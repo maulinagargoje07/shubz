@@ -23,22 +23,27 @@ export type SessionUser = {
 
 /** The current user, or null. Does not redirect — for optional-auth surfaces. */
 export async function getSessionUser(): Promise<SessionUser | null> {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) return null
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return null
 
-  const user = session.user as typeof session.user & {
-    role?: UserRole
-    active?: boolean
-  }
+    const user = session.user as typeof session.user & {
+      role?: UserRole
+      active?: boolean
+    }
 
-  if (user.active === false) return null
+    if (user.active === false) return null
 
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role ?? "OPERATOR",
-    active: user.active ?? true,
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role ?? "OPERATOR",
+      active: user.active ?? true,
+    }
+  } catch (error) {
+    console.error("Failed to retrieve session:", error)
+    return null
   }
 }
 

@@ -19,6 +19,7 @@ import { z } from "zod"
 const envSchema = z.object({
   DATABASE_URL: z
     .string()
+    .trim()
     .min(1, "DATABASE_URL is required — see README for Railway setup")
     .refine(
       (v) => v.startsWith("postgres://") || v.startsWith("postgresql://"),
@@ -28,10 +29,22 @@ const envSchema = z.object({
   /** Signs session cookies. Rotating it logs everyone out. */
   BETTER_AUTH_SECRET: z
     .string()
+    .trim()
     .min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
 
   /** Public origin, e.g. https://shubztrader.up.railway.app */
-  BETTER_AUTH_URL: z.string().url().optional(),
+  BETTER_AUTH_URL: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val || val.trim() === "") return undefined
+      val = val.trim()
+      if (!val.startsWith("http://") && !val.startsWith("https://")) {
+        return `https://${val}`
+      }
+      return val
+    })
+    .pipe(z.string().url().optional()),
 
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 })
