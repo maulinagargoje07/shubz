@@ -22,6 +22,7 @@ export const paymentFormSchema = z.object({
 })
 
 export type PaymentFormValues = z.input<typeof paymentFormSchema>
+export type PaymentFormParsed = z.output<typeof paymentFormSchema>
 
 /** Filters on the payments list. */
 export const paymentListParamsSchema = z.object({

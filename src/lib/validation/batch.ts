@@ -79,7 +79,9 @@ export const batchFormSchema = batchBase.superRefine((val, ctx) => {
   }
 })
 
-export type BatchFormValues = z.input<typeof batchBase>
+/** Input is what the form holds; output is what the action receives. */
+export type BatchFormValues = z.input<typeof batchFormSchema>
+export type BatchFormParsed = z.output<typeof batchFormSchema>
 
 export const updateBatchSchema = z.intersection(
   batchFormSchema,

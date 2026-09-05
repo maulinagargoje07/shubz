@@ -73,6 +73,7 @@ export const enrollmentFormSchema = z
   })
 
 export type EnrollmentFormValues = z.input<typeof enrollmentFormSchema>
+export type EnrollmentFormParsed = z.output<typeof enrollmentFormSchema>
 
 export const updateEnrollmentSchema = z.intersection(
   enrollmentFormSchema,

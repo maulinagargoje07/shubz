@@ -21,6 +21,15 @@ import { Label } from "@/components/ui/label"
 
 const Form = FormProvider
 
+/**
+ * react-hook-form types the form-context generic as `any` throughout its own
+ * public API (`Control<TFieldValues, any, TTransformedValues>`), so a form
+ * declaring `unknown` there fails to assign to its own `control` prop. Alias
+ * it once here rather than repeating the escape hatch in every form.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type FormContext = any
+
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -35,9 +44,12 @@ const FormFieldContext = React.createContext<FormFieldContextValue>(
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+  // Forms whose zod schema transforms (rupees to paise, phone to E.164) have
+  // different input and output types; this carries the output through.
+  TTransformedValues = TFieldValues,
 >({
   ...props
-}: ControllerProps<TFieldValues, TName>) => {
+}: ControllerProps<TFieldValues, TName, TTransformedValues>) => {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />

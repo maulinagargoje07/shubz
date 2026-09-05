@@ -13,10 +13,8 @@
 
 import type { BillingCycle, BillingType, DeliveryMode, ProgramType } from "@/db/schema"
 
-export type ProgramKind = `${ProgramType}__${DeliveryMode}`
-
 export type ProgramKindOption = {
-  value: ProgramKind
+  value: `${ProgramType}__${DeliveryMode}`
   /** How the combined selector reads: "Trading Floor — Offline". */
   label: string
   type: ProgramType
@@ -29,7 +27,7 @@ export type ProgramKindOption = {
   }
 }
 
-export const PROGRAM_KINDS: readonly ProgramKindOption[] = [
+export const PROGRAM_KINDS = [
   {
     value: "MENTORSHIP__ONLINE",
     label: "Mentorship — Online",
@@ -80,18 +78,39 @@ export const PROGRAM_KINDS: readonly ProgramKindOption[] = [
     deliveryMode: "ONLINE",
     defaults: { billingType: "ONE_TIME", billingCycle: null, feePaise: null },
   },
-] as const
+] as const satisfies readonly ProgramKindOption[]
 
-export const PROGRAM_KIND_VALUES = PROGRAM_KINDS.map((k) => k.value) as [
+/**
+ * Exactly the seven combinations that exist in this business — NOT the ten of
+ * a full type x mode cross product. Deriving the type from the list rather
+ * than from `${ProgramType}__${DeliveryMode}` means an offline webinar is a
+ * compile error, not just a runtime absence.
+ */
+export type ProgramKind = (typeof PROGRAM_KINDS)[number]["value"]
+
+export const PROGRAM_KIND_VALUES = PROGRAM_KINDS.map((k) => k.value) as unknown as [
   ProgramKind,
   ...ProgramKind[],
 ]
 
+/**
+ * Map a stored program's two columns back to the combined selector value.
+ *
+ * The columns are independent, so a row could in principle hold a combination
+ * the UI never offers (an offline webinar, say, from a direct database edit or
+ * a future product change). Rather than casting and rendering a broken select,
+ * fall back to the first kind sharing the same type so the form still loads.
+ */
 export function toProgramKind(
   type: ProgramType,
   deliveryMode: DeliveryMode
 ): ProgramKind {
-  return `${type}__${deliveryMode}`
+  const candidate = `${type}__${deliveryMode}`
+  const exact = PROGRAM_KINDS.find((k) => k.value === candidate)
+  if (exact) return exact.value
+
+  const sameType = PROGRAM_KINDS.find((k) => k.type === type)
+  return sameType?.value ?? "MENTORSHIP__ONLINE"
 }
 
 export function findProgramKind(kind: ProgramKind): ProgramKindOption | undefined {

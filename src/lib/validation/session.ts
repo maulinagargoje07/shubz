@@ -29,5 +29,6 @@ export const sessionFormSchema = z.object({
 })
 
 export type SessionFormValues = z.input<typeof sessionFormSchema>
+export type SessionFormParsed = z.output<typeof sessionFormSchema>
 
 export const updateSessionSchema = sessionFormSchema.extend({ id: uuidSchema })

@@ -52,7 +52,13 @@ export const programFormSchema = z
     }
   })
 
+/**
+ * Input and output differ because the schema transforms: `defaultFeeRupees`
+ * arrives as the text a human typed and leaves as integer paise. Forms are
+ * typed on the input, server actions on the output.
+ */
 export type ProgramFormValues = z.input<typeof programFormSchema>
+export type ProgramFormParsed = z.output<typeof programFormSchema>
 
 export const updateProgramSchema = z.intersection(
   programFormSchema,
