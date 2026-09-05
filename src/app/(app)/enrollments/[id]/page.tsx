@@ -22,6 +22,7 @@ import { billingCycleLabel, programKindLabelOf } from "@/lib/programs"
 import { getEnrollment, listSchedule } from "@/server/enrollments/queries"
 import { listPaymentsForEnrollment } from "@/server/payments/queries"
 import { RecordPaymentDialog } from "../../payments/payment-form"
+import { DeleteRecordButton, VoidPaymentButton } from "./record-actions"
 
 export const dynamic = "force-dynamic"
 
@@ -59,6 +60,7 @@ export default async function EnrollmentDetailPage({
               <Pencil className="size-4" />
               Edit
             </Button>
+            <DeleteRecordButton studentName={String(enrollment.contactName)} />
             <RecordPaymentDialog
               enrollmentId={id}
               balanceDuePaise={balance}
@@ -166,6 +168,11 @@ export default async function EnrollmentDetailPage({
                   >
                     {payment.receiptNo}
                   </Link>
+                  <VoidPaymentButton
+                    paymentId={payment.id}
+                    amountPaise={payment.amountPaise}
+                    receiptNo={payment.receiptNo}
+                  />
                 </li>
               ))}
             </ul>

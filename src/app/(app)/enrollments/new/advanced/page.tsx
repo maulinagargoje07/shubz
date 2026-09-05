@@ -3,10 +3,10 @@ import { searchContactsForPicker } from "@/server/contacts/queries"
 import { listSelectablePrograms } from "@/server/programs/queries"
 import { db } from "@/db"
 import { batches } from "@/db/schema"
-import { EnrollmentForm } from "../enrollment-form"
+import { EnrollmentForm } from "../../enrollment-form"
 
 export const dynamic = "force-dynamic"
-export const metadata = { title: "New enrollment" }
+export const metadata = { title: "Detailed enrollment" }
 
 export default async function NewEnrollmentPage() {
   const [contacts, programs, allBatches] = await Promise.all([
@@ -26,8 +26,9 @@ export default async function NewEnrollmentPage() {
   return (
     <div>
       <PageHeader
-        title="New enrollment"
-        description="Pick a student and a program; the fee plan is generated from what you enter."
+        back={{ href: "/enrollments/new", label: "Quick record" }}
+        title="Detailed enrollment"
+        description="For recurring billing, installment plans, seat allocation, or enrolling an existing contact."
       />
       <EnrollmentForm contacts={contacts} programs={programs} batches={allBatches} />
     </div>

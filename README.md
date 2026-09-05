@@ -51,8 +51,26 @@ than the public proxy.
 | `npm run db:generate` | Generate a migration from schema changes |
 | `npm run db:migrate` | Apply pending migrations |
 | `npm run db:seed` | Seed demo data (idempotent) |
+| `npm run db:backup` | Dump every business table to `backups/*.json` |
+| `npm run db:reset -- --yes` | Clear all business data, keep logins, provision the four programs |
 | `npm run db:studio` | Drizzle Studio |
 
 Migrations are generated and committed. `drizzle-kit push` is never used after
 the first deploy.
+
+## Starting fresh
+
+To clear demo data and begin entering real records:
+
+```bash
+npm run db:backup            # writes backups/backup-<timestamp>.json
+npm run db:reset -- --yes    # clears everything except your login
+```
+
+`db:reset` refuses to run without `--yes`. It preserves the auth tables, so
+you are not locked out, and provisions the four programs the student-record
+form offers (Mentorship Online/Offline, Trading Floor Online/Offline).
+
+Backups contain real contact details and are gitignored. Keep them somewhere
+private.
 # shubz

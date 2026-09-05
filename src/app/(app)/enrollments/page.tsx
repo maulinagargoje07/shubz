@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Plus, Receipt } from "lucide-react"
+import { Download, Plus, Receipt } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { EmptyState, StatusPill, enrollmentTone } from "@/components/ui/status"
@@ -20,6 +20,7 @@ export const metadata = { title: "Enrollments" }
 type Row = {
   id: string
   status: keyof typeof ENROLLMENT_STATUS_LABELS
+  enrolledOn: string
   contactName: string
   programName: string
   programType: ProgramType
@@ -50,15 +51,14 @@ const columns: Column<Row>[] = [
         <p className="truncate">{row.programName}</p>
         <p className="truncate text-xs text-muted-foreground">
           {programKindLabelOf(row.programType, row.deliveryMode)}
-          {row.batchName ? ` · ${row.batchName}` : ""}
           {row.seatNumber ? ` · Seat ${row.seatNumber}` : ""}
         </p>
       </div>
     ),
   },
   {
-    id: "balance",
-    header: "Balance",
+    id: "outstanding",
+    header: "Outstanding",
     priority: "primary",
     align: "right",
     cell: (row) => (
@@ -69,19 +69,48 @@ const columns: Column<Row>[] = [
             : "tabular-nums text-muted-foreground"
         }
       >
-        {formatINR(row.balanceDuePaise)}
+        {formatINR(Math.max(row.balanceDuePaise, 0))}
+      </span>
+    ),
+  },
+  {
+    id: "total",
+    header: "Total fees",
+    priority: "secondary",
+    align: "right",
+    cell: (row) => (
+      <span className="tabular-nums text-muted-foreground">
+        {formatINR(row.netPayablePaise)}
       </span>
     ),
   },
   {
     id: "paid",
     header: "Paid",
+    priority: "secondary",
+    align: "right",
+    cell: (row) => (
+      <span className="tabular-nums">{formatINR(row.totalPaidPaise)}</span>
+    ),
+  },
+  {
+    id: "batch",
+    header: "Batch",
+    priority: "tertiary",
+    cell: (row) =>
+      row.batchName ? (
+        row.batchName
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      ),
+  },
+  {
+    id: "date",
+    header: "Date",
     priority: "tertiary",
     align: "right",
     cell: (row) => (
-      <span className="tabular-nums text-muted-foreground">
-        {formatINR(row.totalPaidPaise)} of {formatINR(row.netPayablePaise)}
-      </span>
+      <span className="text-muted-foreground">{formatDate(row.enrolledOn)}</span>
     ),
   },
   {
@@ -127,6 +156,11 @@ export default async function EnrollmentsPage({
     overdue: str(raw.overdue),
   }
 
+  // The export gets the same filters the list is showing.
+  const exportQuery = new URLSearchParams(
+    Object.entries(active).filter(([, v]) => Boolean(v)) as [string, string][]
+  ).toString()
+
   const [{ rows, total }, programs] = await Promise.all([
     listEnrollments({
       page,
@@ -142,12 +176,28 @@ export default async function EnrollmentsPage({
     <div>
       <PageHeader
         title="Enrollments"
-        description="Balances are computed from the ledger, never stored."
+        description="Student records with fees, paid and outstanding."
         actions={
-          <Button render={<Link href="/enrollments/new" />}>
-            <Plus className="size-4" />
-            New enrollment
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              render={
+                <a
+                  href={`/enrollments/export${exportQuery ? `?${exportQuery}` : ""}`}
+                  // A plain anchor, not a Link: this is a file download, and
+                  // client-side navigation would try to render the CSV.
+                  download
+                />
+              }
+            >
+              <Download className="size-4" />
+              Export CSV
+            </Button>
+            <Button render={<Link href="/enrollments/new" />}>
+              <Plus className="size-4" />
+              New record
+            </Button>
+          </>
         }
       />
 
@@ -172,9 +222,9 @@ export default async function EnrollmentsPage({
         <div className="px-4 sm:px-6">
           <EmptyState
             icon={<Receipt className="size-5" />}
-            title="No enrollments yet"
-            description="Enroll a contact in a program to start tracking fees and attendance."
-            action={<Button render={<Link href="/enrollments/new" />}>New enrollment</Button>}
+            title="No student records yet"
+            description="Add a student, their program and their fees in one form."
+            action={<Button render={<Link href="/enrollments/new" />}>Add first record</Button>}
           />
         </div>
       ) : (
