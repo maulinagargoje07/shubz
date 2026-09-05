@@ -15,13 +15,13 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
 
   return (
-    <nav className="flex flex-col gap-5 p-3" aria-label="Main">
+    <nav className="flex flex-col gap-6 p-3" aria-label="Main">
       {NAV_SECTIONS.map((section) => (
         <div key={section.heading}>
-          <p className="px-3 pb-1.5 text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground">
+          <p className="px-3 pb-2 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground/75">
             {section.heading}
           </p>
-          <ul className="space-y-0.5">
+          <ul className="space-y-1">
             {section.items.map((item) => {
               const active = isActivePath(pathname, item.href)
               const Icon = item.icon
@@ -33,16 +33,22 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                      "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
                       active
-                        ? "bg-accent font-medium text-accent-foreground"
-                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                        ? "border border-primary/30 bg-primary/15 font-semibold text-primary shadow-xs"
+                        : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground active:scale-[0.99]"
                     )}
                   >
-                    <Icon className="size-4 shrink-0" aria-hidden />
+                    <Icon
+                      className={cn(
+                        "size-4 shrink-0 transition-colors",
+                        active ? "text-primary" : "text-muted-foreground"
+                      )}
+                      aria-hidden
+                    />
                     <span className="truncate">{item.label}</span>
                     {item.comingSoon ? (
-                      <span className="ml-auto rounded bg-muted px-1.5 py-0.5 text-[0.625rem] uppercase tracking-wide text-muted-foreground">
+                      <span className="ml-auto rounded border border-border/50 bg-secondary px-1.5 py-0.5 text-[0.625rem] uppercase tracking-wide text-muted-foreground">
                         Soon
                       </span>
                     ) : null}

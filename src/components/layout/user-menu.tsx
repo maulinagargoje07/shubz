@@ -1,7 +1,8 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { LogOut } from "lucide-react"
+import { LogOut, Moon, Sun } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -34,6 +35,26 @@ export function UserMenu({
   role: string
 }) {
   const router = useRouter()
+  const [isDark, setIsDark] = useState(true)
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains("dark"))
+  }, [])
+
+  function toggleTheme() {
+    const currentlyDark = document.documentElement.classList.contains("dark")
+    if (currentlyDark) {
+      document.documentElement.classList.remove("dark")
+      document.documentElement.classList.add("light")
+      localStorage.setItem("theme", "light")
+      setIsDark(false)
+    } else {
+      document.documentElement.classList.remove("light")
+      document.documentElement.classList.add("dark")
+      localStorage.setItem("theme", "dark")
+      setIsDark(true)
+    }
+  }
 
   async function handleSignOut() {
     await signOut()
@@ -45,26 +66,42 @@ export function UserMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" className="h-9 gap-2 px-2">
-            <Avatar className="size-7">
-              <AvatarFallback className="text-xs">{initials(name)}</AvatarFallback>
+          <Button variant="ghost" className="h-9 gap-2 px-2 hover:bg-secondary">
+            <Avatar className="size-7 ring-1 ring-primary/40">
+              <AvatarFallback className="bg-primary/20 text-xs font-semibold text-primary">
+                {initials(name)}
+              </AvatarFallback>
             </Avatar>
-            <span className="hidden text-sm sm:inline">{name}</span>
+            <span className="hidden text-sm font-medium sm:inline">{name}</span>
           </Button>
         }
       />
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-56 border-border/70 bg-popover/95 backdrop-blur-md">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium">{name}</span>
-            <span className="text-xs text-muted-foreground">{email}</span>
-            <span className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
+            <span className="text-sm font-semibold text-foreground">{name}</span>
+            <span className="truncate text-xs text-muted-foreground">{email}</span>
+            <span className="mt-1 inline-flex w-fit items-center rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[0.625rem] font-medium uppercase tracking-wider text-primary">
               {role}
             </span>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
+        <DropdownMenuSeparator className="bg-border/60" />
+        <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer">
+          {isDark ? (
+            <>
+              <Sun className="size-4 text-primary" aria-hidden />
+              <span>Light mode</span>
+            </>
+          ) : (
+            <>
+              <Moon className="size-4 text-primary" aria-hidden />
+              <span>Dark mode</span>
+            </>
+          )}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator className="bg-border/60" />
+        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
           <LogOut className="size-4" aria-hidden />
           Sign out
         </DropdownMenuItem>

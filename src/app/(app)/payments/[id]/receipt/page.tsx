@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { notFound } from "next/navigation"
 
 import { formatDate, financialYearLabel } from "@/lib/fy"
@@ -35,9 +36,18 @@ export default async function ReceiptPage({
 
       <article className="rounded-lg border p-8 print:rounded-none print:border-0 print:p-0">
         <header className="mb-6 flex items-start justify-between gap-4 border-b pb-6">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">ShubzTrader</h1>
-            <p className="text-sm text-muted-foreground">Trading education · Pune</p>
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo.png"
+              alt="ShubzTrader"
+              width={48}
+              height={48}
+              className="size-12 object-contain drop-shadow-sm"
+            />
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">ShubzTrader</h1>
+              <p className="text-sm text-muted-foreground">Trading education · Pune</p>
+            </div>
           </div>
           <div className="text-right">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Receipt</p>

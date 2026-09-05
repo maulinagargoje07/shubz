@@ -71,14 +71,20 @@ export default async function DashboardPage() {
           label="Collected this month"
           value={formatINRShort(collected)}
           icon={<IndianRupee className="size-3.5" />}
+          href="/payments"
         />
-        <StatTile label="Outstanding" value={formatINRShort(outstanding)} />
+        <StatTile
+          label="Outstanding"
+          value={formatINRShort(outstanding)}
+          href="/enrollments"
+        />
         <StatTile
           label="Overdue"
           value={overdue}
           tone={overdue > 0 ? "overdue" : undefined}
           hint={overdue > 0 ? "Needs chasing" : "All clear"}
           icon={overdue > 0 ? <AlertTriangle className="size-3.5" /> : undefined}
+          href="/fees"
         />
       </div>
 
@@ -87,13 +93,15 @@ export default async function DashboardPage() {
           label="Total contacts"
           value={contacts}
           icon={<Users className="size-3.5" />}
+          href="/contacts"
         />
-        <StatTile label="Active students" value={students} />
-        <StatTile label="Active batches" value={batches} />
+        <StatTile label="Active students" value={students} href="/students" />
+        <StatTile label="Active batches" value={batches} href="/programs" />
         <StatTile
           label="Sessions this week"
           value={upcomingCount}
           icon={<CalendarDays className="size-3.5" />}
+          href="/sessions"
         />
       </div>
 

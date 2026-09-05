@@ -76,82 +76,128 @@
 }
 
 :root {
-  /* Neutrals carry a trace of blue so the greys read as considered, not dead. */
-  --background: oklch(0.995 0.002 260);
-  --foreground: oklch(0.21 0.012 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.012 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.012 260);
+  /*
+   * Official ShubzTrader theme (https://shubztrader.com/)
+   * Executive Obsidian Black & Metallic Gold trading terminal aesthetic.
+   */
+  --background: #050505;
+  --foreground: #F7F7F5;
+  --card: #0D0D0D;
+  --card-foreground: #F7F7F5;
+  --popover: #121212;
+  --popover-foreground: #F7F7F5;
 
-  --primary: oklch(0.48 0.16 268);
-  --primary-foreground: oklch(0.99 0.003 260);
+  /* Signature Metallic Gold */
+  --primary: #D4AF37;
+  --primary-foreground: #050505;
 
-  --secondary: oklch(0.965 0.005 260);
-  --secondary-foreground: oklch(0.29 0.015 260);
-  --muted: oklch(0.965 0.005 260);
-  --muted-foreground: oklch(0.53 0.014 260);
-  --accent: oklch(0.955 0.012 268);
-  --accent-foreground: oklch(0.34 0.06 268);
+  --secondary: #161616;
+  --secondary-foreground: #EDEDED;
+  --muted: #141414;
+  --muted-foreground: #9A9A9A;
+  --accent: rgba(212, 175, 55, 0.12);
+  --accent-foreground: #F0C75E;
 
-  --destructive: oklch(0.58 0.21 22);
-  --destructive-foreground: oklch(0.99 0.003 260);
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
 
-  --border: oklch(0.915 0.006 260);
-  --input: oklch(0.9 0.008 260);
-  --ring: oklch(0.48 0.16 268);
+  /* Fine gold-tinted borders and input focus rings */
+  --border: rgba(212, 175, 55, 0.18);
+  --input: rgba(212, 175, 55, 0.24);
+  --ring: #D4AF37;
 
-  --paid: oklch(0.55 0.13 158);
-  --paid-foreground: oklch(0.36 0.09 158);
-  --paid-muted: oklch(0.95 0.03 158);
+  /* Financial status indicators (trading floor standard) */
+  --paid: #10B981;
+  --paid-foreground: #34D399;
+  --paid-muted: rgba(16, 185, 129, 0.14);
 
-  --pending: oklch(0.7 0.14 75);
-  --pending-foreground: oklch(0.44 0.1 63);
-  --pending-muted: oklch(0.96 0.04 85);
+  --pending: #F59E0B;
+  --pending-foreground: #FBBF24;
+  --pending-muted: rgba(245, 158, 11, 0.14);
 
-  --overdue: oklch(0.58 0.21 22);
-  --overdue-foreground: oklch(0.44 0.17 22);
-  --overdue-muted: oklch(0.96 0.025 22);
+  --overdue: #EF4444;
+  --overdue-foreground: #F87171;
+  --overdue-muted: rgba(239, 68, 68, 0.14);
 
   --radius: 0.625rem;
 }
 
 .dark {
-  --background: oklch(0.17 0.012 262);
-  --foreground: oklch(0.96 0.004 260);
-  --card: oklch(0.21 0.014 262);
-  --card-foreground: oklch(0.96 0.004 260);
-  --popover: oklch(0.23 0.014 262);
-  --popover-foreground: oklch(0.96 0.004 260);
+  /* Aligned with root Obsidian & Metallic Gold */
+  --background: #050505;
+  --foreground: #F7F7F5;
+  --card: #0D0D0D;
+  --card-foreground: #F7F7F5;
+  --popover: #121212;
+  --popover-foreground: #F7F7F5;
 
-  --primary: oklch(0.68 0.15 268);
-  --primary-foreground: oklch(0.17 0.012 262);
+  --primary: #D4AF37;
+  --primary-foreground: #050505;
 
-  --secondary: oklch(0.27 0.014 262);
-  --secondary-foreground: oklch(0.93 0.005 260);
-  --muted: oklch(0.26 0.013 262);
-  --muted-foreground: oklch(0.68 0.012 260);
-  --accent: oklch(0.3 0.03 268);
-  --accent-foreground: oklch(0.92 0.02 268);
+  --secondary: #161616;
+  --secondary-foreground: #EDEDED;
+  --muted: #141414;
+  --muted-foreground: #9A9A9A;
+  --accent: rgba(212, 175, 55, 0.14);
+  --accent-foreground: #F0C75E;
 
-  --destructive: oklch(0.65 0.19 22);
-  --destructive-foreground: oklch(0.98 0.005 260);
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
 
-  --border: oklch(1 0 0 / 11%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.68 0.15 268);
+  --border: rgba(212, 175, 55, 0.18);
+  --input: rgba(212, 175, 55, 0.24);
+  --ring: #D4AF37;
 
-  --paid: oklch(0.7 0.14 158);
-  --paid-foreground: oklch(0.82 0.12 158);
-  --paid-muted: oklch(0.3 0.06 158);
+  --paid: #10B981;
+  --paid-foreground: #34D399;
+  --paid-muted: rgba(16, 185, 129, 0.14);
 
-  --pending: oklch(0.78 0.13 78);
-  --pending-foreground: oklch(0.86 0.11 82);
-  --pending-muted: oklch(0.32 0.06 70);
+  --pending: #F59E0B;
+  --pending-foreground: #FBBF24;
+  --pending-muted: rgba(245, 158, 11, 0.14);
 
-  --overdue: oklch(0.68 0.18 22);
-  --overdue-foreground: oklch(0.82 0.13 22);
-  --overdue-muted: oklch(0.32 0.08 22);
+  --overdue: #EF4444;
+  --overdue-foreground: #F87171;
+  --overdue-muted: rgba(239, 68, 68, 0.14);
+}
+
+.light {
+  /* Crisp champagne luxury light mode */
+  --background: #FBFBF9;
+  --foreground: #121212;
+  --card: #FFFFFF;
+  --card-foreground: #121212;
+  --popover: #FFFFFF;
+  --popover-foreground: #121212;
+
+  --primary: #B38E22;
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #F4F4F0;
+  --secondary-foreground: #2A2A2A;
+  --muted: #F4F4F0;
+  --muted-foreground: #6B6B6B;
+  --accent: rgba(212, 175, 55, 0.1);
+  --accent-foreground: #8C6D15;
+
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+
+  --border: rgba(179, 142, 34, 0.22);
+  --input: rgba(179, 142, 34, 0.28);
+  --ring: #B38E22;
+
+  --paid: #059669;
+  --paid-foreground: #065F46;
+  --paid-muted: #ECFDF5;
+
+  --pending: #D97706;
+  --pending-foreground: #92400E;
+  --pending-muted: #FFFBEB;
+
+  --overdue: #DC2626;
+  --overdue-foreground: #991B1B;
+  --overdue-muted: #FEF2F2;
 }
 
 @layer base {
@@ -217,8 +263,8 @@
     background:
       linear-gradient(to right, var(--card) 30%, transparent),
       linear-gradient(to left, var(--card) 30%, transparent) 100% 0,
-      radial-gradient(farthest-side at 0 50%, oklch(0 0 0 / 10%), transparent),
-      radial-gradient(farthest-side at 100% 50%, oklch(0 0 0 / 10%), transparent) 100% 0;
+      radial-gradient(farthest-side at 0 50%, rgba(212, 175, 55, 0.12), transparent),
+      radial-gradient(farthest-side at 100% 50%, rgba(212, 175, 55, 0.12), transparent) 100% 0;
     background-repeat: no-repeat;
     background-size:
       40px 100%,
@@ -226,6 +272,29 @@
       14px 100%,
       14px 100%;
     background-attachment: local, local, scroll, scroll;
+  }
+
+  /* Hide scrollbar for clean horizontal tab navigation */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Executive gold border & glow accents */
+  .card-gold {
+    border-color: rgba(212, 175, 55, 0.22);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.35);
+  }
+
+  .gold-glow {
+    box-shadow: 0 0 15px -3px rgba(212, 175, 55, 0.22);
+  }
+
+  .gold-glow-sm {
+    box-shadow: 0 0 8px -2px rgba(212, 175, 55, 0.18);
   }
 }
 

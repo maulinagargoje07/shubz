@@ -46,7 +46,7 @@ export function LoginForm() {
   }
 
   return (
-    <div className="rounded-xl border bg-card p-6">
+    <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-md card-gold">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -63,6 +63,7 @@ export function LoginForm() {
                     autoCapitalize="none"
                     autoCorrect="off"
                     placeholder="you@shubztrader.in"
+                    className="h-10 bg-secondary/30"
                     {...field}
                   />
                 </FormControl>
@@ -78,7 +79,7 @@ export function LoginForm() {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" autoComplete="current-password" {...field} />
+                  <Input type="password" autoComplete="current-password" className="h-10 bg-secondary/30" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -87,14 +88,14 @@ export function LoginForm() {
 
           {error ? (
             <p
-              className="rounded-lg bg-overdue-muted px-3 py-2 text-sm text-overdue-foreground"
+              className="rounded-lg border border-overdue/40 bg-overdue-muted/40 px-3 py-2 text-sm text-overdue-foreground"
               role="alert"
             >
               {error}
             </p>
           ) : null}
 
-          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+          <Button type="submit" className="h-11 w-full bg-primary text-primary-foreground font-semibold hover:bg-primary/90 gold-glow-sm active:scale-[0.98]" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? "Signing in…" : "Sign in"}
           </Button>
         </form>

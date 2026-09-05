@@ -70,7 +70,7 @@ export const ALL_NAV_ITEMS = NAV_SECTIONS.flatMap((s) => s.items)
  */
 export const MOBILE_TABS: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/contacts", label: "Contacts", icon: Users },
+  { href: "/enrollments", label: "Records", icon: Receipt },
   { href: "/fees", label: "Fees", icon: IndianRupee },
   { href: "/attendance", label: "Mark", icon: ClipboardCheck },
 ]

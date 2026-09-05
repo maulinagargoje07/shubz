@@ -24,6 +24,7 @@
  */
 
 import Link from "next/link"
+import { ChevronRight } from "lucide-react"
 import { cn } from "cn"
 
 export type ColumnPriority = "primary" | "secondary" | "tertiary"
@@ -67,42 +68,61 @@ export function DataTable<TRow>({
 }: DataTableProps<TRow>) {
   if (rows.length === 0) {
     return (
-      <div className="mx-4 rounded-xl border border-dashed bg-card px-6 py-12 text-center text-sm text-muted-foreground sm:mx-6">
+      <div className="mx-4 rounded-xl border border-dashed border-border/70 bg-card/60 px-6 py-12 text-center text-sm text-muted-foreground sm:mx-6">
         {empty}
       </div>
     )
   }
 
-  const primary = columns.find((c) => (c.priority ?? "secondary") === "primary") ?? columns[0]
-  const rest = columns.filter((c) => c !== primary)
+  // Find primary column for title (usually left-aligned) and secondary primary for header right (e.g. amount or status)
+  const primaryLeft =
+    columns.find((c) => (c.priority ?? "secondary") === "primary" && c.align !== "right") ??
+    columns[0]
+  const primaryRight = columns.find(
+    (c) => c !== primaryLeft && (c.priority ?? "secondary") === "primary" && c.align === "right"
+  )
+  const rest = columns.filter((c) => c !== primaryLeft && c !== primaryRight)
 
   return (
     <>
-      {/* ---------- Phones: a stacked card per row ---------- */}
-      <ul className="flex flex-col gap-2 px-4 sm:hidden">
+      {/* ---------- Phones: an executive stacked card per row ---------- */}
+      <ul className="flex flex-col gap-2.5 px-4 sm:hidden">
         {rows.map((row) => {
           const key = rowKey(row)
           const href = rowHref?.(row)
 
           const body = (
             <>
-              <div className="text-[0.9375rem] font-medium text-foreground">
-                {primary.cell(row)}
+              <div className="flex items-start justify-between gap-2.5">
+                <div className="min-w-0 flex-1 text-[0.9375rem] font-semibold text-foreground">
+                  {primaryLeft.cell(row)}
+                </div>
+                {primaryRight ? (
+                  <div className="shrink-0 text-right font-medium">
+                    {primaryRight.cell(row)}
+                  </div>
+                ) : null}
+                {href ? (
+                  <ChevronRight className="size-4 shrink-0 self-center text-muted-foreground/60 transition-transform group-active:translate-x-0.5" aria-hidden />
+                ) : null}
               </div>
-              <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5">
-                {rest
-                  .filter((column) => (column.priority ?? "secondary") !== "tertiary")
-                  .map((column) => (
-                    <div key={column.id} className="min-w-0">
-                      {column.hideLabelOnCard ? null : (
-                        <dt className="text-[0.6875rem] uppercase tracking-wide text-muted-foreground">
-                          {column.header}
-                        </dt>
-                      )}
-                      <dd className="truncate text-sm">{column.cell(row)}</dd>
-                    </div>
-                  ))}
-              </dl>
+
+              {rest.filter((column) => (column.priority ?? "secondary") !== "tertiary").length > 0 ? (
+                <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border/50 pt-2">
+                  {rest
+                    .filter((column) => (column.priority ?? "secondary") !== "tertiary")
+                    .map((column) => (
+                      <div key={column.id} className="min-w-0">
+                        {column.hideLabelOnCard ? null : (
+                          <dt className="text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground/75">
+                            {column.header}
+                          </dt>
+                        )}
+                        <dd className="mt-0.5 truncate text-sm text-foreground/90">{column.cell(row)}</dd>
+                      </div>
+                    ))}
+                </dl>
+              ) : null}
             </>
           )
 
@@ -111,12 +131,12 @@ export function DataTable<TRow>({
               {href ? (
                 <Link
                   href={href}
-                  className="block rounded-xl border bg-card p-3.5 transition-colors active:bg-accent/40"
+                  className="group block rounded-xl border border-border/80 bg-card p-3.5 shadow-xs transition-all active:scale-[0.99] active:border-primary/50 active:bg-secondary/40"
                 >
                   {body}
                 </Link>
               ) : (
-                <div className="rounded-xl border bg-card p-3.5">{body}</div>
+                <div className="rounded-xl border border-border/80 bg-card p-3.5 shadow-xs">{body}</div>
               )}
             </li>
           )
@@ -125,16 +145,16 @@ export function DataTable<TRow>({
 
       {/* ---------- Tablet and up: a real table ---------- */}
       <div className="hidden sm:block">
-        <div className="scroll-x mx-6 rounded-xl border bg-card">
+        <div className="scroll-x mx-6 rounded-xl border border-border/80 bg-card shadow-xs">
           <table className="w-full caption-bottom text-sm">
             <thead>
-              <tr className="border-b">
+              <tr className="border-b border-border/80 bg-secondary/35">
                 {columns.map((column) => (
                   <th
                     key={column.id}
                     scope="col"
                     className={cn(
-                      "px-4 py-2.5 text-left text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground",
+                      "px-4 py-3 text-left text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground/80",
                       column.align === "right" && "text-right",
                       PRIORITY_VISIBILITY[column.priority ?? "secondary"],
                       column.className
@@ -145,7 +165,7 @@ export function DataTable<TRow>({
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border/60">
               {rows.map((row) => {
                 const key = rowKey(row)
                 const href = rowHref?.(row)
@@ -153,26 +173,20 @@ export function DataTable<TRow>({
                 return (
                   <tr
                     key={key}
-                    className="border-b transition-colors last:border-0 hover:bg-accent/40"
+                    className="transition-colors hover:bg-secondary/35"
                   >
                     {columns.map((column, index) => (
                       <td
                         key={column.id}
                         className={cn(
-                          "px-4 py-2.5 align-middle",
+                          "px-4 py-3 align-middle",
                           column.align === "right" && "text-right",
                           PRIORITY_VISIBILITY[column.priority ?? "secondary"],
                           column.className
                         )}
                       >
-                        {/*
-                          The link wraps the first cell rather than the row:
-                          nesting an anchor around <tr> is invalid HTML, and a
-                          JS row-click handler would drag this whole component
-                          back to the client.
-                        */}
                         {href && index === 0 ? (
-                          <Link href={href} className="block hover:underline">
+                          <Link href={href} className="block font-medium text-foreground hover:text-primary transition-colors hover:underline">
                             {column.cell(row)}
                           </Link>
                         ) : (

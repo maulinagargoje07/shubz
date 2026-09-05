@@ -106,8 +106,8 @@ export default async function ContactDetailPage({
 
       <div className="px-4 py-4 sm:px-6">
         <Tabs defaultValue="overview">
-          {/* The tab strip scrolls rather than wrapping to two rows on a phone. */}
-          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          {/* The tab strip scrolls smoothly without an intrusive scrollbar. */}
+          <div className="-mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0">
             <TabsList className="w-max">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="enrollments">

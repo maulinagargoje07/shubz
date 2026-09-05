@@ -149,38 +149,37 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="max-w-2xl space-y-6 px-4 py-4 sm:px-6"
+        className="max-w-2xl space-y-5 px-4 py-4 sm:px-6"
       >
         {savedCount > 0 ? (
-          <p className="rounded-lg bg-paid-muted px-3 py-2 text-sm text-paid-foreground">
-            {savedCount} record{savedCount === 1 ? "" : "s"} saved in this session.
-          </p>
+          <div className="flex items-center gap-2 rounded-xl border border-paid/30 bg-paid-muted/30 px-4 py-3 text-sm text-paid-foreground">
+            <span className="flex size-2 rounded-full bg-paid" />
+            <span className="font-medium">{savedCount}</span> record{savedCount === 1 ? "" : "s"} saved in this session.
+          </div>
         ) : null}
 
-        {/* ---------------- Program ---------------- */}
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">Program</legend>
+        {/* ---------------- 1. Program ---------------- */}
+        <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+          <div className="flex items-center gap-2 border-b border-border/60 pb-3">
+            <span className="flex size-5.5 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">1</span>
+            <h3 className="text-sm font-semibold text-foreground">Program Selection</h3>
+          </div>
           <FormField
             control={form.control}
             name="programKind"
             render={({ field }) => (
               <FormItem>
-                {/*
-                  Four cards rather than a dropdown: there are only four, the
-                  choice drives everything else on the form, and a visible
-                  radio group is one tap on a phone instead of two.
-                */}
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-2.5 sm:grid-cols-2">
                   {RECORD_PROGRAM_KINDS.map((kind) => {
                     const selected = field.value === kind.value
                     return (
                       <label
                         key={kind.value}
                         className={cn(
-                          "flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm transition-colors",
+                          "flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm font-medium transition-all",
                           selected
-                            ? "border-primary bg-accent text-accent-foreground"
-                            : "hover:bg-accent/40"
+                            ? "border-primary bg-primary/10 text-primary shadow-xs"
+                            : "border-border/80 bg-secondary/30 hover:border-border hover:bg-secondary/60 active:scale-[0.99]"
                         )}
                       >
                         <input
@@ -194,11 +193,13 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
                         <span
                           aria-hidden
                           className={cn(
-                            "size-4 shrink-0 rounded-full border-2 transition-colors",
+                            "flex size-4.5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                             selected ? "border-primary bg-primary" : "border-muted-foreground/40"
                           )}
-                        />
-                        {kind.label}
+                        >
+                          {selected ? <span className="size-1.5 rounded-full bg-primary-foreground" /> : null}
+                        </span>
+                        <span>{kind.label}</span>
                       </label>
                     )
                   })}
@@ -207,11 +208,14 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
               </FormItem>
             )}
           />
-        </fieldset>
+        </div>
 
-        {/* ---------------- Student ---------------- */}
-        <fieldset className="space-y-4">
-          <legend className="text-sm font-medium">Student</legend>
+        {/* ---------------- 2. Student ---------------- */}
+        <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+          <div className="flex items-center gap-2 border-b border-border/60 pb-3">
+            <span className="flex size-5.5 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">2</span>
+            <h3 className="text-sm font-semibold text-foreground">Student Details</h3>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
@@ -221,7 +225,7 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
                 <FormItem>
                   <FormLabel>Full name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ravi Kumar" autoComplete="off" {...field} />
+                    <Input placeholder="Ravi Kumar" autoComplete="name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -239,12 +243,12 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
                       type="tel"
                       inputMode="tel"
                       placeholder="9876543210"
-                      autoComplete="off"
+                      autoComplete="tel"
                       {...field}
                     />
                   </FormControl>
                   <FormDescription>
-                    An existing number adds the enrollment to that student.
+                    An existing number links to that student.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -257,12 +261,13 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Email <span className="text-muted-foreground">optional</span>
+                    Email <span className="text-muted-foreground font-normal">optional</span>
                   </FormLabel>
                   <FormControl>
                     <Input
                       type="email"
                       inputMode="email"
+                      autoComplete="email"
                       autoCapitalize="none"
                       autoCorrect="off"
                       {...field}
@@ -280,7 +285,7 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    City <span className="text-muted-foreground">optional</span>
+                    City <span className="text-muted-foreground font-normal">optional</span>
                   </FormLabel>
                   <FormControl>
                     <Input placeholder="Pune" {...field} value={field.value ?? ""} />
@@ -290,11 +295,14 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
               )}
             />
           </div>
-        </fieldset>
+        </div>
 
-        {/* ---------------- Enrollment ---------------- */}
-        <fieldset className="space-y-4">
-          <legend className="text-sm font-medium">Enrollment</legend>
+        {/* ---------------- 3. Enrollment ---------------- */}
+        <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+          <div className="flex items-center gap-2 border-b border-border/60 pb-3">
+            <span className="flex size-5.5 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">3</span>
+            <h3 className="text-sm font-semibold text-foreground">Enrollment &amp; Batch</h3>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
@@ -302,7 +310,7 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
               name="enrolledOn"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel>Date of enrollment</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -317,7 +325,7 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Batch <span className="text-muted-foreground">optional</span>
+                    Batch label <span className="text-muted-foreground font-normal">optional</span>
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -327,7 +335,6 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
                       value={field.value ?? ""}
                     />
                   </FormControl>
-                  {/* Suggests batches already in use without forcing a choice. */}
                   <datalist id="batch-labels">
                     {batchLabels.map((label) => (
                       <option key={label} value={label} />
@@ -338,11 +345,14 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
               )}
             />
           </div>
-        </fieldset>
+        </div>
 
-        {/* ---------------- Fees ---------------- */}
-        <fieldset className="space-y-4">
-          <legend className="text-sm font-medium">Fees</legend>
+        {/* ---------------- 4. Fees ---------------- */}
+        <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+          <div className="flex items-center gap-2 border-b border-border/60 pb-3">
+            <span className="flex size-5.5 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">4</span>
+            <h3 className="text-sm font-semibold text-foreground">Fees &amp; Initial Payment</h3>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
@@ -369,7 +379,7 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
               name="feesPaidRupees"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Fees paid (₹)</FormLabel>
+                  <FormLabel>Fees paid now (₹)</FormLabel>
                   <FormControl>
                     <Input
                       inputMode="decimal"
@@ -378,26 +388,28 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
                       value={String(field.value ?? "")}
                     />
                   </FormControl>
-                  <FormDescription>Leave blank if nothing is paid yet.</FormDescription>
+                  <FormDescription>Leave blank if unpaid.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
 
-          {/* Outstanding, live. Derived here for display; the stored truth is
-              the enrollment_balances view. */}
+          {/* Outstanding, live derived tile */}
           {money ? (
-            <div className="flex items-center justify-between rounded-lg border bg-card px-4 py-3">
-              <span className="text-sm text-muted-foreground">Outstanding</span>
+            <div className="flex items-center justify-between rounded-xl border border-border/70 bg-secondary/40 p-4 shadow-xs">
+              <div>
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Outstanding</span>
+                <p className="text-xs text-muted-foreground">Computed live from Total − Paid</p>
+              </div>
               <span
                 className={cn(
-                  "text-lg font-semibold tabular-nums",
+                  "rounded-lg px-3 py-1 text-lg font-bold tabular-nums",
                   money.outstanding > 0
-                    ? "text-overdue"
+                    ? "border border-overdue/30 bg-overdue-muted/40 text-overdue"
                     : money.outstanding === 0
-                      ? "text-paid"
-                      : ""
+                      ? "border border-paid/30 bg-paid-muted/40 text-paid"
+                      : "text-foreground"
                 )}
               >
                 {formatINR(Math.max(money.outstanding, 0))}
@@ -416,7 +428,7 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
                     <FormControl>
                       <select
                         {...field}
-                        className="h-10 w-full rounded-lg border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                        className="h-10 w-full rounded-lg border border-border/80 bg-card px-3 text-sm text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
                       >
                         {PAYMENT_METHODS.map((m) => (
                           <option key={m} value={m}>
@@ -436,11 +448,11 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Reference <span className="text-muted-foreground">optional</span>
+                      Payment reference <span className="text-muted-foreground font-normal">optional</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="UPI txn id"
+                        placeholder="UPI txn id / cheque no"
                         {...field}
                         value={field.value ?? ""}
                       />
@@ -458,19 +470,23 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Notes <span className="text-muted-foreground">optional</span>
+                  Notes <span className="text-muted-foreground font-normal">optional</span>
                 </FormLabel>
                 <FormControl>
-                  <Textarea rows={2} {...field} value={field.value ?? ""} />
+                  <Textarea rows={2} placeholder="Any notes on installments or student requests" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </fieldset>
+        </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button type="submit" disabled={submitting}>
+        <div className="flex flex-col gap-2.5 pt-2 sm:flex-row">
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="h-11 flex-1 bg-primary text-primary-foreground font-semibold px-6 hover:bg-primary/90 active:scale-[0.98] sm:flex-none"
+          >
             {submitting ? "Saving…" : "Save record"}
           </Button>
           <Button
@@ -478,6 +494,7 @@ export function StudentRecordForm({ batchLabels }: { batchLabels: string[] }) {
             variant="outline"
             onClick={onSubmitAndAddAnother}
             disabled={submitting}
+            className="h-11 active:scale-[0.98]"
           >
             Save &amp; add another
           </Button>

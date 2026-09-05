@@ -53,55 +53,72 @@ export function FilterBar({
     <form
       action={action}
       method="get"
-      className="flex flex-wrap items-end gap-2 px-4 pb-4 sm:px-6"
+      className="flex flex-col gap-2.5 px-4 pb-4 sm:flex-row sm:flex-wrap sm:items-end sm:px-6"
     >
-      {showSearch ? (
-        <div className="relative min-w-0 flex-1 sm:max-w-72">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <input
-            type="search"
-            name="q"
-            defaultValue={params.q ?? ""}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder ?? "Search"}
-            className="h-10 w-full rounded-lg border bg-card pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
-          />
-        </div>
-      ) : null}
+      <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+        {showSearch ? (
+          <div className="relative w-full min-w-0 sm:max-w-72 sm:flex-1">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <input
+              type="search"
+              name="q"
+              defaultValue={params.q ?? ""}
+              placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder ?? "Search"}
+              className="h-10 w-full rounded-lg border border-border/80 bg-card pl-9 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
+            />
+          </div>
+        ) : null}
 
-      {filters.map((filter) => (
-        <label key={filter.key} className="min-w-0">
-          <span className="sr-only">{filter.label}</span>
-          <select
-            name={filter.key}
-            defaultValue={params[filter.key] ?? ""}
-            className="h-10 w-full rounded-lg border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-          >
-            <option value="">All {filter.label.toLowerCase()}</option>
-            {filter.options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
+        {filters.length > 0 ? (
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+            {filters.map((filter) => (
+              <label key={filter.key} className="min-w-0">
+                <span className="sr-only">{filter.label}</span>
+                <select
+                  name={filter.key}
+                  defaultValue={params[filter.key] ?? ""}
+                  className="h-10 w-full rounded-lg border border-border/80 bg-card px-3 text-sm text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
+                >
+                  <option value="">All {filter.label.toLowerCase()}</option>
+                  {filter.options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             ))}
-          </select>
-        </label>
-      ))}
+          </div>
+        ) : null}
 
-      {children}
+        {children}
+      </div>
 
-      <Button type="submit" variant="secondary" size="sm" className="h-10">
-        Apply
-      </Button>
-
-      {hasActive ? (
-        <Button variant="ghost" size="sm" className="h-10" render={<Link href={action} />}>
-          <X className="size-4" />
-          Clear
+      <div className="flex items-center gap-2">
+        <Button
+          type="submit"
+          size="sm"
+          className="h-10 flex-1 bg-primary text-primary-foreground font-semibold hover:bg-primary/90 active:scale-95 sm:flex-none"
+        >
+          Apply
         </Button>
-      ) : null}
+
+        {hasActive ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10 text-muted-foreground hover:text-foreground active:scale-95"
+            render={<Link href={action} />}
+          >
+            <X className="size-4" />
+            Clear
+          </Button>
+        ) : null}
+      </div>
     </form>
   )
 }

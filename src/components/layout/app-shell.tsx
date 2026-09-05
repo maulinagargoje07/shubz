@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { X } from "lucide-react"
@@ -48,33 +49,44 @@ export function AppShell({
   }, [menuOpen])
 
   return (
-    <div className="min-h-svh">
-      <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-card/90 px-4 backdrop-blur-sm sm:px-6">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold tracking-tight">
-          <span
-            aria-hidden
-            className="flex size-7 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground"
-          >
-            ST
+    <div className="min-h-svh bg-background text-foreground">
+      <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/80 bg-background/90 px-4 backdrop-blur-md sm:px-6">
+        <Link href="/dashboard" className="flex items-center gap-2.5 font-semibold tracking-tight transition-opacity hover:opacity-90">
+          <Image
+            src="/logo.png"
+            alt="ShubzTrader"
+            width={32}
+            height={32}
+            priority
+            className="size-8 object-contain drop-shadow-[0_2px_10px_rgba(212,175,55,0.4)]"
+          />
+          <span className="text-[0.9375rem] font-bold tracking-tight text-foreground sm:inline">
+            $hubz<span className="font-semibold text-primary">Trader</span>
           </span>
-          <span className="hidden sm:inline">ShubzTrader</span>
         </Link>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <Link
+            href="/enrollments/new"
+            className="hidden items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20 sm:inline-flex"
+          >
+            + Record
+          </Link>
           <UserMenu name={user.name} email={user.email} role={user.role} />
         </div>
       </header>
 
       <div className="flex">
-        <aside className="sticky top-14 hidden h-[calc(100svh-3.5rem)] w-56 shrink-0 overflow-y-auto border-r lg:block">
+        <aside className="sticky top-14 hidden h-[calc(100svh-3.5rem)] w-56 shrink-0 overflow-y-auto border-r border-border/70 bg-card/40 backdrop-blur-sm lg:block">
           <SidebarNav />
         </aside>
 
         {/*
-          Bottom padding on mobile clears the fixed tab bar, so the last row of
-          a list is never trapped underneath it.
+          Bottom padding clears the mobile tab bar + safe area on iOS/Android
         */}
-        <main className="min-w-0 flex-1 pb-20 lg:pb-0">{children}</main>
+        <main className="min-w-0 flex-1 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-8">
+          {children}
+        </main>
       </div>
 
       <MobileTabs onOpenMenu={() => setMenuOpen(true)} />
@@ -84,23 +96,49 @@ export function AppShell({
           <button
             type="button"
             aria-label="Close menu"
-            className="absolute inset-0 bg-foreground/30 backdrop-blur-[2px]"
+            className="animate-in fade-in duration-200 absolute inset-0 bg-black/75 backdrop-blur-xs"
             onClick={() => setMenuOpen(false)}
           />
-          {/* Anchored to the bottom, next to the thumb that opened it. */}
-          <div className="absolute inset-x-0 bottom-0 max-h-[80svh] overflow-y-auto rounded-t-2xl border-t bg-card pb-[env(safe-area-inset-bottom)]">
-            <div className="sticky top-0 flex items-center justify-between border-b bg-card px-4 py-3">
-              <span className="font-medium">Menu</span>
+          {/* Anchored to the bottom with slide-up animation and drag handle */}
+          <div className="animate-in slide-in-from-bottom duration-250 ease-out absolute inset-x-0 bottom-0 max-h-[85svh] overflow-y-auto rounded-t-3xl border-t border-primary/25 bg-card shadow-[0_-8px_32px_rgba(0,0,0,0.8)] pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <div className="mx-auto mt-2.5 mb-1 h-1 w-10 rounded-full bg-muted-foreground/30" />
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/70 bg-card/95 px-4 py-3 backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold tracking-wide">Navigation</span>
+                <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[0.625rem] font-medium uppercase tracking-wider text-primary">
+                  Menu
+                </span>
+              </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setMenuOpen(false)}
                 aria-label="Close menu"
+                className="size-8"
               >
-                <X className="size-5" />
+                <X className="size-4.5" />
               </Button>
             </div>
-            <SidebarNav onNavigate={() => setMenuOpen(false)} />
+
+            <div className="p-3">
+              <div className="mb-3 grid grid-cols-2 gap-2">
+                <Link
+                  href="/enrollments/new"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 py-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+                >
+                  + New Record
+                </Link>
+                <Link
+                  href="/contacts/new"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary py-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary/80"
+                >
+                  + Add Contact
+                </Link>
+              </div>
+              <SidebarNav onNavigate={() => setMenuOpen(false)} />
+            </div>
           </div>
         </div>
       ) : null}

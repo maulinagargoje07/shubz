@@ -93,26 +93,30 @@ export function StudentRecordEditForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="max-w-2xl space-y-6 px-4 py-4 sm:px-6"
+        className="max-w-2xl space-y-5 px-4 py-4 sm:px-6"
       >
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">Program</legend>
+        {/* ---------------- 1. Program ---------------- */}
+        <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+          <div className="flex items-center gap-2 border-b border-border/60 pb-3">
+            <span className="flex size-5.5 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">1</span>
+            <h3 className="text-sm font-semibold text-foreground">Program</h3>
+          </div>
           <FormField
             control={form.control}
             name="programKind"
             render={({ field }) => (
               <FormItem>
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-2.5 sm:grid-cols-2">
                   {RECORD_PROGRAM_KINDS.map((kind) => {
                     const selected = field.value === kind.value
                     return (
                       <label
                         key={kind.value}
                         className={cn(
-                          "flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm transition-colors",
+                          "flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm font-medium transition-all",
                           selected
-                            ? "border-primary bg-accent text-accent-foreground"
-                            : "hover:bg-accent/40"
+                            ? "border-primary bg-primary/10 text-primary shadow-xs"
+                            : "border-border/80 bg-secondary/30 hover:border-border hover:bg-secondary/60 active:scale-[0.99]"
                         )}
                       >
                         <input
@@ -126,11 +130,13 @@ export function StudentRecordEditForm({
                         <span
                           aria-hidden
                           className={cn(
-                            "size-4 shrink-0 rounded-full border-2 transition-colors",
+                            "flex size-4.5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                             selected ? "border-primary bg-primary" : "border-muted-foreground/40"
                           )}
-                        />
-                        {kind.label}
+                        >
+                          {selected ? <span className="size-1.5 rounded-full bg-primary-foreground" /> : null}
+                        </span>
+                        <span>{kind.label}</span>
                       </label>
                     )
                   })}
@@ -139,10 +145,14 @@ export function StudentRecordEditForm({
               </FormItem>
             )}
           />
-        </fieldset>
+        </div>
 
-        <fieldset className="space-y-4">
-          <legend className="text-sm font-medium">Student</legend>
+        {/* ---------------- 2. Student ---------------- */}
+        <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+          <div className="flex items-center gap-2 border-b border-border/60 pb-3">
+            <span className="flex size-5.5 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">2</span>
+            <h3 className="text-sm font-semibold text-foreground">Student Details</h3>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
@@ -176,7 +186,7 @@ export function StudentRecordEditForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Email <span className="text-muted-foreground">optional</span>
+                    Email <span className="text-muted-foreground font-normal">optional</span>
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -197,7 +207,7 @@ export function StudentRecordEditForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    City <span className="text-muted-foreground">optional</span>
+                    City <span className="text-muted-foreground font-normal">optional</span>
                   </FormLabel>
                   <FormControl>
                     <Input {...field} value={field.value ?? ""} />
@@ -207,10 +217,14 @@ export function StudentRecordEditForm({
               )}
             />
           </div>
-        </fieldset>
+        </div>
 
-        <fieldset className="space-y-4">
-          <legend className="text-sm font-medium">Enrollment</legend>
+        {/* ---------------- 3. Enrollment & Fees ---------------- */}
+        <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+          <div className="flex items-center gap-2 border-b border-border/60 pb-3">
+            <span className="flex size-5.5 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">3</span>
+            <h3 className="text-sm font-semibold text-foreground">Enrollment &amp; Fees</h3>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
@@ -231,7 +245,7 @@ export function StudentRecordEditForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Batch <span className="text-muted-foreground">optional</span>
+                    Batch <span className="text-muted-foreground font-normal">optional</span>
                   </FormLabel>
                   <FormControl>
                     <Input list="batch-labels" {...field} value={field.value ?? ""} />
@@ -274,7 +288,7 @@ export function StudentRecordEditForm({
                   <FormControl>
                     <select
                       {...field}
-                      className="h-10 w-full rounded-lg border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                      className="h-10 w-full rounded-lg border border-border/80 bg-card px-3 text-sm text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
                     >
                       {ENROLLMENT_STATUSES.map((s) => (
                         <option key={s} value={s}>
@@ -295,7 +309,7 @@ export function StudentRecordEditForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Notes <span className="text-muted-foreground">optional</span>
+                  Notes <span className="text-muted-foreground font-normal">optional</span>
                 </FormLabel>
                 <FormControl>
                   <Textarea rows={2} {...field} value={field.value ?? ""} />
@@ -304,18 +318,22 @@ export function StudentRecordEditForm({
               </FormItem>
             )}
           />
-        </fieldset>
+        </div>
 
-        <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+        <div className="rounded-xl border border-border/60 bg-secondary/30 px-4 py-3 text-sm text-muted-foreground">
           To change what has been paid, record or void a payment on the record
           page. The ledger is append-only so the history stays intact.
-        </p>
+        </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+        <div className="flex flex-col gap-2.5 pt-2 sm:flex-row">
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting}
+            className="h-11 flex-1 bg-primary text-primary-foreground font-semibold px-6 hover:bg-primary/90 active:scale-[0.98] sm:flex-none"
+          >
             {form.formState.isSubmitting ? "Saving…" : "Save changes"}
           </Button>
-          <Button type="button" variant="outline" onClick={() => router.back()}>
+          <Button type="button" variant="outline" onClick={() => router.back()} className="h-11 active:scale-[0.98]">
             Cancel
           </Button>
         </div>

@@ -84,9 +84,49 @@ export function DetailSkeleton() {
 /** The heading block, so the page frame appears immediately. */
 export function HeaderSkeleton() {
   return (
-    <div className="border-b px-4 py-4 sm:px-6 sm:py-5" aria-hidden>
+    <div className="border-b border-border/70 bg-card/20 px-4 py-4 sm:px-6 sm:py-5" aria-hidden>
       <Bar className="h-6 w-40" />
       <Bar className="mt-2 h-3.5 w-64" />
+    </div>
+  )
+}
+
+export function FormSkeleton({ sections = 3 }: { sections?: number }) {
+  return (
+    <div aria-hidden className="max-w-2xl space-y-5 px-4 py-4 sm:px-6">
+      {Array.from({ length: sections }).map((_, i) => (
+        <div key={i} className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-4">
+          <Bar className="h-5 w-36" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Bar className="h-10 w-full" />
+            <Bar className="h-10 w-full" />
+          </div>
+        </div>
+      ))}
+      <div className="flex gap-2.5">
+        <Bar className="h-11 w-32 rounded-lg" />
+        <Bar className="h-11 w-36 rounded-lg" />
+      </div>
+    </div>
+  )
+}
+
+export function AttendanceSkeleton({ rows = 10 }: { rows?: number }) {
+  return (
+    <div aria-hidden className="px-4 py-4 sm:px-6 space-y-3">
+      <div className="flex gap-2">
+        <Bar className="h-8 w-28 rounded-lg" />
+        <Bar className="h-8 w-28 rounded-lg" />
+      </div>
+      <div className="divide-y overflow-hidden rounded-xl border border-border/80 bg-card">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 px-4 py-3">
+            <Bar className="size-6 rounded-full" />
+            <Bar className="h-4 flex-1" />
+            <Bar className="h-6 w-16 rounded-md" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

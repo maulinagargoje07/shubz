@@ -24,11 +24,11 @@ export function MobileTabs({ onOpenMenu }: { onOpenMenu: () => void }) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 backdrop-blur-sm lg:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-[#D4AF37]/20 bg-[#080808]/95 shadow-[0_-4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md lg:hidden"
+      style={{ paddingBottom: "calc(0.25rem + env(safe-area-inset-bottom))" }}
       aria-label="Primary"
     >
-      <ul className="grid grid-cols-5">
+      <ul className="grid grid-cols-5 items-center py-1">
         {MOBILE_TABS.map((tab) => {
           const active = isActivePath(pathname, tab.href)
           const Icon = tab.icon
@@ -39,12 +39,27 @@ export function MobileTabs({ onOpenMenu }: { onOpenMenu: () => void }) {
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 py-2 text-[0.625rem] font-medium transition-colors",
-                  active ? "text-primary" : "text-muted-foreground"
+                  "relative flex flex-col items-center justify-center gap-1 py-1 text-[0.6875rem] font-medium transition-all active:scale-95",
+                  active
+                    ? "font-semibold text-primary"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Icon className="size-5" aria-hidden />
-                {tab.label}
+                {active ? (
+                  <span
+                    aria-hidden
+                    className="absolute -top-1 size-1 rounded-full bg-primary gold-glow-sm"
+                  />
+                ) : null}
+                <div
+                  className={cn(
+                    "flex size-7 items-center justify-center rounded-lg transition-colors",
+                    active ? "bg-primary/15 text-primary" : ""
+                  )}
+                >
+                  <Icon className="size-4.5" aria-hidden />
+                </div>
+                <span>{tab.label}</span>
               </Link>
             </li>
           )
@@ -54,10 +69,12 @@ export function MobileTabs({ onOpenMenu }: { onOpenMenu: () => void }) {
           <button
             type="button"
             onClick={onOpenMenu}
-            className="flex w-full flex-col items-center gap-0.5 py-2 text-[0.625rem] font-medium text-muted-foreground"
+            className="flex w-full flex-col items-center justify-center gap-1 py-1 text-[0.6875rem] font-medium text-muted-foreground transition-all hover:text-foreground active:scale-95"
           >
-            <Menu className="size-5" aria-hidden />
-            More
+            <div className="flex size-7 items-center justify-center rounded-lg">
+              <Menu className="size-4.5" aria-hidden />
+            </div>
+            <span>More</span>
           </button>
         </li>
       </ul>

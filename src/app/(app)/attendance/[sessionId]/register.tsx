@@ -186,9 +186,9 @@ export function AttendanceRegister({
         without scrolling back through a long register, and sits above the tab
         bar rather than behind it.
       */}
-      <div className="sticky bottom-20 z-10 mt-4 lg:static lg:bottom-auto">
+      <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-10 mt-4 lg:static lg:bottom-auto">
         <Button
-          className="w-full shadow-lg lg:w-auto lg:shadow-none"
+          className="w-full shadow-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] lg:w-auto lg:shadow-none"
           onClick={save}
           disabled={saving || !dirty}
         >
