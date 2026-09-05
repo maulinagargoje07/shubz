@@ -30,6 +30,12 @@ function createAuth() {
     appName: "ShubzTrader",
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
+    trustedOrigins: [
+      "http://localhost:3000",
+      "https://*.up.railway.app",
+      "https://*.railway.app",
+      ...(env.BETTER_AUTH_URL ? [env.BETTER_AUTH_URL] : []),
+    ],
 
     database: drizzleAdapter(db, {
       provider: "pg",

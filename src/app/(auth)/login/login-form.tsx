@@ -36,9 +36,8 @@ export function LoginForm() {
     })
 
     if (error) {
-      // Deliberately vague: distinguishing "no such user" from "wrong password"
-      // tells an attacker which emails are registered.
-      setError("Those details don't match an active account.")
+      console.error("Sign in failed:", error)
+      setError(error.message || "Those details don't match an active account.")
       return
     }
 
