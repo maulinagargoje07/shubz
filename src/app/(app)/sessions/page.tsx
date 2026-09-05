@@ -1,9 +1,8 @@
 import Link from "next/link"
-import { ClipboardCheck, MapPin, Video } from "lucide-react"
+import { CalendarDays, ClipboardCheck, MapPin, Video } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { EmptyState, StatusPill } from "@/components/ui/status"
 import { PageHeader } from "@/components/page-header"
 import { formatIST } from "@/lib/fy"
 import { SESSION_STATUS_LABELS } from "@/lib/labels"
@@ -17,64 +16,77 @@ export default async function SessionsPage() {
   const sessions = await listAllSessions(100)
 
   return (
-    <div>
+    <div className="pb-8">
       <PageHeader
         title="Sessions"
         description="Every class across all batches, most recent first."
       />
 
-      <div className="px-6 pb-8">
+      <div className="px-4 py-4 sm:px-6">
         {sessions.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              No sessions scheduled yet. Add one from a batch.
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={<CalendarDays className="size-5" />}
+            title="No sessions scheduled"
+            description="Sessions are added from inside a batch."
+            action={
+              <Button variant="outline" render={<Link href="/programs" />}>
+                Go to programs
+              </Button>
+            }
+          />
         ) : (
-          <div className="divide-y rounded-lg border">
+          <ul className="divide-y overflow-hidden rounded-xl border bg-card">
             {sessions.map((session) => (
-              <div key={session.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+              <li
+                key={session.id}
+                className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-accent/40"
+              >
                 {session.deliveryMode === "ONLINE" ? (
                   <Video className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                 ) : (
                   <MapPin className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                 )}
 
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">
+                <Link
+                  href={`/programs/${session.programId}/batches/${session.batchId}`}
+                  className="min-w-0 flex-1"
+                >
+                  <p className="truncate text-sm font-medium">
                     <span className="text-muted-foreground">{session.seq}. </span>
                     {session.title}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    <Link
-                      href={`/programs/${session.programId}/batches/${session.batchId}`}
-                      className="hover:underline"
-                    >
-                      {session.programName} ·{" "}
-                      {programKindLabelOf(session.programType, session.deliveryMode)} ·{" "}
-                      {session.batchName}
-                    </Link>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {session.programName} ·{" "}
+                    {programKindLabelOf(session.programType, session.deliveryMode)} ·{" "}
+                    {session.batchName}
                   </p>
-                </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground sm:hidden">
+                    {formatIST(session.scheduledAt)}
+                  </p>
+                </Link>
 
-                <span className="text-xs text-muted-foreground">
+                <span className="hidden shrink-0 text-xs text-muted-foreground sm:block">
                   {formatIST(session.scheduledAt)}
                 </span>
 
-                <Badge variant="secondary">
+                <StatusPill
+                  tone={session.status === "COMPLETED" ? "paid" : "neutral"}
+                  className="hidden sm:inline-flex"
+                >
                   {SESSION_STATUS_LABELS[session.status] ?? session.status}
-                </Badge>
+                </StatusPill>
 
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
+                  aria-label={`Mark attendance for ${session.title}`}
                   render={<Link href={`/attendance/${session.id}`} />}
                 >
                   <ClipboardCheck className="size-4" />
                 </Button>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </div>

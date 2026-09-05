@@ -2,10 +2,15 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { IndianRupee, Pencil, Receipt } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { PageHeader } from "@/components/page-header"
+import {
+  EmptyState,
+  StatTile,
+  StatusPill,
+  enrollmentTone,
+  scheduleTone,
+} from "@/components/ui/status"
+import { PageHeader, SectionHeading } from "@/components/page-header"
 import { formatDate } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
 import {
@@ -38,12 +43,16 @@ export default async function EnrollmentDetailPage({
   const isRecurring = enrollment.billingType === "RECURRING"
 
   return (
-    <div>
+    <div className="pb-8">
       <PageHeader
+        back={{ href: "/enrollments", label: "Enrollments" }}
         title={String(enrollment.contactName)}
-        description={`${enrollment.programName} · ${programKindLabelOf(enrollment.programType, enrollment.deliveryMode)}${
-          enrollment.batchName ? ` · ${enrollment.batchName}` : ""
-        }${enrollment.seatNumber ? ` · Seat ${enrollment.seatNumber}` : ""}`}
+        description={`${enrollment.programName} · ${programKindLabelOf(
+          enrollment.programType,
+          enrollment.deliveryMode
+        )}${enrollment.batchName ? ` · ${enrollment.batchName}` : ""}${
+          enrollment.seatNumber ? ` · Seat ${enrollment.seatNumber}` : ""
+        }`}
         actions={
           <>
             <Button variant="outline" render={<Link href={`/enrollments/${id}/edit`} />}>
@@ -67,131 +76,118 @@ export default async function EnrollmentDetailPage({
         }
       />
 
-      <div className="grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label={isRecurring ? "Per cycle" : "Net payable"}>
-          {formatINR(Number(enrollment.netPayablePaise))}
-          {isRecurring && enrollment.billingCycle ? (
-            <span className="text-sm font-normal text-muted-foreground">
-              {" "}
-              total raised
-            </span>
-          ) : null}
-        </Stat>
-        <Stat label="Paid">{formatINR(Number(enrollment.totalPaidPaise))}</Stat>
-        <Stat label="Remaining">
-          <span className={balance > 0 ? "" : "text-muted-foreground"}>
-            {formatINR(balance)}
-          </span>
-        </Stat>
-        <Stat label="Next due">
-          {enrollment.isOverdue ? (
-            <span className="text-rose-600 dark:text-rose-400">
-              {String(enrollment.daysOverdue)} days overdue
-            </span>
-          ) : enrollment.nextDueDate ? (
-            formatDate(String(enrollment.nextDueDate))
-          ) : (
-            "—"
-          )}
-        </Stat>
+      <div className="grid gap-3 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+        <StatTile
+          label={isRecurring ? "Raised to date" : "Net payable"}
+          value={formatINR(Number(enrollment.netPayablePaise))}
+          hint={
+            isRecurring && enrollment.billingCycle
+              ? `${formatINR(Number(enrollment.feeTotalPaise) - Number(enrollment.discountPaise))} per ${billingCycleLabel(enrollment.billingCycle).toLowerCase()}`
+              : Number(enrollment.discountPaise) > 0
+                ? `After ${formatINR(Number(enrollment.discountPaise))} discount`
+                : undefined
+          }
+        />
+        <StatTile label="Paid" value={formatINR(Number(enrollment.totalPaidPaise))} />
+        <StatTile
+          label="Remaining"
+          value={formatINR(balance)}
+          tone={balance > 0 ? (enrollment.isOverdue ? "overdue" : undefined) : "paid"}
+        />
+        <StatTile
+          label="Next due"
+          value={
+            enrollment.isOverdue
+              ? `${String(enrollment.daysOverdue)} days late`
+              : enrollment.nextDueDate
+                ? formatDate(String(enrollment.nextDueDate))
+                : "—"
+          }
+          tone={enrollment.isOverdue ? "overdue" : undefined}
+          hint={
+            enrollment.nextDueAmountPaise
+              ? formatINR(Number(enrollment.nextDueAmountPaise))
+              : undefined
+          }
+        />
       </div>
 
-      <div className="grid gap-6 px-6 pb-8 lg:grid-cols-2">
+      <div className="grid gap-6 px-4 sm:px-6 lg:grid-cols-2">
         <section>
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          <SectionHeading>
             {isRecurring ? "Billing cycles" : "Payment schedule"}
-          </h2>
+          </SectionHeading>
+
           {schedule.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                No schedule — the fee is payable in full.
-              </CardContent>
-            </Card>
+            <EmptyState title="No schedule" description="The fee is payable in full." />
           ) : (
-            <div className="divide-y rounded-lg border text-sm">
+            <ul className="divide-y overflow-hidden rounded-xl border bg-card text-sm">
               {schedule.map((row) => (
-                <div key={row.id} className="flex items-center gap-3 px-4 py-2.5">
-                  <span className="w-6 shrink-0 tabular-nums text-muted-foreground">
+                <li key={row.id} className="flex items-center gap-3 px-4 py-2.5">
+                  <span className="w-5 shrink-0 tabular-nums text-muted-foreground">
                     {row.seq}
                   </span>
                   <span className="flex-1">{formatDate(row.dueDate)}</span>
                   <span className="tabular-nums">{formatINR(row.amountPaise)}</span>
-                  <Badge
-                    variant="secondary"
-                    className={
-                      row.status === "OVERDUE"
-                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200"
-                        : row.status === "PAID"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
-                          : ""
-                    }
-                  >
+                  <StatusPill tone={scheduleTone(row.status)}>
                     {SCHEDULE_STATUS_LABELS[row.status] ?? row.status}
-                  </Badge>
-                </div>
+                  </StatusPill>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </section>
 
         <section>
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Payments
-          </h2>
+          <SectionHeading>Payments</SectionHeading>
+
           {payments.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                Nothing recorded yet.
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={<Receipt className="size-5" />}
+              title="Nothing recorded yet"
+              description="Recording a payment generates a receipt number and updates the schedule."
+            />
           ) : (
-            <div className="divide-y rounded-lg border text-sm">
+            <ul className="divide-y overflow-hidden rounded-xl border bg-card text-sm">
               {payments.map((payment) => (
-                <div key={payment.id} className="flex items-center gap-3 px-4 py-2.5">
+                <li key={payment.id} className="flex items-center gap-3 px-4 py-2.5">
                   <div className="min-w-0 flex-1">
-                    <p className="tabular-nums">{formatINR(payment.amountPaise)}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="font-medium tabular-nums">
+                      {formatINR(payment.amountPaise)}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
                       {formatDate(payment.paidOn)} · {PAYMENT_METHOD_LABELS[payment.method]}
                       {payment.referenceNo ? ` · ${payment.referenceNo}` : ""}
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    render={<Link href={`/payments/${payment.id}/receipt`} />}
+                  <Link
+                    href={`/payments/${payment.id}/receipt`}
+                    className="shrink-0 font-mono text-xs hover:underline"
                   >
-                    <Receipt className="size-4" />
                     {payment.receiptNo}
-                  </Button>
-                </div>
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </section>
       </div>
 
-      <div className="px-6 pb-8 text-sm text-muted-foreground">
-        <p>
-          Enrolled {formatDate(String(enrollment.enrolledOn))} ·{" "}
+      <div className="mt-6 flex flex-wrap items-center gap-2 px-4 text-sm text-muted-foreground sm:px-6">
+        <StatusPill tone={enrollmentTone(String(enrollment.status))}>
           {ENROLLMENT_STATUS_LABELS[enrollment.status as keyof typeof ENROLLMENT_STATUS_LABELS]}
-          {isRecurring && enrollment.billingCycle
-            ? ` · ${billingCycleLabel(enrollment.billingCycle)} billing`
-            : ""}
-          {Number(enrollment.discountPaise) > 0
-            ? ` · Discount ${formatINR(Number(enrollment.discountPaise))}`
-            : ""}
-        </p>
-        {enrollment.notes ? <p className="mt-2">{String(enrollment.notes)}</p> : null}
+        </StatusPill>
+        <span>Enrolled {formatDate(String(enrollment.enrolledOn))}</span>
+        {isRecurring && enrollment.billingCycle ? (
+          <span>· {billingCycleLabel(enrollment.billingCycle)} billing</span>
+        ) : null}
       </div>
-    </div>
-  )
-}
 
-function Stat({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border p-4">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{children}</p>
+      {enrollment.notes ? (
+        <p className="mt-3 px-4 text-sm text-muted-foreground sm:px-6">
+          {String(enrollment.notes)}
+        </p>
+      ) : null}
     </div>
   )
 }

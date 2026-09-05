@@ -2,10 +2,16 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Pencil, Plus } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  EmptyState,
+  StatTile,
+  StatusPill,
+  attendanceTone,
+  enrollmentTone,
+  lifecycleTone,
+} from "@/components/ui/status"
 import { PageHeader } from "@/components/page-header"
 import { formatDate, formatIST } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
@@ -14,16 +20,12 @@ import {
   ATTENDANCE_LABELS,
   ENROLLMENT_STATUS_LABELS,
   LIFECYCLE_LABELS,
-  LIFECYCLE_TONES,
   PAYMENT_METHOD_LABELS,
   SOURCE_LABELS,
 } from "@/lib/labels"
 import { programKindLabelOf } from "@/lib/programs"
 import { diffFields } from "@/lib/audit"
-import {
-  contactAttendanceRate,
-  listAttendanceForContact,
-} from "@/server/attendance/queries"
+import { contactAttendanceRate, listAttendanceForContact } from "@/server/attendance/queries"
 import {
   currentConsent,
   listActivityForContact,
@@ -63,10 +65,16 @@ export default async function ContactDetailPage({
   )
 
   return (
-    <div>
+    <div className="pb-8">
       <PageHeader
+        back={{ href: "/contacts", label: "Contacts" }}
         title={contact.fullName}
-        description={`${formatE164(contact.phoneE164)}${contact.city ? ` · ${contact.city}` : ""}`}
+        description={
+          <span className="tabular-nums">
+            {formatE164(contact.phoneE164)}
+            {contact.city ? ` · ${contact.city}` : ""}
+          </span>
+        }
         actions={
           <>
             <Button variant="outline" render={<Link href={`/contacts/${id}/edit`} />}>
@@ -81,258 +89,267 @@ export default async function ContactDetailPage({
         }
       />
 
-      <div className="flex flex-wrap gap-2 px-6 pt-4">
-        <Badge variant="secondary" className={LIFECYCLE_TONES[contact.lifecycleStage]}>
+      <div className="flex flex-wrap gap-1.5 px-4 pt-4 sm:px-6">
+        <StatusPill tone={lifecycleTone(contact.lifecycleStage)}>
           {LIFECYCLE_LABELS[contact.lifecycleStage]}
-        </Badge>
-        <Badge variant="secondary">{SOURCE_LABELS[contact.source]}</Badge>
+        </StatusPill>
+        <StatusPill tone="muted">{SOURCE_LABELS[contact.source]}</StatusPill>
         {consent.map((event) => (
-          <Badge
+          <StatusPill
             key={event.id}
-            variant="secondary"
-            className={
-              event.action === "OPT_OUT"
-                ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200"
-                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
-            }
+            tone={event.action === "OPT_OUT" ? "overdue" : "paid"}
           >
             {event.channel} {event.action === "OPT_IN" ? "opted in" : "opted out"}
-          </Badge>
+          </StatusPill>
         ))}
       </div>
 
-      <Tabs defaultValue="overview" className="p-6">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="mt-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Enrollments">{enrollments.length}</Stat>
-            <Stat label="Total paid">{formatINR(totalPaid)}</Stat>
-            <Stat label="Outstanding">{formatINR(totalDue)}</Stat>
-            <Stat label="Attendance">
-              {rate.percent === null ? (
-                <span className="text-muted-foreground">—</span>
-              ) : (
-                <>
-                  {rate.percent}%
-                  <span className="block text-xs font-normal text-muted-foreground">
-                    {rate.attended} of {rate.eligible} sessions held
-                  </span>
-                </>
-              )}
-            </Stat>
+      <div className="px-4 py-4 sm:px-6">
+        <Tabs defaultValue="overview">
+          {/* The tab strip scrolls rather than wrapping to two rows on a phone. */}
+          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+            <TabsList className="w-max">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="enrollments">
+                Enrollments
+                {enrollments.length ? (
+                  <span className="ml-1 text-muted-foreground">{enrollments.length}</span>
+                ) : null}
+              </TabsTrigger>
+              <TabsTrigger value="payments">
+                Payments
+                {payments.length ? (
+                  <span className="ml-1 text-muted-foreground">{payments.length}</span>
+                ) : null}
+              </TabsTrigger>
+              <TabsTrigger value="attendance">Attendance</TabsTrigger>
+              <TabsTrigger value="notes">Notes</TabsTrigger>
+              <TabsTrigger value="activity">Activity</TabsTrigger>
+            </TabsList>
           </div>
 
-          <dl className="mt-6 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Phone">{formatE164(contact.phoneE164)}</Field>
-            {contact.altPhone ? (
-              <Field label="Alternate">{formatE164(contact.altPhone)}</Field>
-            ) : null}
-            {contact.email ? <Field label="Email">{contact.email}</Field> : null}
-            {contact.city ? <Field label="City">{contact.city}</Field> : null}
-            {contact.state ? <Field label="State">{contact.state}</Field> : null}
-            {contact.telegramUsername ? (
-              <Field label="Telegram">{contact.telegramUsername}</Field>
-            ) : null}
-            {contact.tradingviewUsername ? (
-              <Field label="TradingView">{contact.tradingviewUsername}</Field>
-            ) : null}
-            <Field label="Added">{formatIST(contact.createdAt)}</Field>
-          </dl>
+          <TabsContent value="overview" className="mt-4 space-y-6">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <StatTile label="Enrollments" value={enrollments.length} />
+              <StatTile label="Total paid" value={formatINR(totalPaid)} />
+              <StatTile
+                label="Outstanding"
+                value={formatINR(totalDue)}
+                tone={totalDue > 0 ? "overdue" : undefined}
+              />
+              <StatTile
+                label="Attendance"
+                value={rate.percent === null ? "—" : `${rate.percent}%`}
+                hint={
+                  rate.percent === null
+                    ? "No sessions held yet"
+                    : `${rate.attended} of ${rate.eligible} held`
+                }
+              />
+            </div>
 
-          {contact.notes ? (
-            <p className="mt-6 whitespace-pre-wrap text-sm text-muted-foreground">
-              {contact.notes}
-            </p>
-          ) : null}
-        </TabsContent>
+            <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+              <Field label="Phone">
+                <a href={`tel:${contact.phoneE164}`} className="tabular-nums hover:underline">
+                  {formatE164(contact.phoneE164)}
+                </a>
+              </Field>
+              {contact.altPhone ? (
+                <Field label="Alternate">
+                  <a href={`tel:${contact.altPhone}`} className="tabular-nums hover:underline">
+                    {formatE164(contact.altPhone)}
+                  </a>
+                </Field>
+              ) : null}
+              {contact.email ? (
+                <Field label="Email">
+                  <a href={`mailto:${contact.email}`} className="hover:underline">
+                    {contact.email}
+                  </a>
+                </Field>
+              ) : null}
+              {contact.city ? <Field label="City">{contact.city}</Field> : null}
+              {contact.state ? <Field label="State">{contact.state}</Field> : null}
+              {contact.telegramUsername ? (
+                <Field label="Telegram">{contact.telegramUsername}</Field>
+              ) : null}
+              {contact.tradingviewUsername ? (
+                <Field label="TradingView">{contact.tradingviewUsername}</Field>
+              ) : null}
+              <Field label="Added">{formatIST(contact.createdAt)}</Field>
+            </dl>
 
-        <TabsContent value="enrollments" className="mt-4">
-          {enrollments.length === 0 ? (
-            <Empty>Not enrolled in anything yet.</Empty>
-          ) : (
-            <div className="divide-y rounded-lg border text-sm">
-              {enrollments.map((row) => (
-                <Link
-                  key={String(row.id)}
-                  href={`/enrollments/${row.id}`}
-                  className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-muted/30"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">{String(row.programName)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {programKindLabelOf(row.programType, row.deliveryMode)}
-                      {row.batchName ? ` · ${row.batchName}` : ""}
-                      {row.seatNumber ? ` · Seat ${row.seatNumber}` : ""}
-                    </p>
-                  </div>
-                  <span className="tabular-nums">
-                    {formatINR(Number(row.totalPaidPaise))} /{" "}
-                    {formatINR(Number(row.netPayablePaise))}
-                  </span>
-                  {row.isOverdue ? (
-                    <Badge
-                      variant="secondary"
-                      className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200"
+            {contact.notes ? (
+              <p className="whitespace-pre-wrap rounded-xl border bg-card p-4 text-sm text-muted-foreground">
+                {contact.notes}
+              </p>
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="enrollments" className="mt-4">
+            {enrollments.length === 0 ? (
+              <EmptyState
+                title="Not enrolled in anything yet"
+                action={
+                  <Button render={<Link href="/enrollments/new" />}>Create enrollment</Button>
+                }
+              />
+            ) : (
+              <ul className="divide-y overflow-hidden rounded-xl border bg-card">
+                {enrollments.map((row) => (
+                  <li key={String(row.id)}>
+                    <Link
+                      href={`/enrollments/${row.id}`}
+                      className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-accent/40"
                     >
-                      {String(row.daysOverdue)}d overdue
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">
-                      {
-                        ENROLLMENT_STATUS_LABELS[
-                          row.status as keyof typeof ENROLLMENT_STATUS_LABELS
-                        ]
-                      }
-                    </Badge>
-                  )}
-                </Link>
-              ))}
-            </div>
-          )}
-        </TabsContent>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{String(row.programName)}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {programKindLabelOf(row.programType, row.deliveryMode)}
+                          {row.batchName ? ` · ${row.batchName}` : ""}
+                          {row.seatNumber ? ` · Seat ${row.seatNumber}` : ""}
+                        </p>
+                      </div>
+                      <span className="tabular-nums text-muted-foreground">
+                        {formatINR(Number(row.totalPaidPaise))} /{" "}
+                        {formatINR(Number(row.netPayablePaise))}
+                      </span>
+                      {row.isOverdue ? (
+                        <StatusPill tone="overdue">
+                          {String(row.daysOverdue)}d overdue
+                        </StatusPill>
+                      ) : (
+                        <StatusPill tone={enrollmentTone(String(row.status))}>
+                          {
+                            ENROLLMENT_STATUS_LABELS[
+                              row.status as keyof typeof ENROLLMENT_STATUS_LABELS
+                            ]
+                          }
+                        </StatusPill>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </TabsContent>
 
-        <TabsContent value="payments" className="mt-4">
-          {payments.length === 0 ? (
-            <Empty>No payments recorded.</Empty>
-          ) : (
-            <div className="divide-y rounded-lg border text-sm">
-              {payments.map((payment) => (
-                <div key={payment.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                  <Link
-                    href={`/payments/${payment.id}/receipt`}
-                    className="font-mono text-xs hover:underline"
+          <TabsContent value="payments" className="mt-4">
+            {payments.length === 0 ? (
+              <EmptyState title="No payments recorded" />
+            ) : (
+              <ul className="divide-y overflow-hidden rounded-xl border bg-card">
+                {payments.map((payment) => (
+                  <li
+                    key={payment.id}
+                    className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm"
                   >
-                    {payment.receiptNo}
-                  </Link>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium tabular-nums">
-                      {formatINR(payment.amountPaise)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {payment.programName} ·{" "}
-                      {programKindLabelOf(payment.programType, payment.deliveryMode)}
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(payment.paidOn)} · {PAYMENT_METHOD_LABELS[payment.method]}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium tabular-nums">
+                        {formatINR(payment.amountPaise)}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {payment.programName} ·{" "}
+                        {programKindLabelOf(payment.programType, payment.deliveryMode)}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(payment.paidOn)} · {PAYMENT_METHOD_LABELS[payment.method]}
+                    </span>
+                    <Link
+                      href={`/payments/${payment.id}/receipt`}
+                      className="font-mono text-xs hover:underline"
+                    >
+                      {payment.receiptNo}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </TabsContent>
 
-        <TabsContent value="attendance" className="mt-4">
-          <div className="mb-4 rounded-lg border p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Attendance rate
-            </p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">
-              {rate.percent === null ? "—" : `${rate.percent}%`}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {rate.percent === null
-                ? "No sessions have been held yet."
-                : `Present or late at ${rate.attended} of ${rate.eligible} sessions held. Excused absences are excluded.`}
-            </p>
-          </div>
+          <TabsContent value="attendance" className="mt-4 space-y-4">
+            <StatTile
+              label="Attendance rate"
+              value={rate.percent === null ? "—" : `${rate.percent}%`}
+              hint={
+                rate.percent === null
+                  ? "No sessions have been held yet."
+                  : `Present or late at ${rate.attended} of ${rate.eligible} sessions held. Excused absences are excluded.`
+              }
+            />
 
-          {attendanceRows.length === 0 ? (
-            <Empty>No attendance marked yet.</Empty>
-          ) : (
-            <div className="divide-y rounded-lg border text-sm">
-              {attendanceRows.map((row) => (
-                <div key={row.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">{row.sessionTitle}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {row.programName} · {row.batchName} · {formatIST(row.scheduledAt)}
-                    </p>
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className={
-                      row.status === "PRESENT"
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
-                        : row.status === "ABSENT"
-                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200"
-                          : ""
-                    }
+            {attendanceRows.length === 0 ? (
+              <EmptyState title="No attendance marked yet" />
+            ) : (
+              <ul className="divide-y overflow-hidden rounded-xl border bg-card">
+                {attendanceRows.map((row) => (
+                  <li
+                    key={row.id}
+                    className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm"
                   >
-                    {ATTENDANCE_LABELS[row.status]}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{row.sessionTitle}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {row.programName} · {row.batchName} · {formatIST(row.scheduledAt)}
+                      </p>
+                    </div>
+                    <StatusPill tone={attendanceTone(row.status)}>
+                      {ATTENDANCE_LABELS[row.status]}
+                    </StatusPill>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </TabsContent>
 
-        <TabsContent value="notes" className="mt-4 max-w-2xl space-y-4">
-          <AddNote contactId={id} />
-          {notes.length === 0 ? (
-            <Empty>No notes yet.</Empty>
-          ) : (
-            <div className="divide-y rounded-lg border text-sm">
-              {notes.map((note) => (
-                <div key={note.id} className="px-4 py-3">
-                  <p className="whitespace-pre-wrap">{note.body}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {note.authorName ?? "Unknown"} · {formatIST(note.createdAt)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="activity" className="mt-4">
-          {activity.length === 0 ? (
-            <Empty>No recorded changes.</Empty>
-          ) : (
-            <div className="divide-y rounded-lg border text-sm">
-              {activity.map((entry) => {
-                const changed = diffFields(
-                  entry.before as Record<string, unknown> | null,
-                  entry.after as Record<string, unknown> | null
-                )
-                return (
-                  <div key={entry.id} className="px-4 py-3">
-                    <p>
-                      <span className="font-medium">{entry.action}</span>
-                      {changed.length > 0 ? (
-                        <span className="text-muted-foreground">
-                          {" "}
-                          · {changed.join(", ")}
-                        </span>
-                      ) : null}
+          <TabsContent value="notes" className="mt-4 max-w-2xl space-y-4">
+            <AddNote contactId={id} />
+            {notes.length === 0 ? (
+              <EmptyState title="No notes yet" />
+            ) : (
+              <ul className="divide-y overflow-hidden rounded-xl border bg-card text-sm">
+                {notes.map((note) => (
+                  <li key={note.id} className="px-4 py-3">
+                    <p className="whitespace-pre-wrap">{note.body}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {note.authorName ?? "Unknown"} · {formatIST(note.createdAt)}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {entry.actorName ?? "System"} · {formatIST(entry.createdAt)}
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
-}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </TabsContent>
 
-function Stat({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border p-4">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-semibold tabular-nums">{children}</p>
+          <TabsContent value="activity" className="mt-4">
+            {activity.length === 0 ? (
+              <EmptyState title="No recorded changes" />
+            ) : (
+              <ul className="divide-y overflow-hidden rounded-xl border bg-card text-sm">
+                {activity.map((entry) => {
+                  const changed = diffFields(
+                    entry.before as Record<string, unknown> | null,
+                    entry.after as Record<string, unknown> | null
+                  )
+                  return (
+                    <li key={entry.id} className="px-4 py-3">
+                      <p>
+                        <span className="font-medium">{entry.action}</span>
+                        {changed.length > 0 ? (
+                          <span className="text-muted-foreground"> · {changed.join(", ")}</span>
+                        ) : null}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {entry.actorName ?? "System"} · {formatIST(entry.createdAt)}
+                      </p>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   )
 }
@@ -340,18 +357,10 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dt className="text-[0.6875rem] uppercase tracking-wide text-muted-foreground">
+        {label}
+      </dt>
       <dd className="mt-0.5">{children}</dd>
     </div>
-  )
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-  return (
-    <Card>
-      <CardContent className="py-10 text-center text-sm text-muted-foreground">
-        {children}
-      </CardContent>
-    </Card>
   )
 }

@@ -6,9 +6,8 @@ import { CheckCircle2, FileUp, Upload, XCircle } from "lucide-react"
 import { toast } from "sonner"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
+import { StatusPill } from "@/components/ui/status"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -115,37 +114,37 @@ export function ImportWizard() {
 
   if (step === "upload") {
     return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-            <FileUp className="size-8 text-muted-foreground" aria-hidden />
-            <div>
-              <p className="font-medium">Choose a CSV file</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Phone numbers are normalised to +91 form and checked against existing
-                contacts before anything is written.
-              </p>
-            </div>
-            <input
-              id="csv"
-              type="file"
-              accept=".csv,text/csv"
-              className="hidden"
-              onChange={onFile}
-            />
-            <Button render={<label htmlFor="csv" />}>
-              <Upload className="size-4" />
-              Select file
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="px-4 py-4 sm:px-6">
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed bg-card px-6 py-12 text-center">
+          <div className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <FileUp className="size-5" aria-hidden />
+          </div>
+          <div>
+            <p className="font-medium">Choose a CSV file</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+              Phone numbers are normalised to +91 form and checked against existing
+              contacts before anything is written.
+            </p>
+          </div>
+          <input
+            id="csv"
+            type="file"
+            accept=".csv,text/csv"
+            className="sr-only"
+            onChange={onFile}
+          />
+          <Button render={<label htmlFor="csv" />}>
+            <Upload className="size-4" />
+            Select file
+          </Button>
+        </div>
       </div>
     )
   }
 
   if (step === "map") {
     return (
-      <div className="max-w-2xl space-y-6 p-6">
+      <div className="max-w-2xl space-y-6 px-4 py-4 sm:px-6">
         <Alert>
           <AlertDescription>
             <strong>{filename}</strong> · {rowCount} row{rowCount === 1 ? "" : "s"}. Check the
@@ -199,7 +198,7 @@ export function ImportWizard() {
 
   if (step === "preview" && preview) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 px-4 py-4 sm:px-6">
         <div className="grid gap-4 sm:grid-cols-3">
           <Count
             label="Valid"
@@ -244,18 +243,21 @@ export function ImportWizard() {
                   <td className="px-4 py-2">{row.fullName ?? "—"}</td>
                   <td className="px-4 py-2 tabular-nums">{row.phoneE164 ?? "—"}</td>
                   <td className="px-4 py-2">
-                    <Badge
-                      variant="secondary"
-                      className={
+                    <StatusPill
+                      tone={
                         row.status === "VALID"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                          ? "paid"
                           : row.status === "INVALID"
-                            ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200"
-                            : ""
+                            ? "overdue"
+                            : "pending"
                       }
                     >
-                      {row.status === "VALID" ? "Valid" : row.status === "DUPLICATE" ? "Duplicate" : "Invalid"}
-                    </Badge>
+                      {row.status === "VALID"
+                        ? "Valid"
+                        : row.status === "DUPLICATE"
+                          ? "Duplicate"
+                          : "Invalid"}
+                    </StatusPill>
                     {row.errorMessage ? (
                       <span className="ml-2 text-xs text-muted-foreground">
                         {row.errorMessage}
@@ -289,9 +291,8 @@ export function ImportWizard() {
 
   return (
     <div className="p-6">
-      <Card>
-        <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-          <CheckCircle2 className="size-8 text-emerald-600" aria-hidden />
+        <div className="rounded-xl border bg-card p-6">
+          <CheckCircle2 className="size-8 text-paid" aria-hidden />
           <p className="font-medium">Import complete</p>
           <div className="flex gap-2">
             <Button onClick={reset}>Import another file</Button>
@@ -299,8 +300,7 @@ export function ImportWizard() {
               View contacts
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
     </div>
   )
 }
@@ -320,9 +320,9 @@ function Count({
     <div className="rounded-lg border p-4">
       <div className="flex items-center gap-2">
         {tone === "good" ? (
-          <CheckCircle2 className="size-4 text-emerald-600" aria-hidden />
+          <CheckCircle2 className="size-4 text-paid" aria-hidden />
         ) : tone === "bad" ? (
-          <XCircle className="size-4 text-rose-600" aria-hidden />
+          <XCircle className="size-4 text-overdue" aria-hidden />
         ) : null}
         <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
       </div>

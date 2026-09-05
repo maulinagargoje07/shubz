@@ -97,7 +97,7 @@ export function ContactForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-3xl space-y-6 p-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-3xl space-y-6 px-4 py-4 sm:px-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
@@ -120,7 +120,13 @@ export function ContactForm({
               <FormItem>
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="9876543210" {...field} />
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="9876543210"
+                    {...field}
+                  />
                 </FormControl>
                 <FormDescription>
                   Indian numbers can be typed plain — stored as +91…
@@ -137,7 +143,13 @@ export function ContactForm({
               <FormItem>
                 <FormLabel>Alternate phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Optional" {...field} value={field.value ?? ""} />
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    placeholder="Optional"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -151,7 +163,15 @@ export function ContactForm({
               <FormItem className="sm:col-span-2">
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="Optional" {...field} value={field.value ?? ""} />
+                  <Input
+                    type="email"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    placeholder="Optional"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -279,7 +299,7 @@ export function ContactForm({
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Add contact"}
           </Button>

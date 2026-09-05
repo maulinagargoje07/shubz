@@ -98,7 +98,7 @@ export function BatchForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-3xl space-y-6 p-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-3xl space-y-6 px-4 py-4 sm:px-6">
         <Alert>
           <AlertDescription>
             {program.name} is <strong>{programKindLabel(program)}</strong>, so this batch
@@ -297,7 +297,7 @@ export function BatchForm({
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Create batch"}
           </Button>

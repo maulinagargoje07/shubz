@@ -1,21 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { Check, X } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "cn"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { StatusPill, attendanceTone } from "@/components/ui/status"
 import { ATTENDANCE_LABELS } from "@/lib/labels"
-import { ATTENDANCE_STATUSES } from "@/lib/validation/attendance"
 import { markAttendance } from "@/server/attendance/actions"
 import type { AttendanceStatus, DeliveryMode } from "@/db/schema"
 
@@ -26,6 +19,8 @@ export type RegisterRow = {
   seatNumber: string | null
   status: AttendanceStatus | null
 }
+
+const CYCLE: AttendanceStatus[] = ["PRESENT", "LATE", "EXCUSED", "ABSENT"]
 
 export function AttendanceRegister({
   sessionId,
@@ -41,25 +36,44 @@ export function AttendanceRegister({
 
   /**
    * Offline classes default everyone to PRESENT so the admin unchecks the few
-   * absentees rather than ticking twenty people one at a time — a room of
+   * absentees rather than tapping twenty names one at a time — a room of
    * students is overwhelmingly present, and the fast path should match that.
    * Online starts from whatever was already marked.
    */
-  const [marks, setMarks] = useState<Record<string, AttendanceStatus>>(() => {
-    const initial: Record<string, AttendanceStatus> = {}
-    for (const row of rows) {
-      initial[row.enrollmentId] = row.status ?? (isOffline ? "PRESENT" : "ABSENT")
-    }
-    return initial
-  })
+  const [marks, setMarks] = useState<Record<string, AttendanceStatus>>(() =>
+    Object.fromEntries(
+      rows.map((row) => [row.enrollmentId, row.status ?? (isOffline ? "PRESENT" : "ABSENT")])
+    )
+  )
   const [saving, setSaving] = useState(false)
+  const [dirty, setDirty] = useState(false)
 
-  const presentCount = Object.values(marks).filter(
-    (s) => s === "PRESENT" || s === "LATE"
-  ).length
+  const presentCount = useMemo(
+    () => Object.values(marks).filter((s) => s === "PRESENT" || s === "LATE").length,
+    [marks]
+  )
 
   function setAll(status: AttendanceStatus) {
     setMarks(Object.fromEntries(rows.map((r) => [r.enrollmentId, status])))
+    setDirty(true)
+  }
+
+  function toggle(enrollmentId: string) {
+    setMarks((m) => ({
+      ...m,
+      [enrollmentId]: m[enrollmentId] === "ABSENT" ? "PRESENT" : "ABSENT",
+    }))
+    setDirty(true)
+  }
+
+  /** Long-press-free way to reach LATE and EXCUSED: cycle through the states. */
+  function cycle(enrollmentId: string) {
+    setMarks((m) => {
+      const current = m[enrollmentId] ?? "ABSENT"
+      const next = CYCLE[(CYCLE.indexOf(current) + 1) % CYCLE.length]
+      return { ...m, [enrollmentId]: next }
+    })
+    setDirty(true)
   }
 
   async function save() {
@@ -78,87 +92,109 @@ export function AttendanceRegister({
       return
     }
 
-    toast.success(`Attendance saved for ${result.data.count} student${result.data.count === 1 ? "" : "s"}`)
+    setDirty(false)
+    toast.success(
+      `Saved · ${presentCount} of ${rows.length} present`
+    )
     router.refresh()
   }
 
   if (rows.length === 0) {
     return (
-      <p className="px-6 py-10 text-center text-sm text-muted-foreground">
+      <div className="mx-4 rounded-xl border border-dashed bg-card px-6 py-12 text-center text-sm text-muted-foreground sm:mx-6">
         Nobody is enrolled in this batch yet.
-      </p>
+      </div>
     )
   }
 
   return (
-    <div className="px-6 pb-8">
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+    <div className="px-4 sm:px-6">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => setAll("PRESENT")}>
-          Mark all present
+          <Check className="size-4" />
+          All present
         </Button>
         <Button variant="outline" size="sm" onClick={() => setAll("ABSENT")}>
-          Mark all absent
+          <X className="size-4" />
+          All absent
         </Button>
-        <Badge variant="secondary" className="ml-auto">
+        <StatusPill tone="info" className="ml-auto">
           {presentCount} of {rows.length} present
-        </Badge>
+        </StatusPill>
       </div>
 
-      <div className="divide-y rounded-lg border">
+      <ul className="divide-y overflow-hidden rounded-xl border bg-card">
         {rows.map((row) => {
           const status = marks[row.enrollmentId] ?? "ABSENT"
-          const isPresent = status === "PRESENT" || status === "LATE"
+          const isHere = status === "PRESENT" || status === "LATE"
 
           return (
-            <div key={row.enrollmentId} className="flex items-center gap-3 px-4 py-2.5">
-              <Checkbox
-                checked={isPresent}
-                onCheckedChange={(checked) =>
-                  setMarks((m) => ({
-                    ...m,
-                    [row.enrollmentId]: checked ? "PRESENT" : "ABSENT",
-                  }))
-                }
-                aria-label={`${row.contactName} present`}
-              />
-
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{row.contactName}</p>
-                <p className="text-xs text-muted-foreground">
-                  {row.seatNumber ? `Seat ${row.seatNumber} · ` : ""}
-                  {row.contactPhone}
-                </p>
-              </div>
-
-              {/* The checkbox covers present/absent; the select handles late and excused. */}
-              <Select
-                value={status}
-                onValueChange={(v) =>
-                  setMarks((m) => ({
-                    ...m,
-                    [row.enrollmentId]: (v as AttendanceStatus) ?? "ABSENT",
-                  }))
-                }
+            <li key={row.enrollmentId} className="flex items-center gap-3 px-3 py-2">
+              {/*
+                The name is the toggle. A whole-row target beats a 20px
+                checkbox when marking a register standing up, and the tick
+                itself is decoration rather than the thing to aim at.
+              */}
+              <button
+                type="button"
+                onClick={() => toggle(row.enrollmentId)}
+                aria-pressed={isHere}
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-1.5 text-left transition-colors hover:bg-accent/40"
               >
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ATTENDANCE_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {ATTENDANCE_LABELS[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <span
+                  aria-hidden
+                  className={cn(
+                    "flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors",
+                    isHere
+                      ? "border-paid bg-paid text-background"
+                      : "border-border text-transparent"
+                  )}
+                >
+                  <Check className="size-3.5" strokeWidth={3} />
+                </span>
+
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">
+                    {row.contactName}
+                  </span>
+                  {row.seatNumber ? (
+                    <span className="block truncate text-xs text-muted-foreground">
+                      Seat {row.seatNumber}
+                    </span>
+                  ) : null}
+                </span>
+              </button>
+
+              {/* Cycles PRESENT → LATE → EXCUSED → ABSENT for the exceptions. */}
+              <button
+                type="button"
+                onClick={() => cycle(row.enrollmentId)}
+                className="shrink-0"
+                aria-label={`${row.contactName} is ${ATTENDANCE_LABELS[status]}. Change.`}
+              >
+                <StatusPill tone={attendanceTone(status)}>
+                  {ATTENDANCE_LABELS[status]}
+                </StatusPill>
+              </button>
+            </li>
           )
         })}
-      </div>
+      </ul>
 
-      <Button className="mt-4" onClick={save} disabled={saving}>
-        {saving ? "Saving…" : "Save attendance"}
-      </Button>
+      {/*
+        The save button sticks to the bottom on a phone so it is reachable
+        without scrolling back through a long register, and sits above the tab
+        bar rather than behind it.
+      */}
+      <div className="sticky bottom-20 z-10 mt-4 lg:static lg:bottom-auto">
+        <Button
+          className="w-full shadow-lg lg:w-auto lg:shadow-none"
+          onClick={save}
+          disabled={saving || !dirty}
+        >
+          {saving ? "Saving…" : dirty ? "Save attendance" : "Saved"}
+        </Button>
+      </div>
     </div>
   )
 }

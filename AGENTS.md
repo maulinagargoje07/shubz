@@ -10,8 +10,11 @@ that quietly break money, identity, or history if ignored.
 Next.js 15 (App Router) + TypeScript strict · PostgreSQL on Railway ·
 Drizzle ORM + drizzle-kit · Better Auth (email + password, session cookies) ·
 Tailwind v4 + shadcn/ui (`base-nova` style, built on Base UI) ·
-TanStack Table for every data grid · react-hook-form + zod for every form ·
-date-fns · libphonenumber-js · papaparse.
+react-hook-form + zod for every form · date-fns · libphonenumber-js
+(server-side only) · papaparse.
+
+Data grids are server-rendered rather than using a client table library — see
+UI conventions below for why, and for the column API that replaced it.
 
 One repo, one app. No separate backend, no microservices.
 
@@ -137,6 +140,55 @@ accepts.
 sessions are `classSessions`. Two exports named `sessions` collide as an
 ambiguous star export in `schema/index.ts` and one silently disappears from the
 generated migration. This has already happened once.
+
+## UI conventions
+
+The app is used daily on a phone at a desk and on a laptop, on Indian mobile
+networks. Weight and touch ergonomics are requirements, not polish.
+
+**Lists are server components.** Every grid is server-driven — the server
+filters, sorts and paginates — so there is no client table library. Use
+`DataTable` from `components/data-table/table.tsx` and give each column a
+`priority`:
+
+| priority | desktop | mobile |
+| --- | --- | --- |
+| `primary` | always | card title / first line |
+| `secondary` | from `sm` | card metadata |
+| `tertiary` | from `lg` | hidden |
+
+Below `sm` the same rows render as stacked cards. Never solve a wide table by
+scrolling it sideways — the reader loses the row they were on.
+
+**Filters and pagination are a plain GET form and plain links**
+(`components/data-table/filters.tsx`). They work before hydration, and native
+`<select>` gives phones the OS wheel picker. Do not reach for a client-side
+filter component.
+
+**Money state has one visual language.** Use `StatusPill` with the `paid` /
+`pending` / `overdue` tones from `components/ui/status.tsx`, and the
+`scheduleTone` / `enrollmentTone` / `lifecycleTone` / `attendanceTone` helpers.
+Never hand-write emerald/rose classes at a call site — that is how two pages
+end up disagreeing about what "overdue" looks like.
+
+**Keep libphonenumber-js off the client.** The shared zod schemas check shape
+only, via `lib/phone-format.ts`. Server actions run `parsePhone()` from
+`lib/phone.ts` to normalise. Importing `lib/phone.ts` into a client component
+pulls ~150 kB of country metadata into that bundle.
+
+**Mobile specifics**
+- Bottom tab bar is primary navigation under `lg`; the sidebar is desktop only.
+- Fixed bottom elements need `env(safe-area-inset-bottom)` padding.
+- Amount fields take `inputMode="decimal"`, phones `type="tel"`.
+- Form actions stack full-width below `sm`.
+- Touch targets are 44px on coarse pointers (handled globally in `globals.css`).
+
+**Every route has a `loading.tsx`.** Pages are dynamic and hit Postgres, so a
+navigation costs a round-trip; without a skeleton the app reads as broken
+rather than busy. Use the helpers in `components/skeletons.tsx`.
+
+**Fonts are the system stack.** No webfont — it would cost a render-blocking
+request and a layout shift on every cold load.
 
 ## Receipt numbers
 

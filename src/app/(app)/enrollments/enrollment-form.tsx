@@ -206,7 +206,7 @@ export function EnrollmentForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-3xl space-y-6 p-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-3xl space-y-6 px-4 py-4 sm:px-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
@@ -329,7 +329,12 @@ export function EnrollmentForm({
               <FormItem>
                 <FormLabel>Fee (₹)</FormLabel>
                 <FormControl>
-                  <Input placeholder="45000" {...field} value={String(field.value ?? "")} />
+                  <Input
+                    inputMode="decimal"
+                    placeholder="45000"
+                    {...field}
+                    value={String(field.value ?? "")}
+                  />
                 </FormControl>
                 <FormDescription>
                   {billingType === "RECURRING"
@@ -348,7 +353,12 @@ export function EnrollmentForm({
               <FormItem>
                 <FormLabel>Discount (₹)</FormLabel>
                 <FormControl>
-                  <Input placeholder="0" {...field} value={String(field.value ?? "")} />
+                  <Input
+                    inputMode="decimal"
+                    placeholder="0"
+                    {...field}
+                    value={String(field.value ?? "")}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -527,7 +537,7 @@ export function EnrollmentForm({
           </Alert>
         ) : null}
 
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Enroll"}
           </Button>

@@ -2,10 +2,9 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { CalendarDays, ClipboardCheck, MapPin, Pencil, Plus, Video } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { PageHeader } from "@/components/page-header"
+import { EmptyState, StatTile, StatusPill } from "@/components/ui/status"
+import { PageHeader, SectionHeading } from "@/components/page-header"
 import { formatDate, formatIST } from "@/lib/fy"
 import { BATCH_STATUS_LABELS, SESSION_STATUS_LABELS } from "@/lib/labels"
 import { programKindLabel } from "@/lib/programs"
@@ -32,10 +31,11 @@ export default async function BatchDetailPage({
   ])
 
   return (
-    <div>
+    <div className="pb-8">
       <PageHeader
+        back={{ href: `/programs/${id}`, label: program.name }}
         title={batch.name}
-        description={`${program.name} · ${programKindLabel(program)} · ${batch.code}`}
+        description={`${programKindLabel(program)} · ${batch.code}`}
         actions={
           <>
             <Button
@@ -60,86 +60,87 @@ export default async function BatchDetailPage({
         }
       />
 
-      <div className="grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Status">{BATCH_STATUS_LABELS[batch.status] ?? batch.status}</Stat>
-        <Stat label="Runs">
-          {batch.startDate ? formatDate(batch.startDate) : "—"}
-          {batch.endDate ? ` – ${formatDate(batch.endDate)}` : ""}
-        </Stat>
-        <Stat label="Timing">{batch.timingText ?? "—"}</Stat>
+      <div className="grid gap-3 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+        <StatTile
+          label="Status"
+          value={BATCH_STATUS_LABELS[batch.status] ?? batch.status}
+        />
+        <StatTile
+          label="Runs"
+          value={batch.startDate ? formatDate(batch.startDate) : "—"}
+          hint={batch.endDate ? `until ${formatDate(batch.endDate)}` : undefined}
+        />
+        <StatTile label="Timing" value={batch.timingText ?? "—"} />
+
         {/* Only the field belonging to this delivery mode is shown. */}
-        <Stat label={isOnline ? "Meeting link" : "Venue"}>
-          {isOnline ? (
-            batch.meetingLink ? (
-              <a
-                href={batch.meetingLink}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-base underline"
-              >
-                <Video className="size-4" />
-                Join
-              </a>
+        <StatTile
+          label={isOnline ? "Meeting link" : "Venue"}
+          icon={isOnline ? <Video className="size-3.5" /> : <MapPin className="size-3.5" />}
+          value={
+            isOnline ? (
+              batch.meetingLink ? (
+                <a
+                  href={batch.meetingLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-base underline underline-offset-4"
+                >
+                  Join
+                </a>
+              ) : (
+                "—"
+              )
             ) : (
-              "—"
+              <span className="text-base">{batch.venueName ?? "—"}</span>
             )
-          ) : (
-            <span className="inline-flex items-center gap-1.5 text-base">
-              <MapPin className="size-4" />
-              {batch.venueName ?? "—"}
-            </span>
-          )}
-        </Stat>
+          }
+          hint={!isOnline && batch.venueAddress ? batch.venueAddress : undefined}
+        />
       </div>
 
-      <div className="px-6 pb-8">
-        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-          Sessions
-        </h2>
+      <section className="px-4 sm:px-6">
+        <SectionHeading>Sessions</SectionHeading>
 
         {sessions.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              No sessions scheduled yet.
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={<CalendarDays className="size-5" />}
+            title="No sessions scheduled"
+            description="Add the classes that make up this batch so attendance can be marked."
+          />
         ) : (
-          <div className="divide-y rounded-lg border">
+          <ul className="divide-y overflow-hidden rounded-xl border bg-card">
             {sessions.map((session) => (
-              <div
+              <li
                 key={session.id}
-                className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm"
+                className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3"
               >
-                <span className="w-8 shrink-0 tabular-nums text-muted-foreground">
+                <span className="w-6 shrink-0 tabular-nums text-sm text-muted-foreground">
                   {session.seq}
                 </span>
+
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">{session.title}</p>
-                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <CalendarDays className="size-3.5" />
+                  <p className="truncate text-sm font-medium">{session.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">
                     {formatIST(session.scheduledAt)} · {session.durationMinutes} min
                   </p>
                 </div>
 
-                <Badge variant="secondary">
+                <StatusPill tone={session.status === "COMPLETED" ? "paid" : "neutral"}>
                   {SESSION_STATUS_LABELS[session.status] ?? session.status}
-                </Badge>
+                </StatusPill>
 
-                <span className="text-xs text-muted-foreground">
-                  {session.markedCount > 0
-                    ? `${session.markedCount} marked`
-                    : "Not marked"}
-                </span>
-
-                <div className="flex gap-1">
+                <div className="flex shrink-0 items-center gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
                     render={<Link href={`/attendance/${session.id}`} />}
                   >
                     <ClipboardCheck className="size-4" />
-                    Attendance
+                    <span className="hidden sm:inline">
+                      {session.markedCount > 0 ? `${session.markedCount} marked` : "Mark"}
+                    </span>
                   </Button>
+
                   <SessionFormDialog
                     batchId={batchId}
                     deliveryMode={program.deliveryMode}
@@ -151,26 +152,17 @@ export default async function BatchDetailPage({
                       updatedAt: new Date(),
                     }}
                     trigger={
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="icon" aria-label={`Edit ${session.title}`}>
                         <Pencil className="size-4" />
                       </Button>
                     }
                   />
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-      </div>
-    </div>
-  )
-}
-
-function Stat({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border p-4">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{children}</p>
+      </section>
     </div>
   )
 }

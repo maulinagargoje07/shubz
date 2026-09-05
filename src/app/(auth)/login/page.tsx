@@ -12,15 +12,24 @@ export default async function LoginPage() {
   if (await getSessionUser()) redirect("/dashboard")
 
   return (
-    <main className="flex min-h-svh items-center justify-center bg-muted/30 p-6">
+    <main className="flex min-h-svh items-center justify-center p-6">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">ShubzTrader</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Student management &amp; CRM
-          </p>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <span
+            aria-hidden
+            className="mb-3 flex size-11 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground"
+          >
+            ST
+          </span>
+          <h1 className="text-xl font-semibold tracking-tight">ShubzTrader</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Student management &amp; CRM</p>
         </div>
+
         <LoginForm />
+
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          Internal tool. Contact your administrator for access.
+        </p>
       </div>
     </main>
   )

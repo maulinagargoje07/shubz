@@ -22,18 +22,21 @@ export default async function AttendanceSessionPage({
   const rows = await getSessionRegister(sessionId)
 
   return (
-    <div>
+    <div className="pb-8">
       <PageHeader
+        back={{ href: "/attendance", label: "Attendance" }}
         title={context.session.title}
-        description={`${context.program.name} · ${programKindLabel(context.program)} · ${
-          context.batch.name
-        } · ${formatIST(context.session.scheduledAt)}`}
+        description={`${context.batch.name} · ${programKindLabel(context.program)} · ${formatIST(
+          context.session.scheduledAt
+        )}`}
       />
-      <AttendanceRegister
-        sessionId={sessionId}
-        deliveryMode={context.program.deliveryMode}
-        rows={rows as RegisterRow[]}
-      />
+      <div className="pt-4">
+        <AttendanceRegister
+          sessionId={sessionId}
+          deliveryMode={context.program.deliveryMode}
+          rows={rows as RegisterRow[]}
+        />
+      </div>
     </div>
   )
 }

@@ -113,7 +113,13 @@ export function RecordPaymentDialog({
                 <FormItem>
                   <FormLabel>Amount (₹)</FormLabel>
                   <FormControl>
-                    <Input placeholder="15000" {...field} value={String(field.value ?? "")} />
+                    <Input
+                      inputMode="decimal"
+                      autoFocus
+                      placeholder="15000"
+                      {...field}
+                      value={String(field.value ?? "")}
+                    />
                   </FormControl>
                   <FormDescription>
                     Balance outstanding: {formatINR(Math.max(balanceDuePaise, 0))}
