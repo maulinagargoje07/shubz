@@ -1,14 +1,17 @@
 /**
- * Environment configuration, validated once at startup.
+ * Environment configuration, validated on first use.
  *
- * Fail loudly and early: a missing DATABASE_URL should stop the process with a
- * clear message, not surface as a connection error on the first page load.
+ * Validation is LAZY, not eager at module load. `next build` imports every
+ * route module to collect page data, so eager validation would make a
+ * production build require production secrets — and it would fail on a CI
+ * machine that legitimately has none. Instead the first actual read of a
+ * config value validates the whole set and throws with a clear message, so a
+ * misconfigured deployment still fails loudly on its first request rather than
+ * silently connecting to nothing.
  *
- * This module is server-only. Nothing here may be imported into a client
- * component — DATABASE_URL and BETTER_AUTH_SECRET must never reach a browser
- * bundle. Non-NEXT_PUBLIC_ variables are not inlined into client bundles, so a
- * stray import fails loudly at build rather than leaking a secret, but the
- * rule stands: server code only.
+ * Server-only. Nothing here may be imported into a client component.
+ * Non-NEXT_PUBLIC_ variables are not inlined into client bundles, so a stray
+ * import fails rather than leaking a secret, but the rule stands.
  */
 
 import { z } from "zod"
@@ -33,19 +36,47 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 })
 
-function loadEnv() {
+export type Env = z.infer<typeof envSchema>
+
+let cached: Env | undefined
+
+function loadEnv(): Env {
+  if (cached) return cached
+
   const parsed = envSchema.safeParse(process.env)
 
   if (!parsed.success) {
     const issues = parsed.error.issues
       .map((i) => `  ${i.path.join(".")}: ${i.message}`)
       .join("\n")
-    throw new Error(`Invalid environment configuration:\n${issues}`)
+    throw new Error(
+      `Invalid environment configuration:\n${issues}\n\n` +
+        `Copy .env.example to .env and fill it in. See README.md.`
+    )
   }
 
-  return parsed.data
+  cached = parsed.data
+  return cached
 }
 
-export const env = loadEnv()
+/**
+ * Reads validate the whole environment on first access, then serve from cache.
+ */
+export const env = new Proxy({} as Env, {
+  get(_target, prop: string) {
+    return loadEnv()[prop as keyof Env]
+  },
+  has(_target, prop: string) {
+    return prop in loadEnv()
+  },
+  ownKeys() {
+    return Reflect.ownKeys(loadEnv())
+  },
+  getOwnPropertyDescriptor(_target, prop) {
+    return Object.getOwnPropertyDescriptor(loadEnv(), prop)
+  },
+})
 
-export const isProduction = env.NODE_ENV === "production"
+export function isProduction(): boolean {
+  return loadEnv().NODE_ENV === "production"
+}
