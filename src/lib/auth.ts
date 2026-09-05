@@ -96,10 +96,16 @@ function getAuth(): Auth {
 }
 
 /** Built on first access, so importing this module opens no connection. */
-export const auth = new Proxy({} as Auth, {
+export const auth = new Proxy((() => {}) as unknown as Auth, {
   get(_target, prop) {
     const instance = getAuth() as unknown as Record<string | symbol, unknown>
     const value = instance[prop]
     return typeof value === "function" ? value.bind(instance) : value
+  },
+  has(_target, prop) {
+    return Reflect.has(getAuth(), prop)
+  },
+  apply(_target, thisArg, argArray) {
+    return Reflect.apply(getAuth() as unknown as (...args: unknown[]) => unknown, thisArg, argArray)
   },
 })
