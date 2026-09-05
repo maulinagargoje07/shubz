@@ -179,6 +179,7 @@ async function main() {
       userId: adminId,
       accountId: adminId,
       providerId: "credential",
+      issuer: "local:credential",
       password: hash,
     })
     console.log(`  admin created: ${adminEmail}`)

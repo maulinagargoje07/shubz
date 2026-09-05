@@ -15,6 +15,13 @@
       "when": 1788604356914,
       "tag": "0001_enrollment_balances_view",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788616103490,
+      "tag": "0002_account_issuer",
+      "breakpoints": true
     }
   ]
 }

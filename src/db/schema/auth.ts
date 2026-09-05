@@ -60,6 +60,7 @@ export const accounts = pgTable("account", {
     .references(() => users.id, { onDelete: "cascade" }),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
+  issuer: text("issuer").notNull().default("local:credential"),
   /** scrypt hash for providerId 'credential'. Never read this directly. */
   password: text("password"),
   accessToken: text("access_token"),
