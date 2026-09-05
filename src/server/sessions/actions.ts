@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { eq } from "drizzle-orm"
 
 import { db } from "@/db"
-import { batches, classSessions, programs } from "@/db/schema"
+import { batches, classSessions } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { newId } from "@/lib/ids"
 import { requireUser } from "@/lib/session"

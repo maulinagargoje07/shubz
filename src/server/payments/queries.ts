@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, isNull, lte, sql } from "drizzle-orm"
+import { and, count, desc, eq, gte, isNull, lte, sql } from "drizzle-orm"
 
 import { db } from "@/db"
 import { batches, contacts, enrollments, payments, programs } from "@/db/schema"

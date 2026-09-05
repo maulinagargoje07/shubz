@@ -80,7 +80,7 @@ export function ProgramForm({ program }: { program?: Program }) {
     }
   }
 
-  async function onSubmit(values: ProgramFormParsed) {
+  async function onSubmit() {
     // The action re-parses from scratch, so hand it the raw form values —
     // passing the already-transformed paise would be parsed as rupees again.
     const raw = form.getValues()

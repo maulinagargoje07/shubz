@@ -1,10 +1,10 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { and, eq, isNull, sql } from "drizzle-orm"
+import { and, eq, isNull } from "drizzle-orm"
 
 import { db } from "@/db"
-import { batches, enrollments, paymentSchedule, programs } from "@/db/schema"
+import { enrollments, paymentSchedule, programs } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { planSchedule } from "@/lib/billing"
 import { newId } from "@/lib/ids"

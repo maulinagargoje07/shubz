@@ -3,7 +3,7 @@
  * ever stored, so these numbers cannot drift from the ledger.
  */
 
-import { and, desc, eq, gte, isNull, lt, lte, sql } from "drizzle-orm"
+import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm"
 
 import { db } from "@/db"
 import { enrollmentBalances } from "@/db/views"
