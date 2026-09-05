@@ -292,3 +292,6 @@ export type MessageTemplate = typeof messageTemplates.$inferSelect
 export type Campaign = typeof campaigns.$inferSelect
 export type Message = typeof messages.$inferSelect
 export type NewMessage = typeof messages.$inferInsert
+export type MessageStatus = Message["status"]
+export type MessageDirection = Message["direction"]
+export type MessageChannel = Message["channel"]
