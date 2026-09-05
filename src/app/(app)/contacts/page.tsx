@@ -1,14 +1,15 @@
 import Link from "next/link"
-import { Plus } from "lucide-react"
+import { Plus, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { DataTablePagination } from "@/components/data-table/pagination"
-import { FilterBar } from "@/components/data-table/filter-bar"
+import { EmptyState } from "@/components/ui/status"
+import { DataTable } from "@/components/data-table/table"
+import { FilterBar, Pagination } from "@/components/data-table/filters"
 import { PageHeader } from "@/components/page-header"
 import { LIFECYCLE_LABELS, SOURCE_LABELS, toOptions } from "@/lib/labels"
 import { contactListParamsSchema } from "@/lib/validation/contact"
 import { listAllTags, listContacts } from "@/server/contacts/queries"
-import { ContactsTable } from "./contacts-table"
+import { contactColumns } from "./contact-columns"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Contacts" }
@@ -19,20 +20,30 @@ export default async function ContactsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const raw = await searchParams
-  // Unparseable params fall back to defaults rather than erroring — a stale
-  // bookmark should still load the list.
+  const str = (v: string | string[] | undefined) =>
+    typeof v === "string" && v !== "" ? v : undefined
+
+  // A stale bookmark should still load the list, so unparseable params fall
+  // back to defaults rather than throwing.
   const params = contactListParamsSchema.parse({
-    q: raw.q,
-    stage: raw.stage,
-    source: raw.source,
-    tag: raw.tag,
-    page: raw.page ?? 1,
-    perPage: raw.perPage ?? 25,
-    sort: raw.sort ?? "createdAt",
-    dir: raw.dir ?? "desc",
+    q: str(raw.q),
+    stage: str(raw.stage),
+    source: str(raw.source),
+    tag: str(raw.tag),
+    page: str(raw.page) ?? 1,
+    perPage: 25,
+    sort: "createdAt",
+    dir: "desc",
   })
 
   const [{ rows, total }, tags] = await Promise.all([listContacts(params), listAllTags()])
+
+  const active = {
+    q: params.q || undefined,
+    stage: params.stage,
+    source: params.source,
+    tag: params.tag,
+  }
 
   return (
     <div>
@@ -47,25 +58,61 @@ export default async function ContactsPage({
         }
       />
 
-      <FilterBar
-        searchPlaceholder="Search name, phone or email…"
-        filters={[
-          { key: "stage", label: "Stage", options: toOptions(LIFECYCLE_LABELS) },
-          { key: "source", label: "Source", options: toOptions(SOURCE_LABELS) },
-          ...(tags.length
-            ? [
-                {
-                  key: "tag",
-                  label: "Tag",
-                  options: tags.map((t) => ({ value: t.id, label: t.name })),
-                },
-              ]
-            : []),
-        ]}
-      />
+      <div className="pt-4">
+        <FilterBar
+          action="/contacts"
+          params={active}
+          searchPlaceholder="Search name, phone or email"
+          filters={[
+            { key: "stage", label: "Stages", options: toOptions(LIFECYCLE_LABELS) },
+            { key: "source", label: "Sources", options: toOptions(SOURCE_LABELS) },
+            ...(tags.length
+              ? [
+                  {
+                    key: "tag",
+                    label: "Tags",
+                    options: tags.map((t) => ({ value: t.id, label: t.name })),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </div>
 
-      <ContactsTable rows={rows} />
-      <DataTablePagination page={params.page} perPage={params.perPage} total={total} />
+      {rows.length === 0 && !params.q && !params.stage && !params.source ? (
+        <div className="px-4 sm:px-6">
+          <EmptyState
+            icon={<Users className="size-5" />}
+            title="No contacts yet"
+            description="Add someone by hand, or import a CSV export from your spreadsheet."
+            action={
+              <div className="flex gap-2">
+                <Button render={<Link href="/contacts/new" />}>Add contact</Button>
+                <Button variant="outline" render={<Link href="/imports" />}>
+                  Import CSV
+                </Button>
+              </div>
+            }
+          />
+        </div>
+      ) : (
+        <>
+          <DataTable
+            columns={contactColumns}
+            rows={rows}
+            rowKey={(row) => row.id}
+            rowHref={(row) => `/contacts/${row.id}`}
+            empty="No contacts match these filters."
+          />
+          <Pagination
+            action="/contacts"
+            params={active}
+            page={params.page}
+            perPage={params.perPage}
+            total={total}
+          />
+        </>
+      )}
     </div>
   )
 }

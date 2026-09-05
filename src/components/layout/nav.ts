@@ -2,6 +2,7 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardCheck,
+  GraduationCap,
   IndianRupee,
   LayoutDashboard,
   Megaphone,
@@ -9,12 +10,13 @@ import {
   Receipt,
   Upload,
   Users,
+  type LucideIcon,
 } from "lucide-react"
 
 export type NavItem = {
   href: string
   label: string
-  icon: typeof Users
+  icon: LucideIcon
   /** Marks routes that exist but are not built in this pass. */
   comingSoon?: boolean
 }
@@ -28,7 +30,7 @@ export const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
     heading: "People",
     items: [
       { href: "/contacts", label: "Contacts", icon: Users },
-      { href: "/students", label: "Students", icon: Users },
+      { href: "/students", label: "Students", icon: GraduationCap },
     ],
   },
   {
@@ -58,3 +60,27 @@ export const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
 ]
 
 export const ALL_NAV_ITEMS = NAV_SECTIONS.flatMap((s) => s.items)
+
+/**
+ * The five destinations that get a permanent slot in the phone tab bar.
+ *
+ * Chosen from what the daily job actually is: check what is owed, look someone
+ * up, mark a register. Everything else stays one tap away behind "More", which
+ * is the right trade for a bar that must not scroll.
+ */
+export const MOBILE_TABS: NavItem[] = [
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/contacts", label: "Contacts", icon: Users },
+  { href: "/fees", label: "Fees", icon: IndianRupee },
+  { href: "/attendance", label: "Mark", icon: ClipboardCheck },
+]
+
+/**
+ * Whether a nav item should render as current.
+ *
+ * Prefix matching so /contacts/<id> keeps Contacts lit, but exact-only for
+ * "/" style roots that would otherwise match everything below them.
+ */
+export function isActivePath(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`)
+}

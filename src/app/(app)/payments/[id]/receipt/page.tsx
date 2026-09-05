@@ -4,7 +4,7 @@ import { formatDate, financialYearLabel } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
 import { PAYMENT_METHOD_LABELS } from "@/lib/labels"
 import { programKindLabelOf } from "@/lib/programs"
-import { formatPhone } from "@/lib/phone"
+import { formatE164 } from "@/lib/phone-format"
 import { getReceipt } from "@/server/payments/queries"
 import { PrintButton } from "./print-button"
 
@@ -52,7 +52,7 @@ export default async function ReceiptPage({
 
         <dl className="mb-6 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
           <Row label="Received from">{receipt.contactName}</Row>
-          <Row label="Phone">{formatPhone(receipt.contactPhone)}</Row>
+          <Row label="Phone">{formatE164(receipt.contactPhone)}</Row>
           {receipt.contactEmail ? <Row label="Email">{receipt.contactEmail}</Row> : null}
           {receipt.contactCity ? <Row label="City">{receipt.contactCity}</Row> : null}
 

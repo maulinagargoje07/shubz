@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PageHeader } from "@/components/page-header"
 import { formatDate, formatIST } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
-import { formatPhone } from "@/lib/phone"
+import { formatE164 } from "@/lib/phone-format"
 import {
   ATTENDANCE_LABELS,
   ENROLLMENT_STATUS_LABELS,
@@ -66,7 +66,7 @@ export default async function ContactDetailPage({
     <div>
       <PageHeader
         title={contact.fullName}
-        description={`${formatPhone(contact.phoneE164)}${contact.city ? ` · ${contact.city}` : ""}`}
+        description={`${formatE164(contact.phoneE164)}${contact.city ? ` · ${contact.city}` : ""}`}
         actions={
           <>
             <Button variant="outline" render={<Link href={`/contacts/${id}/edit`} />}>
@@ -131,9 +131,9 @@ export default async function ContactDetailPage({
           </div>
 
           <dl className="mt-6 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Phone">{formatPhone(contact.phoneE164)}</Field>
+            <Field label="Phone">{formatE164(contact.phoneE164)}</Field>
             {contact.altPhone ? (
-              <Field label="Alternate">{formatPhone(contact.altPhone)}</Field>
+              <Field label="Alternate">{formatE164(contact.altPhone)}</Field>
             ) : null}
             {contact.email ? <Field label="Email">{contact.email}</Field> : null}
             {contact.city ? <Field label="City">{contact.city}</Field> : null}

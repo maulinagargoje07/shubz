@@ -9,7 +9,7 @@
 
 import { z } from "zod"
 
-import { isValidPhone, parsePhone } from "@/lib/phone"
+import { looksLikePhone } from "@/lib/phone-format"
 import { toPaise } from "@/lib/money"
 
 /** A UUID from a URL, a select, or a hidden field. */
@@ -49,15 +49,18 @@ export const optionalUrl = z
   .transform((v) => v ?? null)
 
 /**
- * A phone number as typed. Validated with libphonenumber (region IN) and
- * normalised to E.164, so the same string cannot enter the database two ways.
+ * A phone number as typed.
+ *
+ * This does NOT normalise to E.164 — it only checks the shape, using the
+ * dependency-free validator so the shared schema stays out of libphonenumber's
+ * 150 kB of metadata. Server actions run `parsePhone()` on the way to the
+ * database, which is what actually guarantees one canonical string per human.
  */
 export const phoneSchema = z
   .string()
   .trim()
   .min(1, "Phone number is required")
-  .refine((v) => isValidPhone(v), "Not a valid phone number")
-  .transform((v) => parsePhone(v).e164)
+  .refine(looksLikePhone, "Not a valid phone number")
 
 export const optionalPhoneSchema = z
   .string()
@@ -65,8 +68,11 @@ export const optionalPhoneSchema = z
   .transform((v) => (v === "" ? null : v))
   .nullable()
   .optional()
-  .refine((v) => v === null || v === undefined || isValidPhone(v), "Not a valid phone number")
-  .transform((v) => (v ? parsePhone(v).e164 : null))
+  .refine(
+    (v) => v === null || v === undefined || looksLikePhone(v),
+    "Not a valid phone number"
+  )
+  .transform((v) => v ?? null)
 
 /**
  * A rupee amount typed by a human, stored as integer paise.

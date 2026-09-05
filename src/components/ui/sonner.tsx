@@ -1,49 +1,37 @@
 "use client"
 
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
-import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
+/**
+ * Toasts.
+ *
+ * Sonner's shadcn wrapper normally reads the active theme through next-themes,
+ * but this app has no theme switcher — it follows the OS. Driving the colours
+ * from our own CSS variables instead drops that dependency entirely and keeps
+ * toasts matching the palette in both schemes without any JavaScript deciding
+ * which one is active.
+ */
+export function Toaster(props: ToasterProps) {
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
       className="toaster group"
-      icons={{
-        success: (
-          <CircleCheckIcon className="size-4" />
-        ),
-        info: (
-          <InfoIcon className="size-4" />
-        ),
-        warning: (
-          <TriangleAlertIcon className="size-4" />
-        ),
-        error: (
-          <OctagonXIcon className="size-4" />
-        ),
-        loading: (
-          <Loader2Icon className="size-4 animate-spin" />
-        ),
-      }}
-      style={
-        {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
-        } as React.CSSProperties
-      }
+      position="top-center"
+      // Bottom-centre would sit under the phone tab bar; top-centre is also
+      // where the eye already is after tapping Save.
+      offset={16}
       toastOptions={{
         classNames: {
-          toast: "cn-toast",
+          toast:
+            "group toast group-[.toaster]:bg-popover group-[.toaster]:text-popover-foreground group-[.toaster]:border group-[.toaster]:shadow-lg group-[.toaster]:rounded-xl",
+          description: "group-[.toast]:text-muted-foreground",
+          actionButton:
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+          cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+          error: "group-[.toaster]:text-overdue-foreground",
+          success: "group-[.toaster]:text-paid-foreground",
         },
       }}
       {...props}
     />
   )
 }
-
-export { Toaster }

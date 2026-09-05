@@ -11,6 +11,11 @@
  * raw unique-constraint stack trace. The constraint is still the authority —
  * the check is a race away from being stale, so the insert is wrapped and a
  * constraint violation is translated to the same friendly message.
+ *
+ * Phone normalisation happens HERE, not in the shared zod schema. The schema
+ * only checks the shape, so that client bundles stay clear of
+ * libphonenumber-js; this is the single point where a number becomes canonical
+ * E.164 on its way to the database.
  */
 
 import { revalidatePath } from "next/cache"
@@ -20,6 +25,7 @@ import { db } from "@/db"
 import { consentEvents, contacts, notes } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { newId } from "@/lib/ids"
+import { parsePhone, tryParsePhone } from "@/lib/phone"
 import { requireUser } from "@/lib/session"
 import type { ActionResult } from "@/lib/validation/shared"
 import {
@@ -53,12 +59,32 @@ export async function createContact(
   }
 
   const values = parsed.data
-  // phoneSchema already normalised this; re-derive raw for the audit trail.
-  const rawPhone = typeof (input as { phone?: unknown })?.phone === "string"
-    ? ((input as { phone: string }).phone).trim()
-    : values.phone
 
-  const existing = await findContactByPhone(values.phone)
+  // The authoritative parse. Rejects anything libphonenumber will not accept,
+  // and yields the one canonical form the unique index is built on.
+  let phone
+  try {
+    phone = parsePhone(values.phone)
+  } catch (error) {
+    return {
+      ok: false,
+      error: "That phone number is not valid.",
+      fieldErrors: {
+        phone: error instanceof Error ? error.message : "Not a valid phone number",
+      },
+    }
+  }
+
+  const altPhone = values.altPhone ? tryParsePhone(values.altPhone)?.e164 ?? null : null
+  if (values.altPhone && !altPhone) {
+    return {
+      ok: false,
+      error: "That alternate phone number is not valid.",
+      fieldErrors: { altPhone: "Not a valid phone number" },
+    }
+  }
+
+  const existing = await findContactByPhone(phone.e164)
   if (existing) {
     return {
       ok: false,
@@ -74,9 +100,9 @@ export async function createContact(
         .values({
           id: newId(),
           fullName: values.fullName,
-          phoneE164: values.phone,
-          phoneRaw: rawPhone,
-          altPhone: values.altPhone,
+          phoneE164: phone.e164,
+          phoneRaw: phone.raw,
+          altPhone,
           email: values.email,
           city: values.city,
           state: values.state,
@@ -117,7 +143,29 @@ export async function updateContact(input: unknown): Promise<ActionResult<{ id: 
 
   const values = parsed.data
 
-  const clash = await findContactByPhone(values.phone, values.id)
+  let phone
+  try {
+    phone = parsePhone(values.phone)
+  } catch (error) {
+    return {
+      ok: false,
+      error: "That phone number is not valid.",
+      fieldErrors: {
+        phone: error instanceof Error ? error.message : "Not a valid phone number",
+      },
+    }
+  }
+
+  const altPhone = values.altPhone ? tryParsePhone(values.altPhone)?.e164 ?? null : null
+  if (values.altPhone && !altPhone) {
+    return {
+      ok: false,
+      error: "That alternate phone number is not valid.",
+      fieldErrors: { altPhone: "Not a valid phone number" },
+    }
+  }
+
+  const clash = await findContactByPhone(phone.e164, values.id)
   if (clash) {
     return {
       ok: false,
@@ -131,19 +179,15 @@ export async function updateContact(input: unknown): Promise<ActionResult<{ id: 
   })
   if (!before) return { ok: false, error: "That contact no longer exists." }
 
-  const rawPhone = typeof (input as { phone?: unknown })?.phone === "string"
-    ? ((input as { phone: string }).phone).trim()
-    : values.phone
-
   try {
     await mutate(user, async ({ tx, audit }) => {
       const [after] = await tx
         .update(contacts)
         .set({
           fullName: values.fullName,
-          phoneE164: values.phone,
-          phoneRaw: rawPhone,
-          altPhone: values.altPhone,
+          phoneE164: phone.e164,
+          phoneRaw: phone.raw,
+          altPhone,
           email: values.email,
           city: values.city,
           state: values.state,

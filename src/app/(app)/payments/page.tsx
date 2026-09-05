@@ -1,16 +1,98 @@
-import { DataTablePagination } from "@/components/data-table/pagination"
-import { FilterBar } from "@/components/data-table/filter-bar"
+import Link from "next/link"
+import { IndianRupee } from "lucide-react"
+
+import { EmptyState } from "@/components/ui/status"
+import { DataTable, type Column } from "@/components/data-table/table"
+import { FilterBar, Pagination } from "@/components/data-table/filters"
 import { PageHeader } from "@/components/page-header"
+import { formatDate } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
 import { PAYMENT_METHOD_LABELS, toOptions } from "@/lib/labels"
+import { programKindLabelOf } from "@/lib/programs"
 import { paymentListParamsSchema } from "@/lib/validation/payment"
 import { listPayments } from "@/server/payments/queries"
 import { listPrograms } from "@/server/programs/queries"
-import { DateRangeFilter } from "./date-range-filter"
-import { PaymentsTable, type PaymentRow } from "./payments-table"
+import type { DeliveryMode, PaymentMethod, ProgramType } from "@/db/schema"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Payments" }
+
+type Row = {
+  id: string
+  amountPaise: number
+  paidOn: string
+  method: PaymentMethod
+  referenceNo: string | null
+  receiptNo: string
+  contactId: string
+  contactName: string
+  programName: string
+  programType: ProgramType
+  deliveryMode: DeliveryMode
+}
+
+const columns: Column<Row>[] = [
+  {
+    id: "student",
+    header: "Student",
+    priority: "primary",
+    cell: (row) => row.contactName,
+  },
+  {
+    id: "amount",
+    header: "Amount",
+    priority: "primary",
+    align: "right",
+    cell: (row) => (
+      <span className="font-medium tabular-nums">{formatINR(row.amountPaise)}</span>
+    ),
+  },
+  {
+    id: "receipt",
+    header: "Receipt",
+    priority: "secondary",
+    cell: (row) => (
+      <Link
+        href={`/payments/${row.id}/receipt`}
+        className="font-mono text-xs hover:underline"
+      >
+        {row.receiptNo}
+      </Link>
+    ),
+  },
+  {
+    id: "date",
+    header: "Date",
+    priority: "secondary",
+    cell: (row) => <span className="text-muted-foreground">{formatDate(row.paidOn)}</span>,
+  },
+  {
+    id: "program",
+    header: "Program",
+    priority: "tertiary",
+    cell: (row) => (
+      <div className="min-w-0">
+        <p className="truncate">{row.programName}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {programKindLabelOf(row.programType, row.deliveryMode)}
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: "method",
+    header: "Method",
+    priority: "tertiary",
+    cell: (row) => (
+      <div className="min-w-0">
+        <p>{PAYMENT_METHOD_LABELS[row.method]}</p>
+        {row.referenceNo ? (
+          <p className="truncate text-xs text-muted-foreground">{row.referenceNo}</p>
+        ) : null}
+      </div>
+    ),
+  },
+]
 
 export default async function PaymentsPage({
   searchParams,
@@ -18,12 +100,15 @@ export default async function PaymentsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const raw = await searchParams
+  const str = (v: string | string[] | undefined) =>
+    typeof v === "string" && v !== "" ? v : undefined
+
   const params = paymentListParamsSchema.parse({
-    from: typeof raw.from === "string" && raw.from ? raw.from : undefined,
-    to: typeof raw.to === "string" && raw.to ? raw.to : undefined,
-    method: typeof raw.method === "string" ? raw.method : undefined,
-    programId: typeof raw.program === "string" ? raw.program : undefined,
-    page: raw.page ?? 1,
+    from: str(raw.from),
+    to: str(raw.to),
+    method: str(raw.method),
+    programId: str(raw.program),
+    page: str(raw.page) ?? 1,
     perPage: 25,
   })
 
@@ -32,6 +117,13 @@ export default async function PaymentsPage({
     listPrograms(),
   ])
 
+  const active = {
+    from: params.from,
+    to: params.to,
+    method: params.method,
+    program: params.programId,
+  }
+
   return (
     <div>
       <PageHeader
@@ -39,22 +131,72 @@ export default async function PaymentsPage({
         description={`${total} payment${total === 1 ? "" : "s"} · ${formatINR(sumPaise)} in this view`}
       />
 
-      <FilterBar
-        showSearch={false}
-        filters={[
-          { key: "method", label: "Method", options: toOptions(PAYMENT_METHOD_LABELS) },
-          {
-            key: "program",
-            label: "Program",
-            options: programs.map((p) => ({ value: p.id, label: p.name })),
-          },
-        ]}
-      />
+      <div className="pt-4">
+        <FilterBar
+          action="/payments"
+          params={active}
+          showSearch={false}
+          filters={[
+            { key: "method", label: "Methods", options: toOptions(PAYMENT_METHOD_LABELS) },
+            {
+              key: "program",
+              label: "Programs",
+              options: programs.map((p) => ({ value: p.id, label: p.name })),
+            },
+          ]}
+        >
+          {/* Native date inputs: the OS picker beats anything we would ship JS for. */}
+          <label className="flex flex-col gap-1">
+            <span className="text-[0.6875rem] uppercase tracking-wide text-muted-foreground">
+              From
+            </span>
+            <input
+              type="date"
+              name="from"
+              defaultValue={params.from ?? ""}
+              className="h-10 rounded-lg border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[0.6875rem] uppercase tracking-wide text-muted-foreground">
+              To
+            </span>
+            <input
+              type="date"
+              name="to"
+              defaultValue={params.to ?? ""}
+              className="h-10 rounded-lg border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            />
+          </label>
+        </FilterBar>
+      </div>
 
-      <DateRangeFilter />
-
-      <PaymentsTable rows={rows as unknown as PaymentRow[]} />
-      <DataTablePagination page={params.page} perPage={params.perPage} total={total} />
+      {total === 0 && !params.from && !params.to && !params.method && !params.programId ? (
+        <div className="px-4 sm:px-6">
+          <EmptyState
+            icon={<IndianRupee className="size-5" />}
+            title="No payments recorded"
+            description="Payments are recorded against an enrollment, which generates a receipt number."
+          />
+        </div>
+      ) : (
+        <>
+          <DataTable
+            columns={columns}
+            rows={rows as unknown as Row[]}
+            rowKey={(row) => row.id}
+            rowHref={(row) => `/contacts/${row.contactId}`}
+            empty="No payments in this range."
+          />
+          <Pagination
+            action="/payments"
+            params={active}
+            page={params.page}
+            perPage={params.perPage}
+            total={total}
+          />
+        </>
+      )}
     </div>
   )
 }
