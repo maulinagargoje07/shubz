@@ -128,3 +128,37 @@
     @apply font-sans;
   }
 }
+/*
+ * Print. Receipts are the only thing anyone prints from this app, and a
+ * receipt with a sidebar and a nav header down the side of it is not a
+ * receipt. Everything chrome-like is dropped and the page reverts to plain
+ * black on white so it does not burn through a cartridge.
+ */
+@media print {
+  header,
+  aside,
+  nav,
+  [data-slot="toaster"] {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  main {
+    display: block !important;
+  }
+
+  /* Links print as plain text; a blue underlined URL helps nobody on paper. */
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+
+  @page {
+    margin: 16mm;
+  }
+}

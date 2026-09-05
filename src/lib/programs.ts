@@ -153,10 +153,22 @@ export function deliveryModeLabel(mode: DeliveryMode): string {
  * rather than rendering the two columns separately, so the phrasing never
  * drifts between pages.
  */
-export function programKindLabel(
-  program: Pick<{ type: ProgramType; deliveryMode: DeliveryMode }, "type" | "deliveryMode">
+export function programKindLabel(program: {
+  type: ProgramType
+  deliveryMode: DeliveryMode
+}): string {
+  return programKindLabelOf(program.type, program.deliveryMode)
+}
+
+/**
+ * Same label from explicit arguments, for rows where the join aliased the
+ * column (`programType` rather than `type`).
+ */
+export function programKindLabelOf(
+  type: ProgramType,
+  deliveryMode: DeliveryMode
 ): string {
-  return `${TYPE_LABELS[program.type]} (${MODE_LABELS[program.deliveryMode]})`
+  return `${TYPE_LABELS[type]} (${MODE_LABELS[deliveryMode]})`
 }
 
 /** "SMC Mentorship Pune — Mentorship (Offline)" for pickers and receipts. */
