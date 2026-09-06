@@ -1,10 +1,10 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidateEverything } from "@/lib/revalidate"
 import { and, eq, isNull } from "drizzle-orm"
 
 import { db } from "@/db"
-import { enrollments, paymentSchedule, programs } from "@/db/schema"
+import { enrollments, paymentSchedule, payments, programs } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { planSchedule } from "@/lib/billing"
 import { newId } from "@/lib/ids"
@@ -135,9 +135,7 @@ export async function createEnrollment(
       return row.id
     })
 
-    revalidatePath("/enrollments")
-    revalidatePath(`/contacts/${values.contactId}`)
-    revalidatePath("/fees")
+  revalidateEverything()
     return { ok: true, data: { id } }
   } catch (error) {
     if (isUniqueViolation(error)) {
@@ -228,10 +226,7 @@ export async function updateEnrollment(
     throw error
   }
 
-  revalidatePath("/enrollments")
-  revalidatePath(`/enrollments/${values.id}`)
-  revalidatePath(`/contacts/${values.contactId}`)
-  revalidatePath("/fees")
+  revalidateEverything()
   return { ok: true, data: { id: values.id } }
 }
 
@@ -267,12 +262,22 @@ export async function changeEnrollmentStatus(input: unknown): Promise<ActionResu
     })
   })
 
-  revalidatePath("/enrollments")
-  revalidatePath(`/enrollments/${id}`)
-  revalidatePath("/fees")
+  revalidateEverything()
   return { ok: true, data: undefined }
 }
 
+/**
+ * Soft-delete an enrollment AND its payments.
+ *
+ * The payments must go with it. A payment is money received *for* this
+ * enrollment; leaving it live when the enrollment is gone produces a row that
+ * still appears on the payments list and still counts toward "collected this
+ * month", attached to a record that no longer exists. That is exactly the
+ * mismatch that made deletions look like they had not taken effect.
+ *
+ * Nothing is destroyed: both rows keep their data and their receipt numbers,
+ * the audit log records the cascade, and clearing `deleted_at` restores them.
+ */
 export async function deleteEnrollment(id: string): Promise<ActionResult> {
   const user = await requireUser()
 
@@ -282,16 +287,38 @@ export async function deleteEnrollment(id: string): Promise<ActionResult> {
   if (!before) return { ok: false, error: "That enrollment no longer exists." }
 
   await mutate(user, async ({ tx, audit }) => {
+    const deletedAt = new Date()
+
+    const voided = await tx
+      .update(payments)
+      .set({ deletedAt })
+      .where(and(eq(payments.enrollmentId, id), isNull(payments.deletedAt)))
+      .returning({ id: payments.id, receiptNo: payments.receiptNo })
+
+    for (const payment of voided) {
+      await audit({
+        action: "PAYMENT_VOIDED",
+        entity: "payments",
+        entityId: payment.id,
+        after: { reason: "Enrollment deleted", receiptNo: payment.receiptNo },
+      })
+    }
+
     const [after] = await tx
       .update(enrollments)
-      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .set({ deletedAt, updatedAt: new Date() })
       .where(eq(enrollments.id, id))
       .returning()
 
-    await audit({ action: "DELETE", entity: "enrollments", entityId: id, before, after })
+    await audit({
+      action: "DELETE",
+      entity: "enrollments",
+      entityId: id,
+      before,
+      after: { ...after, cascadedPayments: voided.length },
+    })
   })
 
-  revalidatePath("/enrollments")
-  revalidatePath("/fees")
+  revalidateEverything()
   return { ok: true, data: undefined }
 }

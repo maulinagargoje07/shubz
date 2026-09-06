@@ -26,7 +26,8 @@ export type ExportFilters = {
 }
 
 export async function listEnrollmentRecords(filters: ExportFilters = {}) {
-  const conditions = [isNull(enrollments.deletedAt)]
+  // The export is the fee book; it must not contain deleted records.
+  const conditions = [isNull(enrollments.deletedAt), isNull(contacts.deletedAt)]
   if (filters.programId) conditions.push(eq(enrollments.programId, filters.programId))
   if (filters.status) conditions.push(sql`${enrollments.status} = ${filters.status}`)
   if (filters.overdueOnly) conditions.push(eq(enrollmentBalances.isOverdue, true))

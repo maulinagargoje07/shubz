@@ -16,11 +16,21 @@ export async function collectedInMonth(year: number, month: number): Promise<num
   const startDate = start.toISOString().slice(0, 10)
   const endDate = end.toISOString().slice(0, 10)
 
+  // Joined to enrollments and contacts so money on a deleted record stops
+  // counting as revenue the moment the record is removed.
   const [row] = await db
     .select({ value: sql<number>`coalesce(sum(${payments.amountPaise}), 0)::bigint` })
     .from(payments)
+    .innerJoin(enrollments, eq(enrollments.id, payments.enrollmentId))
+    .innerJoin(contacts, eq(contacts.id, enrollments.contactId))
     .where(
-      and(isNull(payments.deletedAt), gte(payments.paidOn, startDate), lt(payments.paidOn, endDate))
+      and(
+        isNull(payments.deletedAt),
+        isNull(enrollments.deletedAt),
+        isNull(contacts.deletedAt),
+        gte(payments.paidOn, startDate),
+        lt(payments.paidOn, endDate)
+      )
     )
 
   return Number(row?.value ?? 0)
@@ -122,7 +132,11 @@ export async function collectionByProgram() {
       paymentCount: sql<number>`count(${payments.id})::int`,
     })
     .from(programs)
-    .leftJoin(enrollments, and(eq(enrollments.programId, programs.id), isNull(enrollments.deletedAt)))
+    .leftJoin(
+      enrollments,
+      and(eq(enrollments.programId, programs.id), isNull(enrollments.deletedAt))
+    )
+    .leftJoin(contacts, and(eq(contacts.id, enrollments.contactId), isNull(contacts.deletedAt)))
     .leftJoin(payments, and(eq(payments.enrollmentId, enrollments.id), isNull(payments.deletedAt)))
     .groupBy(programs.id, programs.name, programs.type, programs.deliveryMode)
     .orderBy(desc(sql`coalesce(sum(${payments.amountPaise}), 0)`))

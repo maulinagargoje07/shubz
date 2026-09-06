@@ -39,7 +39,10 @@ export async function getSessionRegister(sessionId: string) {
         sql`${enrollments.status} in ('ACTIVE', 'PAUSED')`
       )
     )
-    .innerJoin(contacts, eq(contacts.id, enrollments.contactId))
+    .innerJoin(
+      contacts,
+      and(eq(contacts.id, enrollments.contactId), isNull(contacts.deletedAt))
+    )
     .leftJoin(
       attendance,
       and(

@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidateEverything } from "@/lib/revalidate"
 import { and, eq, isNull } from "drizzle-orm"
 
 import { db } from "@/db"
@@ -80,10 +80,7 @@ export async function recordPayment(
     return { id: row.id, receiptNo }
   })
 
-  revalidatePath("/payments")
-  revalidatePath("/fees")
-  revalidatePath(`/enrollments/${values.enrollmentId}`)
-  revalidatePath(`/contacts/${enrollment.contactId}`)
+  revalidateEverything()
   return { ok: true, data: result }
 }
 
@@ -135,8 +132,6 @@ export async function voidPayment(input: unknown): Promise<ActionResult> {
     })
   })
 
-  revalidatePath("/payments")
-  revalidatePath("/fees")
-  revalidatePath(`/enrollments/${before.enrollmentId}`)
+  revalidateEverything()
   return { ok: true, data: undefined }
 }

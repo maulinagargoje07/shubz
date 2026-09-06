@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidateEverything } from "@/lib/revalidate"
 import { eq } from "drizzle-orm"
 
 import { db } from "@/db"
@@ -73,7 +73,7 @@ export async function createProgram(input: unknown): Promise<ActionResult<{ id: 
     return row.id
   })
 
-  revalidatePath("/programs")
+  revalidateEverything()
   return { ok: true, data: { id } }
 }
 
@@ -135,7 +135,6 @@ export async function updateProgram(input: unknown): Promise<ActionResult<{ id: 
     })
   })
 
-  revalidatePath("/programs")
-  revalidatePath(`/programs/${values.id}`)
+  revalidateEverything()
   return { ok: true, data: { id: values.id } }
 }

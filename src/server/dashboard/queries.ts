@@ -16,7 +16,14 @@ export async function activeStudentCount(): Promise<number> {
   const [row] = await db
     .select({ value: sql<number>`count(distinct ${enrollments.contactId})::int` })
     .from(enrollments)
-    .where(and(isNull(enrollments.deletedAt), eq(enrollments.status, "ACTIVE")))
+    .innerJoin(contacts, eq(contacts.id, enrollments.contactId))
+    .where(
+      and(
+        isNull(enrollments.deletedAt),
+        isNull(contacts.deletedAt),
+        eq(enrollments.status, "ACTIVE")
+      )
+    )
   return Number(row?.value ?? 0)
 }
 
@@ -44,7 +51,14 @@ export async function activeStudentsByProgramKind() {
     })
     .from(enrollments)
     .innerJoin(programs, eq(programs.id, enrollments.programId))
-    .where(and(isNull(enrollments.deletedAt), eq(enrollments.status, "ACTIVE")))
+    .innerJoin(contacts, eq(contacts.id, enrollments.contactId))
+    .where(
+      and(
+        isNull(enrollments.deletedAt),
+        isNull(contacts.deletedAt),
+        eq(enrollments.status, "ACTIVE")
+      )
+    )
     .groupBy(programs.type, programs.deliveryMode)
     .orderBy(sql`count(distinct ${enrollments.contactId}) desc`)
 }

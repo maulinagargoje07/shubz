@@ -18,11 +18,11 @@
  * E.164 on its way to the database.
  */
 
-import { revalidatePath } from "next/cache"
+import { revalidateEverything } from "@/lib/revalidate"
 import { and, eq, isNull } from "drizzle-orm"
 
 import { db } from "@/db"
-import { consentEvents, contacts, notes } from "@/db/schema"
+import { consentEvents, contacts, enrollments, notes, payments } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { newId } from "@/lib/ids"
 import { parsePhone, tryParsePhone } from "@/lib/phone"
@@ -119,7 +119,7 @@ export async function createContact(
       return row.id
     })
 
-    revalidatePath("/contacts")
+  revalidateEverything()
     return { ok: true, data: { id } }
   } catch (error) {
     if (isUniqueViolation(error)) {
@@ -220,14 +220,23 @@ export async function updateContact(input: unknown): Promise<ActionResult<{ id: 
     throw error
   }
 
-  revalidatePath("/contacts")
-  revalidatePath(`/contacts/${values.id}`)
+  revalidateEverything()
   return { ok: true, data: { id: values.id } }
 }
 
 /**
- * Soft delete. The row stays for history; the partial unique index means the
- * phone number is released so the person can be re-added later.
+ * Soft-delete a contact, and everything hanging off them.
+ *
+ * The cascade matters. Enrollment and payment queries join contacts without
+ * filtering on the contact's own `deleted_at`, so a contact removed on their
+ * own would vanish from the contacts list while their enrollments carried on
+ * appearing in Records, and their payments carried on counting toward
+ * collected revenue. Deleting a person has to mean deleting their records.
+ *
+ * Nothing is destroyed — every row keeps its data and receipt numbers, the
+ * cascade is written to the audit log, and clearing `deleted_at` restores it.
+ * The partial unique index also releases the phone number, so the same person
+ * can be re-added later.
  */
 export async function deleteContact(id: string): Promise<ActionResult> {
   const user = await requireUser()
@@ -238,16 +247,58 @@ export async function deleteContact(id: string): Promise<ActionResult> {
   if (!before) return { ok: false, error: "That contact no longer exists." }
 
   await mutate(user, async ({ tx, audit }) => {
+    const deletedAt = new Date()
+
+    const liveEnrollments = await tx
+      .select({ id: enrollments.id })
+      .from(enrollments)
+      .where(and(eq(enrollments.contactId, id), isNull(enrollments.deletedAt)))
+
+    for (const enrollment of liveEnrollments) {
+      const voided = await tx
+        .update(payments)
+        .set({ deletedAt })
+        .where(and(eq(payments.enrollmentId, enrollment.id), isNull(payments.deletedAt)))
+        .returning({ id: payments.id })
+
+      for (const payment of voided) {
+        await audit({
+          action: "PAYMENT_VOIDED",
+          entity: "payments",
+          entityId: payment.id,
+          after: { reason: "Contact deleted" },
+        })
+      }
+
+      await tx
+        .update(enrollments)
+        .set({ deletedAt, updatedAt: new Date() })
+        .where(eq(enrollments.id, enrollment.id))
+
+      await audit({
+        action: "DELETE",
+        entity: "enrollments",
+        entityId: enrollment.id,
+        after: { reason: "Contact deleted" },
+      })
+    }
+
     const [after] = await tx
       .update(contacts)
-      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .set({ deletedAt, updatedAt: new Date() })
       .where(eq(contacts.id, id))
       .returning()
 
-    await audit({ action: "DELETE", entity: "contacts", entityId: id, before, after })
+    await audit({
+      action: "DELETE",
+      entity: "contacts",
+      entityId: id,
+      before,
+      after: { ...after, cascadedEnrollments: liveEnrollments.length },
+    })
   })
 
-  revalidatePath("/contacts")
+  revalidateEverything()
   return { ok: true, data: undefined }
 }
 
@@ -276,7 +327,7 @@ export async function addNote(input: unknown): Promise<ActionResult> {
     await audit({ action: "CREATE", entity: "notes", entityId: row.id, after: row })
   })
 
-  if (values.contactId) revalidatePath(`/contacts/${values.contactId}`)
+  if (values.contactId)  revalidateEverything()
   return { ok: true, data: undefined }
 }
 
@@ -315,7 +366,7 @@ export async function recordConsent(input: unknown): Promise<ActionResult> {
     })
   })
 
-  revalidatePath(`/contacts/${values.contactId}`)
+  revalidateEverything()
   return { ok: true, data: undefined }
 }
 

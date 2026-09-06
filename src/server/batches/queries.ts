@@ -1,7 +1,7 @@
 import { and, asc, eq, isNull, sql } from "drizzle-orm"
 
 import { db } from "@/db"
-import { batches, classSessions, enrollments, programs } from "@/db/schema"
+import { batches, enrollments, programs } from "@/db/schema"
 
 export async function listBatchesForProgram(programId: string) {
   return db
@@ -18,15 +18,19 @@ export async function listBatchesForProgram(programId: string) {
       venueName: batches.venueName,
       status: batches.status,
       // Participants is a live count, so a dropped student stops occupying a seat.
+      // Explicit aliases — see the note in programs/queries.ts.
       participantCount: sql<number>`(
-        select count(*)::int from ${enrollments}
-        where ${enrollments.batchId} = ${batches.id}
-          and ${enrollments.deletedAt} is null
-          and ${enrollments.status} in ('ACTIVE', 'PAUSED')
+        select count(*)::int
+        from enrollments e
+        join contacts c on c.id = e.contact_id and c.deleted_at is null
+        where e.batch_id = batches.id
+          and e.deleted_at is null
+          and e.status in ('ACTIVE', 'PAUSED')
       )`,
       sessionCount: sql<number>`(
-        select count(*)::int from ${classSessions}
-        where ${classSessions.batchId} = ${batches.id}
+        select count(*)::int
+        from sessions s
+        where s.batch_id = batches.id
       )`,
     })
     .from(batches)

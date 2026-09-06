@@ -9,7 +9,7 @@
  * had just handed over. Either the whole record exists or none of it does.
  */
 
-import { revalidatePath } from "next/cache"
+import { revalidateEverything } from "@/lib/revalidate"
 import { and, eq, isNull } from "drizzle-orm"
 
 import { contacts, enrollments, paymentSchedule, payments, programs } from "@/db/schema"
@@ -224,12 +224,7 @@ export async function createStudentRecord(input: unknown): Promise<
       return { enrollmentId: enrollment.id, contactId, reusedContact, receiptNo }
     })
 
-    revalidatePath("/enrollments")
-    revalidatePath("/contacts")
-    revalidatePath("/students")
-    revalidatePath("/fees")
-    revalidatePath("/dashboard")
-    revalidatePath("/payments")
+  revalidateEverything()
 
     return { ok: true, data: result }
   } catch (error) {
@@ -409,10 +404,6 @@ export async function updateStudentRecord(
     throw error
   }
 
-  revalidatePath("/enrollments")
-  revalidatePath(`/enrollments/${values.id}`)
-  revalidatePath("/contacts")
-  revalidatePath("/fees")
-  revalidatePath("/dashboard")
+  revalidateEverything()
   return { ok: true, data: { enrollmentId: values.id } }
 }

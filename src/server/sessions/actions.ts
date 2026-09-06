@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidateEverything } from "@/lib/revalidate"
 import { eq } from "drizzle-orm"
 
 import { db } from "@/db"
@@ -73,8 +73,7 @@ export async function createSession(input: unknown): Promise<ActionResult<{ id: 
     return row.id
   })
 
-  revalidatePath(`/programs/${batch.programId}/batches/${values.batchId}`)
-  revalidatePath("/sessions")
+  revalidateEverything()
   return { ok: true, data: { id } }
 }
 
@@ -123,8 +122,7 @@ export async function updateSession(input: unknown): Promise<ActionResult<{ id: 
     await audit({ action: "UPDATE", entity: "sessions", entityId: values.id, before, after })
   })
 
-  if (batch) revalidatePath(`/programs/${batch.programId}/batches/${values.batchId}`)
-  revalidatePath("/sessions")
+  if (batch)  revalidateEverything()
   return { ok: true, data: { id: values.id } }
 }
 
@@ -143,6 +141,6 @@ export async function deleteSession(id: string): Promise<ActionResult> {
     await audit({ action: "DELETE", entity: "sessions", entityId: id, before })
   })
 
-  revalidatePath("/sessions")
+  revalidateEverything()
   return { ok: true, data: undefined }
 }

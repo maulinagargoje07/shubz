@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidateEverything } from "@/lib/revalidate"
 import { eq } from "drizzle-orm"
 
 import { db } from "@/db"
@@ -79,7 +79,6 @@ export async function markAttendance(input: unknown): Promise<ActionResult<{ cou
     })
   })
 
-  revalidatePath(`/attendance/${sessionId}`)
-  revalidatePath(`/programs/${context.programId}/batches/${context.batchId}`)
+  revalidateEverything()
   return { ok: true, data: { count: entries.length } }
 }

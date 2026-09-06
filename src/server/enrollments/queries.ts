@@ -48,7 +48,9 @@ export async function listEnrollments(params: {
 }) {
   const { page = 1, perPage = 25, programId, status, contactId, overdueOnly } = params
 
-  const filters = [isNull(enrollments.deletedAt)]
+  // The contact guard matters: joining contacts without it left a deleted
+  // student's enrollments showing in Records under their name.
+  const filters = [isNull(enrollments.deletedAt), isNull(contacts.deletedAt)]
   if (programId) filters.push(eq(enrollments.programId, programId))
   if (status) filters.push(sql`${enrollments.status} = ${status}`)
   if (contactId) filters.push(eq(enrollments.contactId, contactId))
@@ -71,9 +73,14 @@ export async function listEnrollments(params: {
       .limit(perPage)
       .offset((page - 1) * perPage),
 
+    // The count MUST carry the same joins as the rows query: the shared
+    // `where` references contacts and programs, and Postgres rejects a
+    // predicate naming a table that is not in the FROM clause.
     db
       .select({ value: count() })
       .from(enrollments)
+      .innerJoin(contacts, eq(contacts.id, enrollments.contactId))
+      .innerJoin(programs, eq(programs.id, enrollments.programId))
       .innerJoin(enrollmentBalances, eq(enrollmentBalances.enrollmentId, enrollments.id))
       .where(where),
   ])
@@ -98,7 +105,13 @@ export async function getEnrollment(id: string) {
     .innerJoin(programs, eq(programs.id, enrollments.programId))
     .leftJoin(batches, eq(batches.id, enrollments.batchId))
     .innerJoin(enrollmentBalances, eq(enrollmentBalances.enrollmentId, enrollments.id))
-    .where(and(eq(enrollments.id, id), isNull(enrollments.deletedAt)))
+    .where(
+      and(
+        eq(enrollments.id, id),
+        isNull(enrollments.deletedAt),
+        isNull(contacts.deletedAt)
+      )
+    )
     .limit(1)
 
   return row ?? null
@@ -130,7 +143,13 @@ export async function listEnrollmentsForContact(contactId: string) {
     .innerJoin(programs, eq(programs.id, enrollments.programId))
     .leftJoin(batches, eq(batches.id, enrollments.batchId))
     .innerJoin(enrollmentBalances, eq(enrollmentBalances.enrollmentId, enrollments.id))
-    .where(and(eq(enrollments.contactId, contactId), isNull(enrollments.deletedAt)))
+    .where(
+      and(
+        eq(enrollments.contactId, contactId),
+        isNull(enrollments.deletedAt),
+        isNull(contacts.deletedAt)
+      )
+    )
     .orderBy(desc(enrollments.enrolledOn))
 }
 
@@ -151,6 +170,7 @@ export async function listBatchRoster(batchId: string) {
       and(
         eq(enrollments.batchId, batchId),
         isNull(enrollments.deletedAt),
+        isNull(contacts.deletedAt),
         sql`${enrollments.status} in ('ACTIVE', 'PAUSED')`
       )
     )

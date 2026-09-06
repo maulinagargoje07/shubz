@@ -1,7 +1,7 @@
 import { asc, eq, sql } from "drizzle-orm"
 
 import { db } from "@/db"
-import { batches, enrollments, programs } from "@/db/schema"
+import { programs } from "@/db/schema"
 
 export async function listPrograms() {
   // Batch and live-enrollment counts come from correlated subqueries rather
@@ -17,14 +17,21 @@ export async function listPrograms() {
       defaultBillingType: programs.defaultBillingType,
       defaultBillingCycle: programs.defaultBillingCycle,
       status: programs.status,
+      // Explicit aliases, not Drizzle interpolation: a `sql` template renders
+      // ${table.column} as a bare column name, which becomes ambiguous as soon
+      // as the subquery joins a second table (Postgres 42702).
       batchCount: sql<number>`(
-        select count(*)::int from ${batches} where ${batches.programId} = ${programs.id}
+        select count(*)::int
+        from batches b
+        where b.program_id = programs.id
       )`,
       activeEnrollments: sql<number>`(
-        select count(*)::int from ${enrollments}
-        where ${enrollments.programId} = ${programs.id}
-          and ${enrollments.status} = 'ACTIVE'
-          and ${enrollments.deletedAt} is null
+        select count(*)::int
+        from enrollments e
+        join contacts c on c.id = e.contact_id and c.deleted_at is null
+        where e.program_id = programs.id
+          and e.status = 'ACTIVE'
+          and e.deleted_at is null
       )`,
     })
     .from(programs)

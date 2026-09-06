@@ -1,7 +1,7 @@
 import { and, asc, count, eq, gte, lte, sql } from "drizzle-orm"
 
 import { db } from "@/db"
-import { attendance, batches, classSessions, enrollments, programs } from "@/db/schema"
+import { batches, classSessions, programs } from "@/db/schema"
 
 export async function listSessionsForBatch(batchId: string) {
   return db
@@ -16,8 +16,9 @@ export async function listSessionsForBatch(batchId: string) {
       recordingLink: classSessions.recordingLink,
       status: classSessions.status,
       markedCount: sql<number>`(
-        select count(*)::int from ${attendance}
-        where ${attendance.sessionId} = ${classSessions.id}
+        select count(*)::int
+        from attendance a
+        where a.session_id = sessions.id
       )`,
     })
     .from(classSessions)
@@ -128,14 +129,17 @@ export async function listAllSessions(limit = 100) {
       programType: programs.type,
       deliveryMode: programs.deliveryMode,
       markedCount: sql<number>`(
-        select count(*)::int from ${attendance}
-        where ${attendance.sessionId} = ${classSessions.id}
+        select count(*)::int
+        from attendance a
+        where a.session_id = sessions.id
       )`,
       enrolledCount: sql<number>`(
-        select count(*)::int from ${enrollments}
-        where ${enrollments.batchId} = ${batches.id}
-          and ${enrollments.deletedAt} is null
-          and ${enrollments.status} in ('ACTIVE', 'PAUSED')
+        select count(*)::int
+        from enrollments e
+        join contacts c on c.id = e.contact_id and c.deleted_at is null
+        where e.batch_id = batches.id
+          and e.deleted_at is null
+          and e.status in ('ACTIVE', 'PAUSED')
       )`,
     })
     .from(classSessions)

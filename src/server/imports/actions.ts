@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidateEverything } from "@/lib/revalidate"
 import { and, eq, inArray, isNull } from "drizzle-orm"
 
 import { db } from "@/db"
@@ -207,7 +207,7 @@ export async function previewImport(
     return batch.id
   })
 
-  revalidatePath("/imports")
+  revalidateEverything()
 
   return {
     ok: true,
@@ -328,7 +328,6 @@ export async function commitImport(
     return count
   })
 
-  revalidatePath("/imports")
-  revalidatePath("/contacts")
+  revalidateEverything()
   return { ok: true, data: { created } }
 }

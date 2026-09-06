@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidateEverything } from "@/lib/revalidate"
 import { eq } from "drizzle-orm"
 
 import { db } from "@/db"
@@ -92,7 +92,7 @@ export async function createBatch(input: unknown): Promise<ActionResult<{ id: st
     return row.id
   })
 
-  revalidatePath(`/programs/${values.programId}`)
+  revalidateEverything()
   return { ok: true, data: { id } }
 }
 
@@ -156,7 +156,6 @@ export async function updateBatch(input: unknown): Promise<ActionResult<{ id: st
     await audit({ action: "UPDATE", entity: "batches", entityId: values.id, before, after })
   })
 
-  revalidatePath(`/programs/${values.programId}`)
-  revalidatePath(`/programs/${values.programId}/batches/${values.id}`)
+  revalidateEverything()
   return { ok: true, data: { id: values.id } }
 }

@@ -27,7 +27,14 @@ const paymentSelect = {
 export async function listPayments(params: PaymentListParams) {
   const { from, to, method, programId, page, perPage } = params
 
-  const filters = [isNull(payments.deletedAt)]
+  // A payment is only real if the enrollment and student behind it are too.
+  // Joining without these guards let a deleted record's money keep appearing
+  // in the list and counting toward the totals above it.
+  const filters = [
+    isNull(payments.deletedAt),
+    isNull(enrollments.deletedAt),
+    isNull(contacts.deletedAt),
+  ]
   if (from) filters.push(gte(payments.paidOn, from))
   if (to) filters.push(lte(payments.paidOn, to))
   if (method) filters.push(eq(payments.method, method))
@@ -48,10 +55,12 @@ export async function listPayments(params: PaymentListParams) {
       .limit(perPage)
       .offset((page - 1) * perPage),
 
+    // Same joins as the rows query — the shared `where` names contacts.
     db
       .select({ value: count() })
       .from(payments)
       .innerJoin(enrollments, eq(enrollments.id, payments.enrollmentId))
+      .innerJoin(contacts, eq(contacts.id, enrollments.contactId))
       .innerJoin(programs, eq(programs.id, enrollments.programId))
       .where(where),
 
@@ -59,6 +68,7 @@ export async function listPayments(params: PaymentListParams) {
       .select({ value: sql<number>`coalesce(sum(${payments.amountPaise}), 0)::bigint` })
       .from(payments)
       .innerJoin(enrollments, eq(enrollments.id, payments.enrollmentId))
+      .innerJoin(contacts, eq(contacts.id, enrollments.contactId))
       .innerJoin(programs, eq(programs.id, enrollments.programId))
       .where(where),
   ])
@@ -70,6 +80,7 @@ export async function listPayments(params: PaymentListParams) {
   }
 }
 
+/** Payments on one enrollment. The caller has already established it is live. */
 export async function listPaymentsForEnrollment(enrollmentId: string) {
   return db
     .select()
@@ -86,7 +97,13 @@ export async function listPaymentsForContact(contactId: string) {
     .innerJoin(contacts, eq(contacts.id, enrollments.contactId))
     .innerJoin(programs, eq(programs.id, enrollments.programId))
     .leftJoin(batches, eq(batches.id, enrollments.batchId))
-    .where(and(eq(enrollments.contactId, contactId), isNull(payments.deletedAt)))
+    .where(
+      and(
+        eq(enrollments.contactId, contactId),
+        isNull(payments.deletedAt),
+        isNull(enrollments.deletedAt)
+      )
+    )
     .orderBy(desc(payments.paidOn))
 }
 

@@ -99,11 +99,13 @@ const columns: Column<Row>[] = [
     priority: "primary",
     align: "right",
     hideLabelOnCard: true,
+    // No event handler on this wrapper: the cell is built in a Server
+    // Component, and a function cannot cross the server/client boundary.
+    // Passing one produced "Event handlers cannot be passed to Client
+    // Component props" as a 500 in production. The DataTable renders the
+    // actions column outside the row link, so there is no click to stop.
     cell: (row) => (
-      <div
-        className="flex items-center justify-end gap-1.5"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex items-center justify-end gap-1.5">
         <Link
           href={`/payments/${row.id}/receipt`}
           className="inline-flex size-8 items-center justify-center rounded-lg border border-border/80 bg-secondary/40 text-muted-foreground transition-all hover:border-primary/40 hover:bg-secondary hover:text-foreground active:scale-95"
