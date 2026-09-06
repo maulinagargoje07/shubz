@@ -1,3 +1,5 @@
+import type { Permission } from "@/lib/permissions"
+
 import {
   BookOpen,
   CalendarDays,
@@ -9,6 +11,8 @@ import {
   MessageSquareText,
   Receipt,
   Upload,
+  ShieldCheck,
+  UserRound,
   Users,
   type LucideIcon,
 } from "lucide-react"
@@ -19,6 +23,11 @@ export type NavItem = {
   icon: LucideIcon
   /** Marks routes that exist but are not built in this pass. */
   comingSoon?: boolean
+  /**
+   * Hide this item unless the viewer holds the permission. Presentation only —
+   * the page itself re-checks, since hiding a link is not access control.
+   */
+  permission?: Permission
 }
 
 export const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
@@ -45,8 +54,16 @@ export const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
     heading: "Money",
     items: [
       { href: "/enrollments", label: "Enrollments", icon: Receipt },
-      { href: "/payments", label: "Payments", icon: IndianRupee },
-      { href: "/fees", label: "Fees", icon: IndianRupee },
+      { href: "/payments", label: "Payments", icon: IndianRupee, permission: "VIEW_FINANCIALS" },
+      { href: "/fees", label: "Fees", icon: IndianRupee, permission: "VIEW_FINANCIALS" },
+    ],
+  },
+  {
+    heading: "Account",
+    items: [
+      // No permission: everyone has a profile.
+      { href: "/settings/profile", label: "Your profile", icon: UserRound },
+      { href: "/settings/team", label: "Team", icon: ShieldCheck, permission: "MANAGE_USERS" },
     ],
   },
   {
@@ -60,6 +77,15 @@ export const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
 ]
 
 export const ALL_NAV_ITEMS = NAV_SECTIONS.flatMap((s) => s.items)
+
+/** Sections filtered to what this viewer may see, dropping any left empty. */
+export function visibleSections(permissions: readonly Permission[], role: string) {
+  const holds = (p: Permission) => role === "SUPERADMIN" || permissions.includes(p)
+  return NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => !item.permission || holds(item.permission)),
+  })).filter((section) => section.items.length > 0)
+}
 
 /**
  * The five destinations that get a permanent slot in the phone tab bar.

@@ -52,7 +52,41 @@ function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
 }
 
+/**
+ * A heading inside a menu.
+ *
+ * This renders a plain element rather than Base UI's `Menu.GroupLabel`, which
+ * throws "MenuGroupContext is missing" unless it sits inside a `Menu.Group`.
+ * That constraint is right for a label that names a group, but this component
+ * is overwhelmingly used as a standalone header — the account block at the top
+ * of the user menu, for instance — and a header that crashes the entire app
+ * shell when used the obvious way is a footgun, not a safety feature.
+ *
+ * When you genuinely are labelling a group, use `DropdownMenuGroupLabel`
+ * inside `DropdownMenuGroup`; it keeps the correct ARIA wiring.
+ */
 function DropdownMenuLabel({
+  className,
+  inset,
+  ...props
+}: React.ComponentProps<"div"> & {
+  inset?: boolean
+}) {
+  return (
+    <div
+      data-slot="dropdown-menu-label"
+      data-inset={inset}
+      className={cn(
+        "px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+/** The ARIA-correct label for a `DropdownMenuGroup`. Must be inside one. */
+function DropdownMenuGroupLabel({
   className,
   inset,
   ...props
@@ -61,7 +95,7 @@ function DropdownMenuLabel({
 }) {
   return (
     <MenuPrimitive.GroupLabel
-      data-slot="dropdown-menu-label"
+      data-slot="dropdown-menu-group-label"
       data-inset={inset}
       className={cn(
         "px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7",
@@ -254,6 +288,7 @@ export {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuGroupLabel,
   DropdownMenuLabel,
   DropdownMenuItem,
   DropdownMenuCheckboxItem,

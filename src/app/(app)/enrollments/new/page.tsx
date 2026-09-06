@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Settings2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { requirePermissionPage } from "@/lib/session"
 import { PageHeader } from "@/components/page-header"
 import { listBatchLabels } from "@/server/records/resolve"
 import { StudentRecordForm } from "../record-form"
@@ -10,6 +11,9 @@ export const dynamic = "force-dynamic"
 export const metadata = { title: "New student record" }
 
 export default async function NewRecordPage() {
+  // Creating a student record.
+  await requirePermissionPage("MANAGE_ENROLLMENTS")
+
   const batchLabels = await listBatchLabels()
 
   return (

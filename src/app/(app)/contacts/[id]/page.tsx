@@ -13,6 +13,8 @@ import {
   lifecycleTone,
 } from "@/components/ui/status"
 import { PageHeader } from "@/components/page-header"
+import { requireUser } from "@/lib/session"
+import { can } from "@/lib/permissions"
 import { formatDate, formatIST } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
 import { formatE164 } from "@/lib/phone-format"
@@ -44,6 +46,15 @@ export default async function ContactDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  /*
+   * Not guarded as a whole: an operator's job includes contact enquiries, and
+   * MANAGE_CONTACTS is theirs by default. What they must not see is the money
+   * — so the fee figures, the payments tab and the enrollment amounts are
+   * omitted, and the payment rows are not even fetched for them.
+   */
+  const viewer = await requireUser()
+  const showMoney = can(viewer, "VIEW_FINANCIALS")
+
   const { id } = await params
   const contact = await getContact(id)
   if (!contact) notFound()
@@ -51,7 +62,7 @@ export default async function ContactDetailPage({
   const [enrollments, payments, attendanceRows, rate, notes, consent, activity] =
     await Promise.all([
       listEnrollmentsForContact(id),
-      listPaymentsForContact(id),
+      showMoney ? listPaymentsForContact(id) : Promise.resolve([]),
       listAttendanceForContact(id),
       contactAttendanceRate(id),
       listNotesForContact(id),
@@ -118,12 +129,14 @@ export default async function ContactDetailPage({
                   <span className="ml-1 text-muted-foreground">{enrollments.length}</span>
                 ) : null}
               </TabsTrigger>
-              <TabsTrigger value="payments">
-                Payments
-                {payments.length ? (
-                  <span className="ml-1 text-muted-foreground">{payments.length}</span>
-                ) : null}
-              </TabsTrigger>
+              {showMoney ? (
+                <TabsTrigger value="payments">
+                  Payments
+                  {payments.length ? (
+                    <span className="ml-1 text-muted-foreground">{payments.length}</span>
+                  ) : null}
+                </TabsTrigger>
+              ) : null}
               <TabsTrigger value="attendance">Attendance</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -133,12 +146,16 @@ export default async function ContactDetailPage({
           <TabsContent value="overview" className="mt-4 space-y-6">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <StatTile label="Enrollments" value={enrollments.length} />
-              <StatTile label="Total paid" value={formatINR(totalPaid)} />
-              <StatTile
-                label="Outstanding"
-                value={formatINR(totalDue)}
-                tone={totalDue > 0 ? "overdue" : undefined}
-              />
+              {showMoney ? (
+                <>
+                  <StatTile label="Total paid" value={formatINR(totalPaid)} />
+                  <StatTile
+                    label="Outstanding"
+                    value={formatINR(totalDue)}
+                    tone={totalDue > 0 ? "overdue" : undefined}
+                  />
+                </>
+              ) : null}
               <StatTile
                 label="Attendance"
                 value={rate.percent === null ? "—" : `${rate.percent}%`}
@@ -212,11 +229,13 @@ export default async function ContactDetailPage({
                           {row.seatNumber ? ` · Seat ${row.seatNumber}` : ""}
                         </p>
                       </div>
-                      <span className="tabular-nums text-muted-foreground">
-                        {formatINR(Number(row.totalPaidPaise))} /{" "}
-                        {formatINR(Number(row.netPayablePaise))}
-                      </span>
-                      {row.isOverdue ? (
+                      {showMoney ? (
+                        <span className="tabular-nums text-muted-foreground">
+                          {formatINR(Number(row.totalPaidPaise))} /{" "}
+                          {formatINR(Number(row.netPayablePaise))}
+                        </span>
+                      ) : null}
+                      {showMoney && row.isOverdue ? (
                         <StatusPill tone="overdue">
                           {String(row.daysOverdue)}d overdue
                         </StatusPill>
@@ -236,6 +255,7 @@ export default async function ContactDetailPage({
             )}
           </TabsContent>
 
+          {showMoney ? (
           <TabsContent value="payments" className="mt-4">
             {payments.length === 0 ? (
               <EmptyState title="No payments recorded" />
@@ -269,6 +289,7 @@ export default async function ContactDetailPage({
               </ul>
             )}
           </TabsContent>
+          ) : null}
 
           <TabsContent value="attendance" className="mt-4 space-y-4">
             <StatTile

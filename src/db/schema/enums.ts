@@ -129,7 +129,16 @@ export const attendanceSourceEnum = pgEnum("attendance_source", [
 
 // ------------------------------------------------------------------- ops
 
-export const userRoleEnum = pgEnum("user_role", ["ADMIN", "MANAGER", "OPERATOR"])
+/**
+ * SUPERADMIN is first because it outranks everything: it is the only role that
+ * can manage team members, and the only one that can mint another superadmin.
+ */
+export const userRoleEnum = pgEnum("user_role", [
+  "SUPERADMIN",
+  "ADMIN",
+  "MANAGER",
+  "OPERATOR",
+])
 
 export const importStatusEnum = pgEnum("import_status", [
   "PENDING",

@@ -13,6 +13,7 @@
 import { redirect } from "next/navigation"
 
 import { getSessionUser } from "@/lib/session"
+import { can } from "@/lib/permissions"
 import { todayIST } from "@/lib/fy"
 import { listEnrollmentRecords, toCsv } from "@/server/records/export"
 
@@ -21,6 +22,12 @@ export const dynamic = "force-dynamic"
 export async function GET(request: Request) {
   const user = await getSessionUser()
   if (!user) redirect("/login")
+
+  // This URL is the entire fee book. Downloading it is its own capability,
+  // separate from being able to read a single record on screen.
+  if (!can(user, "EXPORT_DATA")) {
+    return new Response("You do not have permission to export data.", { status: 403 })
+  }
 
   const params = new URL(request.url).searchParams
   const str = (key: string) => {

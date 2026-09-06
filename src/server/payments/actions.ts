@@ -7,7 +7,7 @@ import { db } from "@/db"
 import { enrollments, payments } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { newId } from "@/lib/ids"
-import { requireUser } from "@/lib/session"
+import { checkPermission } from "@/lib/session"
 import { paymentFormSchema, voidPaymentSchema } from "@/lib/validation/payment"
 import type { ActionResult } from "@/lib/validation/shared"
 import { nextReceiptNo, reconcileSchedule } from "./ledger"
@@ -32,7 +32,9 @@ function fieldErrorsOf(error: { issues: { path: PropertyKey[]; message: string }
 export async function recordPayment(
   input: unknown
 ): Promise<ActionResult<{ id: string; receiptNo: string }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("RECORD_PAYMENTS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = paymentFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -93,7 +95,9 @@ export async function recordPayment(
  * which leaves the whole story visible in the audit log.
  */
 export async function voidPayment(input: unknown): Promise<ActionResult> {
-  const user = await requireUser()
+  const gate = await checkPermission("DELETE_RECORDS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = voidPaymentSchema.safeParse(input)
   if (!parsed.success) {

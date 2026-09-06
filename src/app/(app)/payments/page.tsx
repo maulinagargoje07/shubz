@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/ui/status"
 import { DataTable, type Column } from "@/components/data-table/table"
 import { FilterBar, Pagination } from "@/components/data-table/filters"
 import { PageHeader } from "@/components/page-header"
+import { requirePermissionPage } from "@/lib/session"
 import { formatDate } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
 import { PAYMENT_METHOD_LABELS, toOptions } from "@/lib/labels"
@@ -129,6 +130,9 @@ export default async function PaymentsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  // Revenue is not front-desk information.
+  await requirePermissionPage("VIEW_FINANCIALS")
+
   const raw = await searchParams
   const str = (v: string | string[] | undefined) =>
     typeof v === "string" && v !== "" ? v : undefined

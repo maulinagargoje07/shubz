@@ -26,7 +26,7 @@ import { consentEvents, contacts, enrollments, notes, payments } from "@/db/sche
 import { mutate } from "@/lib/audit"
 import { newId } from "@/lib/ids"
 import { parsePhone, tryParsePhone } from "@/lib/phone"
-import { requireUser } from "@/lib/session"
+import { checkPermission } from "@/lib/session"
 import type { ActionResult } from "@/lib/validation/shared"
 import {
   consentSchema,
@@ -51,7 +51,9 @@ function isUniqueViolation(error: unknown): boolean {
 export async function createContact(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_CONTACTS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = contactFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -134,7 +136,9 @@ export async function createContact(
 }
 
 export async function updateContact(input: unknown): Promise<ActionResult<{ id: string }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_CONTACTS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = updateContactSchema.safeParse(input)
   if (!parsed.success) {
@@ -239,7 +243,9 @@ export async function updateContact(input: unknown): Promise<ActionResult<{ id: 
  * can be re-added later.
  */
 export async function deleteContact(id: string): Promise<ActionResult> {
-  const user = await requireUser()
+  const gate = await checkPermission("DELETE_RECORDS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const before = await db.query.contacts.findFirst({
     where: and(eq(contacts.id, id), isNull(contacts.deletedAt)),
@@ -303,7 +309,9 @@ export async function deleteContact(id: string): Promise<ActionResult> {
 }
 
 export async function addNote(input: unknown): Promise<ActionResult> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_CONTACTS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = noteSchema.safeParse(input)
   if (!parsed.success) {
@@ -336,7 +344,9 @@ export async function addNote(input: unknown): Promise<ActionResult> {
  * opt-in — the pair is the evidence of what was agreed and when.
  */
 export async function recordConsent(input: unknown): Promise<ActionResult> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_CONTACTS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = consentSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: "Could not record that consent event." }

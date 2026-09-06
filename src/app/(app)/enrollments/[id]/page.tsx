@@ -10,6 +10,7 @@ import {
   enrollmentTone,
   scheduleTone,
 } from "@/components/ui/status"
+import { requirePermissionPage } from "@/lib/session"
 import { PageHeader, SectionHeading } from "@/components/page-header"
 import { formatDate } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
@@ -31,6 +32,9 @@ export default async function EnrollmentDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  // Shows the full fee schedule and payment ledger for one student.
+  await requirePermissionPage("VIEW_FINANCIALS")
+
   const { id } = await params
   const enrollment = await getEnrollment(id)
   if (!enrollment) notFound()

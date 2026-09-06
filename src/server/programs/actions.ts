@@ -8,7 +8,7 @@ import { programs } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { newId } from "@/lib/ids"
 import { splitProgramKind } from "@/lib/programs"
-import { requireUser } from "@/lib/session"
+import { checkPermission } from "@/lib/session"
 import { programFormSchema, updateProgramSchema } from "@/lib/validation/program"
 import type { ActionResult } from "@/lib/validation/shared"
 import { getProgramByCode } from "./queries"
@@ -23,7 +23,9 @@ function fieldErrorsOf(error: { issues: { path: PropertyKey[]; message: string }
 }
 
 export async function createProgram(input: unknown): Promise<ActionResult<{ id: string }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_PROGRAMS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = programFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -78,7 +80,9 @@ export async function createProgram(input: unknown): Promise<ActionResult<{ id: 
 }
 
 export async function updateProgram(input: unknown): Promise<ActionResult<{ id: string }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_PROGRAMS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = updateProgramSchema.safeParse(input)
   if (!parsed.success) {

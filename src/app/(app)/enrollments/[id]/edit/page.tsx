@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 
+import { requirePermissionPage } from "@/lib/session"
 import { PageHeader } from "@/components/page-header"
 import { db } from "@/db"
 import { batches, programs } from "@/db/schema"
@@ -18,6 +19,9 @@ export default async function EditRecordPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  // Editing a record is a stronger right than reading one.
+  await requirePermissionPage("MANAGE_ENROLLMENTS")
+
   const { id } = await params
   const [raw, view] = await Promise.all([getEnrollmentRaw(id), getEnrollment(id)])
   if (!raw || !view) notFound()

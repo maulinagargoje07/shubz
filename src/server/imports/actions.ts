@@ -9,7 +9,7 @@ import { mutate } from "@/lib/audit"
 import { parseCsv, type ImportableField } from "@/lib/csv"
 import { newId } from "@/lib/ids"
 import { tryParsePhone } from "@/lib/phone"
-import { requireUser } from "@/lib/session"
+import { checkPermission } from "@/lib/session"
 import {
   importCommitSchema,
   importPreviewSchema,
@@ -47,7 +47,9 @@ export async function previewImport(
     sample: RowVerdict[]
   }>
 > {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_CONTACTS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = importPreviewSchema.safeParse(input)
   if (!parsed.success) {
@@ -232,7 +234,9 @@ export async function previewImport(
 export async function commitImport(
   input: unknown
 ): Promise<ActionResult<{ created: number }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_CONTACTS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = importCommitSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: "Unknown import." }

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { EmptyState, StatusPill, enrollmentTone } from "@/components/ui/status"
 import { DataTable, type Column } from "@/components/data-table/table"
 import { FilterBar, Pagination } from "@/components/data-table/filters"
+import { requirePermissionPage } from "@/lib/session"
 import { PageHeader } from "@/components/page-header"
 import { formatDate } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
@@ -158,6 +159,9 @@ export default async function EnrollmentsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  // Student records carry fees and balances.
+  await requirePermissionPage("VIEW_FINANCIALS")
+
   const raw = await searchParams
   const str = (v: string | string[] | undefined) =>
     typeof v === "string" && v !== "" ? v : undefined

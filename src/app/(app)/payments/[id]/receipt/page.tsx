@@ -1,6 +1,8 @@
 import Image from "next/image"
 import { notFound } from "next/navigation"
 
+import { requirePermissionPage } from "@/lib/session"
+
 import { formatDate, financialYearLabel } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
 import { PAYMENT_METHOD_LABELS } from "@/lib/labels"
@@ -17,6 +19,9 @@ export default async function ReceiptPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  // A receipt is a financial document; it is not front-desk information.
+  await requirePermissionPage("VIEW_FINANCIALS")
+
   const { id } = await params
   const receipt = await getReceipt(id)
   if (!receipt) notFound()

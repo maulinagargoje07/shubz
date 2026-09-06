@@ -13,7 +13,9 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx scripts/seed.ts",
     "db:backup": "tsx scripts/backup.ts",
-    "db:reset": "tsx scripts/reset.ts"
+    "db:reset": "tsx scripts/reset.ts",
+    "setup:superadmin": "tsx scripts/setup-superadmin.ts",
+    "db:repair": "tsx scripts/repair.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

@@ -12,6 +12,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { EmptyState, StatTile, StatusPill } from "@/components/ui/status"
 import { PageHeader, SectionHeading } from "@/components/page-header"
+import { requireUser } from "@/lib/session"
+import { can } from "@/lib/permissions"
 import { formatIST } from "@/lib/fy"
 import { formatINRShort } from "@/lib/money"
 import { programKindLabelOf } from "@/lib/programs"
@@ -28,27 +30,30 @@ export const dynamic = "force-dynamic"
 export const metadata = { title: "Dashboard" }
 
 export default async function DashboardPage() {
-  const [
-    contacts,
-    students,
-    batches,
-    upcomingCount,
-    collected,
-    outstanding,
-    overdue,
-    byKind,
-    upcoming,
-  ] = await Promise.all([
-    totalContacts(),
-    activeStudentCount(),
-    activeBatchCount(),
-    countUpcomingSessions(7),
-    collectedThisMonth(),
-    totalOutstanding(),
-    overdueCount(),
-    activeStudentsByProgramKind(),
-    listUpcomingSessions(7),
-  ])
+  /*
+   * The dashboard is everybody's landing page, so it is not permission-guarded
+   * as a whole — an operator with nowhere to land would be stuck in a redirect
+   * loop. Instead the money tiles are omitted for anyone without
+   * VIEW_FINANCIALS, and the underlying figures are not fetched for them
+   * either, so the numbers never reach the response.
+   */
+  const viewer = await requireUser()
+  const showMoney = can(viewer, "VIEW_FINANCIALS")
+
+  const [contacts, students, batches, upcomingCount, byKind, upcoming] =
+    await Promise.all([
+      totalContacts(),
+      activeStudentCount(),
+      activeBatchCount(),
+      countUpcomingSessions(7),
+      activeStudentsByProgramKind(),
+      listUpcomingSessions(7),
+    ])
+
+  // Only queried when the viewer may see them.
+  const [collected, outstanding, overdue] = showMoney
+    ? await Promise.all([collectedThisMonth(), totalOutstanding(), overdueCount()])
+    : [0, 0, 0]
 
   const offlineTotal = byKind
     .filter((r) => r.deliveryMode === "OFFLINE")
@@ -66,6 +71,7 @@ export default async function DashboardPage() {
         "what came in and what is still owed", so those three tiles lead and
         overdue is coloured to be the thing the eye lands on.
       */}
+      {showMoney ? (
       <div className="grid gap-3 px-4 py-4 sm:grid-cols-3 sm:px-6">
         <StatTile
           label="Collected this month"
@@ -87,6 +93,7 @@ export default async function DashboardPage() {
           href="/fees"
         />
       </div>
+      ) : null}
 
       <div className="grid gap-3 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
         <StatTile
@@ -212,7 +219,7 @@ export default async function DashboardPage() {
         </section>
       </div>
 
-      {overdue > 0 ? (
+      {showMoney && overdue > 0 ? (
         <div className="mt-6 px-4 sm:px-6">
           <div className="flex flex-wrap items-center gap-3 rounded-xl border border-overdue/30 bg-overdue-muted px-4 py-3">
             <AlertTriangle className="size-4 shrink-0 text-overdue" aria-hidden />

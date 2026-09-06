@@ -22,6 +22,13 @@
       "when": 1788616103490,
       "tag": "0002_account_issuer",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788717875933,
+      "tag": "0003_superadmin_rbac",
+      "breakpoints": true
     }
   ]
 }

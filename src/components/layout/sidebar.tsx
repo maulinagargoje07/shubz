@@ -4,19 +4,29 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "cn"
 
-import { isActivePath, NAV_SECTIONS } from "./nav"
+import { isActivePath, visibleSections } from "./nav"
+import type { Permission } from "@/lib/permissions"
 
 /**
  * Desktop sidebar. Client-side only because it reads the pathname to mark the
  * current item — which is worth the few hundred bytes, since without it the
  * user cannot tell where they are.
  */
-export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+export function SidebarNav({
+  onNavigate,
+  permissions = [],
+  role = "OPERATOR",
+}: {
+  onNavigate?: () => void
+  permissions?: Permission[]
+  role?: string
+}) {
   const pathname = usePathname()
+  const sections = visibleSections(permissions, role)
 
   return (
     <nav className="flex flex-col gap-6 p-3" aria-label="Main">
-      {NAV_SECTIONS.map((section) => (
+      {sections.map((section) => (
         <div key={section.heading}>
           <p className="px-3 pb-2 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground/75">
             {section.heading}

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { EmptyState, StatusPill } from "@/components/ui/status"
 import { DataTable, type Column } from "@/components/data-table/table"
 import { PageHeader } from "@/components/page-header"
+import { requireUser } from "@/lib/session"
+import { can } from "@/lib/permissions"
 import { formatINRShort } from "@/lib/money"
 import { PROGRAM_STATUS_LABELS } from "@/lib/labels"
 import { billingCycleLabel, programKindLabelOf } from "@/lib/programs"
@@ -127,7 +129,12 @@ const columns: Column<Row>[] = [
 ]
 
 export default async function ProgramsPage() {
+  // Catalogue pricing is still pricing.
+  const viewer = await requireUser()
+  const showMoney = can(viewer, "VIEW_FINANCIALS")
+
   const rows = await listPrograms()
+  const visibleColumns = showMoney ? columns : columns.filter((c) => c.id !== "fee")
 
   return (
     <div>
@@ -154,7 +161,7 @@ export default async function ProgramsPage() {
           </div>
         ) : (
           <DataTable
-            columns={columns}
+            columns={visibleColumns}
             rows={rows as unknown as Row[]}
             rowKey={(row) => row.id}
             rowHref={(row) => `/programs/${row.id}`}

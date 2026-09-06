@@ -11,7 +11,7 @@
  * so a half-finished record cannot leave an orphan program behind.
  */
 
-import { and, eq, isNull, sql } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 
 import type { DbTx } from "@/db"
 import { batches, programs } from "@/db/schema"
@@ -175,13 +175,27 @@ export async function resolveBatch(
   return fallback?.id ?? null
 }
 
-/** Batch labels already in use, so the form can suggest them. */
+/**
+ * Batch labels already in use, to suggest in the record form.
+ *
+ * "Still running" means it has not finished — either no end date was set, or
+ * that date is still ahead. Filtering on `end_date IS NULL` alone silently
+ * dropped every batch that had one, which is most of them, leaving the
+ * suggestions almost empty. Cancelled and completed batches are excluded too:
+ * suggesting one would quietly enroll a student into a closed batch.
+ */
 export async function listBatchLabels(): Promise<string[]> {
   const { db } = await import("@/db")
   const rows = await db
     .selectDistinct({ name: batches.name })
     .from(batches)
-    .where(isNull(batches.endDate))
+    .where(
+      and(
+        sql`(${batches.endDate} is null
+             or ${batches.endDate} >= (now() at time zone 'Asia/Kolkata')::date)`,
+        sql`${batches.status} not in ('CANCELLED', 'COMPLETED')`
+      )
+    )
     .orderBy(batches.name)
     .limit(50)
 

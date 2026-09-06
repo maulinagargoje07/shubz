@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { LogOut, Moon, Sun } from "lucide-react"
+import Link from "next/link"
+import { LogOut, Moon, ShieldCheck, Sun, UserRound } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -29,10 +30,12 @@ export function UserMenu({
   name,
   email,
   role,
+  canManageUsers = false,
 }: {
   name: string
   email: string
   role: string
+  canManageUsers?: boolean
 }) {
   const router = useRouter()
   const [isDark, setIsDark] = useState(true)
@@ -86,6 +89,23 @@ export function UserMenu({
             </span>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator className="bg-border/60" />
+        <DropdownMenuItem
+          render={<Link href="/settings/profile" />}
+          className="cursor-pointer"
+        >
+          <UserRound className="size-4 text-primary" aria-hidden />
+          <span>Your profile</span>
+        </DropdownMenuItem>
+        {canManageUsers ? (
+          <DropdownMenuItem
+            render={<Link href="/settings/team" />}
+            className="cursor-pointer"
+          >
+            <ShieldCheck className="size-4 text-primary" aria-hidden />
+            <span>Team</span>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator className="bg-border/60" />
         <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer">
           {isDark ? (

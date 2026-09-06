@@ -7,7 +7,7 @@ import { db } from "@/db"
 import { batches, classSessions } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { newId } from "@/lib/ids"
-import { requireUser } from "@/lib/session"
+import { checkPermission } from "@/lib/session"
 import { sessionFormSchema, updateSessionSchema } from "@/lib/validation/session"
 import type { ActionResult } from "@/lib/validation/shared"
 
@@ -32,7 +32,9 @@ function istLocalToInstant(local: string): Date {
 }
 
 export async function createSession(input: unknown): Promise<ActionResult<{ id: string }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_PROGRAMS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = sessionFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -78,7 +80,9 @@ export async function createSession(input: unknown): Promise<ActionResult<{ id: 
 }
 
 export async function updateSession(input: unknown): Promise<ActionResult<{ id: string }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_PROGRAMS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = updateSessionSchema.safeParse(input)
   if (!parsed.success) {
@@ -127,7 +131,9 @@ export async function updateSession(input: unknown): Promise<ActionResult<{ id: 
 }
 
 export async function deleteSession(id: string): Promise<ActionResult> {
-  const user = await requireUser()
+  const gate = await checkPermission("DELETE_RECORDS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const before = await db.query.classSessions.findFirst({
     where: eq(classSessions.id, id),

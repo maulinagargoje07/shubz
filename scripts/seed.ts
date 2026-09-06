@@ -130,6 +130,11 @@ async function main() {
   console.log("  cleared existing data")
 
   // ------------------------------------------------------------ admin user
+  //
+  // The ROOT account is not created here. `npm run setup:superadmin` owns it,
+  // is idempotent, and touches only the auth tables — so it can be re-run
+  // against production without going anywhere near business data. This seed
+  // only ensures *some* user exists to attribute demo rows to.
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@shubztrader.in"
   const adminName = process.env.SEED_ADMIN_NAME ?? "Shubz Admin"
   const adminPassword = process.env.SEED_ADMIN_PASSWORD

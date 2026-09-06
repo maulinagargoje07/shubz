@@ -8,7 +8,7 @@ import { enrollments, paymentSchedule, payments, programs } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { planSchedule } from "@/lib/billing"
 import { newId } from "@/lib/ids"
-import { requireUser } from "@/lib/session"
+import { checkPermission } from "@/lib/session"
 import {
   enrollmentFormSchema,
   enrollmentStatusSchema,
@@ -52,7 +52,9 @@ function translateConstraint(error: unknown): string | null {
 export async function createEnrollment(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_ENROLLMENTS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = enrollmentFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -157,7 +159,9 @@ export async function createEnrollment(
 export async function updateEnrollment(
   input: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_ENROLLMENTS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = updateEnrollmentSchema.safeParse(input)
   if (!parsed.success) {
@@ -231,7 +235,9 @@ export async function updateEnrollment(
 }
 
 export async function changeEnrollmentStatus(input: unknown): Promise<ActionResult> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_ENROLLMENTS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = enrollmentStatusSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: "Unknown status." }
@@ -279,7 +285,9 @@ export async function changeEnrollmentStatus(input: unknown): Promise<ActionResu
  * the audit log records the cascade, and clearing `deleted_at` restores them.
  */
 export async function deleteEnrollment(id: string): Promise<ActionResult> {
-  const user = await requireUser()
+  const gate = await checkPermission("DELETE_RECORDS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const before = await db.query.enrollments.findFirst({
     where: and(eq(enrollments.id, id), isNull(enrollments.deletedAt)),

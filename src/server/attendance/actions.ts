@@ -7,7 +7,7 @@ import { db } from "@/db"
 import { attendance, batches, classSessions, programs } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { newId } from "@/lib/ids"
-import { requireUser } from "@/lib/session"
+import { checkPermission } from "@/lib/session"
 import { attendanceMarkSchema } from "@/lib/validation/attendance"
 import type { ActionResult } from "@/lib/validation/shared"
 
@@ -22,7 +22,9 @@ import type { ActionResult } from "@/lib/validation/shared"
  * check-in, an online one is marked by hand until a Zoom import exists.
  */
 export async function markAttendance(input: unknown): Promise<ActionResult<{ count: number }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_ATTENDANCE")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = attendanceMarkSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: "Nothing to save." }

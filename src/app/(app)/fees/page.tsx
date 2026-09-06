@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2 } from "lucide-react"
 import { EmptyState, StatTile, StatusPill } from "@/components/ui/status"
 import { DataTable, type Column } from "@/components/data-table/table"
 import { PageHeader, SectionHeading } from "@/components/page-header"
+import { requirePermissionPage } from "@/lib/session"
 import { formatDate } from "@/lib/fy"
 import { formatINR, formatINRShort } from "@/lib/money"
 import { formatE164 } from "@/lib/phone-format"
@@ -95,6 +96,9 @@ const overdueColumns: Column<OverdueRow>[] = [
 ]
 
 export default async function FeesPage() {
+  // Revenue is not front-desk information.
+  await requirePermissionPage("VIEW_FINANCIALS")
+
   const [collected, outstanding, overdue, overdueRows, byProgram, outstandingSplit] =
     await Promise.all([
       collectedThisMonth(),

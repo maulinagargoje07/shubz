@@ -17,7 +17,7 @@ import { db } from "@/db"
 import { mutate } from "@/lib/audit"
 import { newId } from "@/lib/ids"
 import { parsePhone } from "@/lib/phone"
-import { requireUser } from "@/lib/session"
+import { checkPermission } from "@/lib/session"
 import { studentRecordEditSchema, studentRecordSchema } from "@/lib/validation/record"
 import type { ActionResult } from "@/lib/validation/shared"
 import { nextReceiptNo, reconcileSchedule } from "@/server/payments/ledger"
@@ -40,7 +40,9 @@ export async function createStudentRecord(input: unknown): Promise<
     receiptNo: string | null
   }>
 > {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_ENROLLMENTS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = studentRecordSchema.safeParse(input)
   if (!parsed.success) {
@@ -257,7 +259,9 @@ export async function createStudentRecord(input: unknown): Promise<
 export async function updateStudentRecord(
   input: unknown
 ): Promise<ActionResult<{ enrollmentId: string }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_ENROLLMENTS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const parsed = studentRecordEditSchema.safeParse(input)
   if (!parsed.success) {

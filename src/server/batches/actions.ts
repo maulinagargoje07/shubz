@@ -7,7 +7,7 @@ import { db } from "@/db"
 import { batches, programs } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { newId } from "@/lib/ids"
-import { requireUser } from "@/lib/session"
+import { checkPermission } from "@/lib/session"
 import { batchFormSchema, updateBatchSchema } from "@/lib/validation/batch"
 import type { ActionResult } from "@/lib/validation/shared"
 import { getBatchByCode } from "./queries"
@@ -37,7 +37,9 @@ async function resolveDeliveryMode(programId: string) {
 }
 
 export async function createBatch(input: unknown): Promise<ActionResult<{ id: string }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_PROGRAMS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const candidate = input as { programId?: string }
   const actualMode = candidate.programId
@@ -97,7 +99,9 @@ export async function createBatch(input: unknown): Promise<ActionResult<{ id: st
 }
 
 export async function updateBatch(input: unknown): Promise<ActionResult<{ id: string }>> {
-  const user = await requireUser()
+  const gate = await checkPermission("MANAGE_PROGRAMS")
+  if (!gate.ok) return gate
+  const user = gate.user
 
   const candidate = input as { programId?: string; id?: string }
   const actualMode = candidate.programId

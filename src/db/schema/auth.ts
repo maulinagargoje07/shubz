@@ -15,7 +15,7 @@
  * `advanced.database.generateId` hook.
  */
 
-import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { boolean, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 
 import { userRoleEnum } from "./enums"
 
@@ -29,6 +29,17 @@ export const users = pgTable("user", {
   // --- ShubzTrader additions ---
   role: userRoleEnum("role").notNull().default("OPERATOR"),
   active: boolean("active").notNull().default(true),
+
+  /**
+   * Per-user permission override.
+   *
+   * NULL means "use the role's defaults", which is the normal case and keeps
+   * roles meaningful. A non-null array REPLACES those defaults, so what a
+   * superadmin ticked is exactly what the user gets — an additive-only model
+   * would make an unticked box do nothing, which is the opposite of what a
+   * toggle implies. See lib/permissions.ts.
+   */
+  permissions: jsonb("permissions").$type<string[] | null>(),
 
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

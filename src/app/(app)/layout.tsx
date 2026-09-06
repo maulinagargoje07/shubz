@@ -16,7 +16,14 @@ export default async function AppLayout({
   const user = await requireUser()
 
   return (
-    <AppShell user={{ name: user.name, email: user.email, role: user.role }}>
+    <AppShell
+      user={{
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        permissions: user.permissions,
+      }}
+    >
       {children}
     </AppShell>
   )

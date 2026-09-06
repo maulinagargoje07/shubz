@@ -1,3 +1,4 @@
+import { requirePermissionPage } from "@/lib/session"
 import { PageHeader } from "@/components/page-header"
 import { searchContactsForPicker } from "@/server/contacts/queries"
 import { listSelectablePrograms } from "@/server/programs/queries"
@@ -9,6 +10,9 @@ export const dynamic = "force-dynamic"
 export const metadata = { title: "Detailed enrollment" }
 
 export default async function NewEnrollmentPage() {
+  // Creating a student record.
+  await requirePermissionPage("MANAGE_ENROLLMENTS")
+
   const [contacts, programs, allBatches] = await Promise.all([
     searchContactsForPicker("", 500),
     listSelectablePrograms(),

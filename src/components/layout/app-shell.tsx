@@ -3,23 +3,26 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { X } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { LogOut, UserRound, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { MobileTabs } from "./mobile-tabs"
 import { SidebarNav } from "./sidebar"
 import { UserMenu } from "./user-menu"
+import { signOut } from "@/lib/auth-client"
+import type { Permission } from "@/lib/permissions"
 
 export function AppShell({
   user,
   children,
 }: {
-  user: { name: string; email: string; role: string }
+  user: { name: string; email: string; role: string; permissions: Permission[] }
   children: React.ReactNode
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
 
   // Navigating from inside the drawer should close it; otherwise the new page
   // renders behind a sheet the user has to dismiss by hand.
@@ -72,13 +75,20 @@ export function AppShell({
           >
             + Record
           </Link>
-          <UserMenu name={user.name} email={user.email} role={user.role} />
+          <UserMenu
+            name={user.name}
+            email={user.email}
+            role={user.role}
+            canManageUsers={
+              user.role === "SUPERADMIN" || user.permissions.includes("MANAGE_USERS")
+            }
+          />
         </div>
       </header>
 
       <div className="flex">
         <aside className="sticky top-14 hidden h-[calc(100svh-3.5rem)] w-56 shrink-0 overflow-y-auto border-r border-border/70 bg-card/40 backdrop-blur-sm lg:block">
-          <SidebarNav />
+          <SidebarNav permissions={user.permissions} role={user.role} />
         </aside>
 
         {/*
@@ -137,7 +147,40 @@ export function AppShell({
                   + Add Contact
                 </Link>
               </div>
-              <SidebarNav onNavigate={() => setMenuOpen(false)} />
+              <SidebarNav
+                onNavigate={() => setMenuOpen(false)}
+                permissions={user.permissions}
+                role={user.role}
+              />
+
+              {/*
+                Sign out lives here as well as in the header menu: on a phone
+                the header avatar is a small target and the sheet is where
+                people already are.
+              */}
+              <div className="mt-3 space-y-2 border-t border-border/60 pt-3">
+                <Link
+                  href="/settings/profile"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
+                >
+                  <UserRound className="size-4 shrink-0" aria-hidden />
+                  Your profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setMenuOpen(false)
+                    await signOut().catch(() => {})
+                    router.push("/login")
+                    router.refresh()
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+                >
+                  <LogOut className="size-4 shrink-0" aria-hidden />
+                  Sign out
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -5,6 +5,8 @@ import { CalendarDays, MapPin, Pencil, Plus, Users, Video } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EmptyState, StatTile, StatusPill } from "@/components/ui/status"
 import { PageHeader, SectionHeading } from "@/components/page-header"
+import { requireUser } from "@/lib/session"
+import { can } from "@/lib/permissions"
 import { formatDate } from "@/lib/fy"
 import { formatINRShort } from "@/lib/money"
 import { BATCH_STATUS_LABELS, PROGRAM_STATUS_LABELS } from "@/lib/labels"
@@ -19,6 +21,9 @@ export default async function ProgramDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  const viewer = await requireUser()
+  const showMoney = can(viewer, "VIEW_FINANCIALS")
+
   const { id } = await params
   const program = await getProgram(id)
   if (!program) notFound()
@@ -47,6 +52,7 @@ export default async function ProgramDetailPage({
       />
 
       <div className="grid gap-3 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+        {showMoney ? (
         <StatTile
           label="Default fee"
           value={formatINRShort(program.defaultFeePaise)}
@@ -56,6 +62,7 @@ export default async function ProgramDetailPage({
               : "One-time"
           }
         />
+        ) : null}
         <StatTile
           label="Delivery"
           value={isOnline ? "Online" : "Offline"}
