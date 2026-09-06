@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Trash2, Undo2 } from "lucide-react"
+import { Eye, Pencil, Trash2, Undo2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -26,16 +27,37 @@ import { voidPayment } from "@/server/payments/actions"
  * numbers already issued remain accounted for. That is deliberate — a fee
  * book you can silently erase rows from is not a fee book.
  */
-export function DeleteRecordButton({ studentName }: { studentName: string }) {
+export function DeleteRecordButton({
+  enrollmentId,
+  studentName,
+  variant = "outline",
+  size = "default",
+  showLabel = true,
+  className,
+}: {
+  enrollmentId?: string
+  studentName: string
+  variant?: "outline" | "ghost" | "destructive"
+  size?: "default" | "sm" | "icon"
+  showLabel?: boolean
+  className?: string
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [confirm, setConfirm] = useState("")
   const [busy, setBusy] = useState(false)
 
-  // The enrollment id is read from the URL so this stays a small client island.
-  async function onDelete(id: string) {
+  async function onDelete() {
+    const targetId =
+      enrollmentId ??
+      (typeof window !== "undefined" ? window.location.pathname.split("/")[2] : undefined)
+
+    if (!targetId) {
+      toast.error("Could not find record ID")
+      return
+    }
+
     setBusy(true)
-    const result = await deleteEnrollment(id)
+    const result = await deleteEnrollment(targetId)
     setBusy(false)
 
     if (!result.ok) {
@@ -44,7 +66,7 @@ export function DeleteRecordButton({ studentName }: { studentName: string }) {
     }
 
     setOpen(false)
-    toast.success("Record removed")
+    toast.success("Enrollment record deleted")
     router.push("/enrollments")
     router.refresh()
   }
@@ -53,47 +75,43 @@ export function DeleteRecordButton({ studentName }: { studentName: string }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="outline" className="text-overdue">
-            <Trash2 className="size-4" />
-            Delete
+          <Button
+            variant={variant}
+            size={size}
+            className={className ?? (variant === "outline" ? "text-overdue hover:bg-overdue/10 border-destructive/30" : "text-muted-foreground hover:text-overdue hover:bg-overdue/10")}
+            title="Delete record"
+            aria-label={`Delete record for ${studentName}`}
+          >
+            <Trash2 className="size-4 shrink-0" />
+            {showLabel ? <span>Delete</span> : null}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Delete this record?</DialogTitle>
+          <DialogTitle className="text-foreground">Delete this enrollment record?</DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm text-muted-foreground">
-          <strong className="text-foreground">{studentName}</strong>&apos;s enrollment
-          will be removed from lists and totals. Payments already recorded stay on
-          file with their receipt numbers, so the books still reconcile.
-        </p>
-
-        <div className="space-y-2">
-          <Label htmlFor="confirm">
-            Type <span className="font-mono font-medium">delete</span> to confirm
-          </Label>
-          <Input
-            id="confirm"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            autoComplete="off"
-          />
+        <div className="space-y-3 py-1 text-sm text-muted-foreground">
+          <p>
+            Are you sure you want to delete the enrollment for{" "}
+            <strong className="text-foreground font-semibold">{studentName}</strong>?
+          </p>
+          <p className="text-xs bg-muted/60 rounded-lg p-2.5 border border-border/70">
+            This student record will be removed from active lists and fee schedules. Payments already recorded will remain in the accounting ledger.
+          </p>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row-reverse">
+        <div className="flex flex-col gap-2 pt-2 sm:flex-row-reverse">
           <Button
             variant="destructive"
-            disabled={confirm !== "delete" || busy}
-            onClick={() => {
-              const id = window.location.pathname.split("/")[2]
-              if (id) onDelete(id)
-            }}
+            disabled={busy}
+            onClick={onDelete}
+            className="w-full sm:w-auto"
           >
-            {busy ? "Deleting…" : "Delete record"}
+            {busy ? "Deleting…" : "Yes, delete record"}
           </Button>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" disabled={busy} onClick={() => setOpen(false)} className="w-full sm:w-auto">
             Cancel
           </Button>
         </div>
@@ -185,5 +203,52 @@ export function VoidPaymentButton({
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+/**
+ * Row actions for the main Enrollments data grid and cards.
+ * Provides quick access to View details, Edit record, and Delete record.
+ */
+export function EnrollmentRowActions({
+  enrollmentId,
+  studentName,
+}: {
+  enrollmentId: string
+  studentName: string
+}) {
+  return (
+    <div
+      className="flex items-center justify-end gap-1.5"
+      onClick={(e) => {
+        // Prevent row navigation when clicking action buttons
+        e.stopPropagation()
+      }}
+    >
+      <Link
+        href={`/enrollments/${enrollmentId}`}
+        className="inline-flex size-8 items-center justify-center rounded-lg border border-border/80 bg-secondary/40 text-muted-foreground transition-all hover:border-primary/40 hover:bg-secondary hover:text-foreground active:scale-95"
+        title="View details"
+        aria-label={`View record for ${studentName}`}
+      >
+        <Eye className="size-3.5" />
+      </Link>
+      <Link
+        href={`/enrollments/${enrollmentId}/edit`}
+        className="inline-flex size-8 items-center justify-center rounded-lg border border-border/80 bg-secondary/40 text-muted-foreground transition-all hover:border-primary/40 hover:bg-secondary hover:text-foreground active:scale-95"
+        title="Edit record"
+        aria-label={`Edit record for ${studentName}`}
+      >
+        <Pencil className="size-3.5" />
+      </Link>
+      <DeleteRecordButton
+        enrollmentId={enrollmentId}
+        studentName={studentName}
+        variant="ghost"
+        size="icon"
+        showLabel={false}
+        className="size-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive active:scale-95"
+      />
+    </div>
   )
 }

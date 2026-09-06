@@ -35,6 +35,7 @@ import { getContact } from "@/server/contacts/queries"
 import { listEnrollmentsForContact } from "@/server/enrollments/queries"
 import { listPaymentsForContact } from "@/server/payments/queries"
 import { AddNote } from "./add-note"
+import { DeleteContactButton } from "../contact-actions"
 
 export const dynamic = "force-dynamic"
 
@@ -81,6 +82,7 @@ export default async function ContactDetailPage({
               <Pencil className="size-4" />
               Edit
             </Button>
+            <DeleteContactButton contactId={id} contactName={contact.fullName} />
             <Button render={<Link href="/enrollments/new" />}>
               <Plus className="size-4" />
               Enroll

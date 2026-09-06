@@ -74,14 +74,18 @@ export function DataTable<TRow>({
     )
   }
 
+  // Separate actions column from data columns if present
+  const actionsCol = columns.find((c) => c.id === "actions")
+  const dataColumns = columns.filter((c) => c.id !== "actions")
+
   // Find primary column for title (usually left-aligned) and secondary primary for header right (e.g. amount or status)
   const primaryLeft =
-    columns.find((c) => (c.priority ?? "secondary") === "primary" && c.align !== "right") ??
-    columns[0]
-  const primaryRight = columns.find(
+    dataColumns.find((c) => (c.priority ?? "secondary") === "primary" && c.align !== "right") ??
+    dataColumns[0]
+  const primaryRight = dataColumns.find(
     (c) => c !== primaryLeft && (c.priority ?? "secondary") === "primary" && c.align === "right"
   )
-  const rest = columns.filter((c) => c !== primaryLeft && c !== primaryRight)
+  const rest = dataColumns.filter((c) => c !== primaryLeft && c !== primaryRight)
 
   return (
     <>
@@ -91,53 +95,62 @@ export function DataTable<TRow>({
           const key = rowKey(row)
           const href = rowHref?.(row)
 
-          const body = (
-            <>
-              <div className="flex items-start justify-between gap-2.5">
-                <div className="min-w-0 flex-1 text-[0.9375rem] font-semibold text-foreground">
-                  {primaryLeft.cell(row)}
-                </div>
-                {primaryRight ? (
-                  <div className="shrink-0 text-right font-medium">
-                    {primaryRight.cell(row)}
-                  </div>
-                ) : null}
-                {href ? (
-                  <ChevronRight className="size-4 shrink-0 self-center text-muted-foreground/60 transition-transform group-active:translate-x-0.5" aria-hidden />
-                ) : null}
-              </div>
-
-              {rest.filter((column) => (column.priority ?? "secondary") !== "tertiary").length > 0 ? (
-                <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border/50 pt-2">
-                  {rest
-                    .filter((column) => (column.priority ?? "secondary") !== "tertiary")
-                    .map((column) => (
-                      <div key={column.id} className="min-w-0">
-                        {column.hideLabelOnCard ? null : (
-                          <dt className="text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground/75">
-                            {column.header}
-                          </dt>
-                        )}
-                        <dd className="mt-0.5 truncate text-sm text-foreground/90">{column.cell(row)}</dd>
-                      </div>
-                    ))}
-                </dl>
-              ) : null}
-            </>
-          )
-
           return (
             <li key={key}>
-              {href ? (
-                <Link
-                  href={href}
-                  className="group block rounded-xl border border-border/80 bg-card p-3.5 shadow-xs transition-all active:scale-[0.99] active:border-primary/50 active:bg-secondary/40"
-                >
-                  {body}
-                </Link>
-              ) : (
-                <div className="rounded-xl border border-border/80 bg-card p-3.5 shadow-xs">{body}</div>
-              )}
+              <div className="rounded-xl border border-border/80 bg-card p-3.5 shadow-xs transition-all">
+                {/* Header line: Title & Metric */}
+                <div className="flex items-start justify-between gap-2.5">
+                  {href ? (
+                    <Link
+                      href={href}
+                      className="group min-w-0 flex-1 text-[0.9375rem] font-semibold text-foreground hover:text-primary transition-colors flex items-center justify-between"
+                    >
+                      <span className="truncate">{primaryLeft.cell(row)}</span>
+                      <ChevronRight
+                        className="size-4 shrink-0 text-muted-foreground/60 transition-transform group-active:translate-x-0.5 ml-1.5"
+                        aria-hidden
+                      />
+                    </Link>
+                  ) : (
+                    <div className="min-w-0 flex-1 text-[0.9375rem] font-semibold text-foreground">
+                      {primaryLeft.cell(row)}
+                    </div>
+                  )}
+
+                  {primaryRight ? (
+                    <div className="shrink-0 text-right font-medium">
+                      {primaryRight.cell(row)}
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* Secondary metadata grid */}
+                {rest.filter((column) => (column.priority ?? "secondary") !== "tertiary").length > 0 ? (
+                  <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border/50 pt-2">
+                    {rest
+                      .filter((column) => (column.priority ?? "secondary") !== "tertiary")
+                      .map((column) => (
+                        <div key={column.id} className="min-w-0">
+                          {column.hideLabelOnCard ? null : (
+                            <dt className="text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground/75">
+                              {column.header}
+                            </dt>
+                          )}
+                          <dd className="mt-0.5 truncate text-sm text-foreground/90">
+                            {column.cell(row)}
+                          </dd>
+                        </div>
+                      ))}
+                  </dl>
+                ) : null}
+
+                {/* Action buttons footer for mobile card */}
+                {actionsCol ? (
+                  <div className="mt-2.5 flex items-center justify-end border-t border-border/50 pt-2">
+                    {actionsCol.cell(row)}
+                  </div>
+                ) : null}
+              </div>
             </li>
           )
         })}

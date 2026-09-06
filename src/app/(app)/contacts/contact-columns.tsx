@@ -4,6 +4,7 @@ import { formatDate } from "@/lib/fy"
 import { formatE164 } from "@/lib/phone-format"
 import { LIFECYCLE_LABELS, SOURCE_LABELS } from "@/lib/labels"
 import type { ContactListRow } from "@/server/contacts/queries"
+import { ContactRowActions } from "./contact-actions"
 
 /**
  * Column definitions shared by the Contacts and Students lists.
@@ -67,6 +68,19 @@ export const contactColumns: Column<ContactListRow>[] = [
     align: "right",
     cell: (row) => (
       <span className="text-muted-foreground">{formatDate(row.createdAt)}</span>
+    ),
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    priority: "primary",
+    align: "right",
+    hideLabelOnCard: true,
+    cell: (row) => (
+      <ContactRowActions
+        contactId={row.id}
+        contactName={row.fullName}
+      />
     ),
   },
 ]

@@ -13,6 +13,7 @@ import { programKindLabelOf } from "@/lib/programs"
 import { listEnrollments } from "@/server/enrollments/queries"
 import { listPrograms } from "@/server/programs/queries"
 import type { DeliveryMode, ProgramType } from "@/db/schema"
+import { EnrollmentRowActions } from "./[id]/record-actions"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Enrollments" }
@@ -135,6 +136,19 @@ const columns: Column<Row>[] = [
       <StatusPill tone={enrollmentTone(row.status)}>
         {ENROLLMENT_STATUS_LABELS[row.status]}
       </StatusPill>
+    ),
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    priority: "primary",
+    align: "right",
+    hideLabelOnCard: true,
+    cell: (row) => (
+      <EnrollmentRowActions
+        enrollmentId={row.id}
+        studentName={row.contactName}
+      />
     ),
   },
 ]

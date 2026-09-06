@@ -60,7 +60,7 @@ export default async function EnrollmentDetailPage({
               <Pencil className="size-4" />
               Edit
             </Button>
-            <DeleteRecordButton studentName={String(enrollment.contactName)} />
+            <DeleteRecordButton enrollmentId={id} studentName={String(enrollment.contactName)} />
             <RecordPaymentDialog
               enrollmentId={id}
               balanceDuePaise={balance}

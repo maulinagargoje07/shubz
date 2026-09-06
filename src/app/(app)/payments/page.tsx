@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { IndianRupee } from "lucide-react"
+import { IndianRupee, Receipt } from "lucide-react"
 
 import { EmptyState } from "@/components/ui/status"
 import { DataTable, type Column } from "@/components/data-table/table"
@@ -13,6 +13,7 @@ import { paymentListParamsSchema } from "@/lib/validation/payment"
 import { listPayments } from "@/server/payments/queries"
 import { listPrograms } from "@/server/programs/queries"
 import type { DeliveryMode, PaymentMethod, ProgramType } from "@/db/schema"
+import { VoidPaymentButton } from "../enrollments/[id]/record-actions"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Payments" }
@@ -89,6 +90,33 @@ const columns: Column<Row>[] = [
         {row.referenceNo ? (
           <p className="truncate text-xs text-muted-foreground">{row.referenceNo}</p>
         ) : null}
+      </div>
+    ),
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    priority: "primary",
+    align: "right",
+    hideLabelOnCard: true,
+    cell: (row) => (
+      <div
+        className="flex items-center justify-end gap-1.5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Link
+          href={`/payments/${row.id}/receipt`}
+          className="inline-flex size-8 items-center justify-center rounded-lg border border-border/80 bg-secondary/40 text-muted-foreground transition-all hover:border-primary/40 hover:bg-secondary hover:text-foreground active:scale-95"
+          title="View receipt"
+          aria-label={`View receipt for ${row.receiptNo}`}
+        >
+          <Receipt className="size-3.5" />
+        </Link>
+        <VoidPaymentButton
+          paymentId={row.id}
+          amountPaise={row.amountPaise}
+          receiptNo={row.receiptNo}
+        />
       </div>
     ),
   },

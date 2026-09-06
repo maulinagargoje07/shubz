@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BookOpen, Plus } from "lucide-react"
+import { BookOpen, Eye, Pencil, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { EmptyState, StatusPill } from "@/components/ui/status"
@@ -82,6 +82,44 @@ const columns: Column<Row>[] = [
       <StatusPill tone={row.status === "ACTIVE" ? "paid" : "neutral"}>
         {PROGRAM_STATUS_LABELS[row.status] ?? row.status}
       </StatusPill>
+    ),
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    priority: "primary",
+    align: "right",
+    hideLabelOnCard: true,
+    cell: (row) => (
+      <div
+        className="flex items-center justify-end gap-1.5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Link
+          href={`/programs/${row.id}`}
+          className="inline-flex size-8 items-center justify-center rounded-lg border border-border/80 bg-secondary/40 text-muted-foreground transition-all hover:border-primary/40 hover:bg-secondary hover:text-foreground active:scale-95"
+          title="View program & batches"
+          aria-label={`View ${row.name}`}
+        >
+          <Eye className="size-3.5" />
+        </Link>
+        <Link
+          href={`/programs/${row.id}/edit`}
+          className="inline-flex size-8 items-center justify-center rounded-lg border border-border/80 bg-secondary/40 text-muted-foreground transition-all hover:border-primary/40 hover:bg-secondary hover:text-foreground active:scale-95"
+          title="Edit program"
+          aria-label={`Edit ${row.name}`}
+        >
+          <Pencil className="size-3.5" />
+        </Link>
+        <Link
+          href={`/programs/${row.id}/batches/new`}
+          className="inline-flex size-8 items-center justify-center rounded-lg border border-border/80 bg-secondary/40 text-muted-foreground transition-all hover:border-primary/40 hover:bg-secondary hover:text-primary active:scale-95"
+          title="New batch"
+          aria-label={`New batch for ${row.name}`}
+        >
+          <Plus className="size-3.5" />
+        </Link>
+      </div>
     ),
   },
 ]
