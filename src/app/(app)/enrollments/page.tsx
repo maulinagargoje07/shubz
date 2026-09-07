@@ -2,15 +2,17 @@ import Link from "next/link"
 import { Download, Plus, Receipt } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { SubLabel } from "@/components/ui/sub-label"
 import { EmptyState, StatusPill, enrollmentTone } from "@/components/ui/status"
 import { DataTable, type Column } from "@/components/data-table/table"
 import { FilterBar, Pagination } from "@/components/data-table/filters"
 import { requirePermissionPage } from "@/lib/session"
+import { enumParam, idParam, pageParam, textParam } from "@/lib/search-params"
 import { PageHeader } from "@/components/page-header"
 import { formatDate } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
 import { ENROLLMENT_STATUS_LABELS, toOptions } from "@/lib/labels"
-import { programKindLabelOf } from "@/lib/programs"
+import { programKindSuffixOf } from "@/lib/programs"
 import { listEnrollments } from "@/server/enrollments/queries"
 import { listPrograms } from "@/server/programs/queries"
 import {
@@ -55,10 +57,12 @@ const columns: Column<Row>[] = [
     cell: (row) => (
       <div className="min-w-0">
         <p className="truncate">{row.programName}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {programKindLabelOf(row.programType, row.deliveryMode)}
-          {row.seatNumber ? ` · Seat ${row.seatNumber}` : ""}
-        </p>
+        <SubLabel
+          parts={[
+            programKindSuffixOf(row.programName, row.programType, row.deliveryMode),
+            row.seatNumber ? `Seat ${row.seatNumber}` : null,
+          ]}
+        />
       </div>
     ),
   },
@@ -169,16 +173,15 @@ export default async function EnrollmentsPage({
   await requirePermissionPage("VIEW_FINANCIALS")
 
   const raw = await searchParams
-  const str = (v: string | string[] | undefined) =>
-    typeof v === "string" && v !== "" ? v : undefined
 
-  const page = Number(str(raw.page) ?? 1) || 1
+  const page = pageParam(raw.page)
   const perPage = 25
   const active = {
-    status: str(raw.status),
-    program: str(raw.program),
-    overdue: str(raw.overdue),
-    batch: str(raw.batch),
+    status: enumParam(raw.status, Object.keys(ENROLLMENT_STATUS_LABELS)),
+    program: idParam(raw.program),
+    overdue: textParam(raw.overdue),
+    // "none" is a real answer here: students carrying no batch at all.
+    batch: idParam(raw.batch, ["none"]),
   }
 
   // The export gets the same filters the list is showing.

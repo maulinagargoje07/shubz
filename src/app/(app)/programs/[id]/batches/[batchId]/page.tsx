@@ -8,8 +8,14 @@ import { PageHeader, SectionHeading } from "@/components/page-header"
 import { formatDate, formatIST } from "@/lib/fy"
 import { BATCH_STATUS_LABELS, SESSION_STATUS_LABELS } from "@/lib/labels"
 import { programKindLabel } from "@/lib/programs"
-import { getBatchWithProgram } from "@/server/batches/queries"
-import { listSessionsForBatch, nextSessionSeq } from "@/server/sessions/queries"
+import { batchAttendanceOverview, getBatchWithProgram } from "@/server/batches/queries"
+import { BatchAttendance } from "@/components/sessions/batch-attendance"
+import {
+  listSchedulableBatches,
+  listSessionsForBatch,
+  nextSessionSeq,
+} from "@/server/sessions/queries"
+import { ScheduleSessionsDialog } from "@/components/sessions/schedule-sessions-dialog"
 import { SessionFormDialog } from "./session-form"
 
 export const dynamic = "force-dynamic"
@@ -25,9 +31,11 @@ export default async function BatchDetailPage({
 
   const { batch, program } = row
   const isOnline = program.deliveryMode === "ONLINE"
-  const [sessions, nextSeq] = await Promise.all([
+  const [sessions, nextSeq, schedulable, overview] = await Promise.all([
     listSessionsForBatch(batchId),
     nextSessionSeq(batchId),
+    listSchedulableBatches(),
+    batchAttendanceOverview(batchId),
   ])
 
   return (
@@ -45,14 +53,16 @@ export default async function BatchDetailPage({
               <Pencil className="size-4" />
               Edit
             </Button>
+            {/* Bulk first: a batch is usually scheduled as a run, not one class. */}
+            <ScheduleSessionsDialog batches={schedulable} defaultBatchId={batchId} />
             <SessionFormDialog
               batchId={batchId}
               deliveryMode={program.deliveryMode}
               nextSeq={nextSeq}
               trigger={
-                <Button>
+                <Button variant="outline">
                   <Plus className="size-4" />
-                  Add session
+                  Add one
                 </Button>
               }
             />
@@ -105,7 +115,10 @@ export default async function BatchDetailPage({
           <EmptyState
             icon={<CalendarDays className="size-5" />}
             title="No sessions scheduled"
-            description="Add the classes that make up this batch so attendance can be marked."
+            description="Schedule the run of classes for this batch — pick the days and how many, and they are created together."
+            action={
+              <ScheduleSessionsDialog batches={schedulable} defaultBatchId={batchId} />
+            }
           />
         ) : (
           <ul className="divide-y overflow-hidden rounded-xl border bg-card">
@@ -162,6 +175,26 @@ export default async function BatchDetailPage({
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="mt-8 px-4 sm:px-6">
+        <SectionHeading
+          action={
+            <Link
+              href="/attendance"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              All registers
+            </Link>
+          }
+        >
+          Attendance
+        </SectionHeading>
+        <BatchAttendance
+          sessions={overview.sessions}
+          students={overview.students}
+          heldCount={overview.heldCount}
+        />
       </section>
     </div>
   )

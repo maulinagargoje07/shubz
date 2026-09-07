@@ -148,3 +148,40 @@ export async function listAllSessions(limit = 100) {
     .orderBy(sql`${classSessions.scheduledAt} desc`)
     .limit(limit)
 }
+
+
+/**
+ * Batches you can schedule classes into, with the sequence number the next
+ * session would take.
+ *
+ * Finished and cancelled batches are excluded — scheduling a class into a
+ * batch that has ended is almost always a mistake, and offering it invites one.
+ */
+export async function listSchedulableBatches() {
+  const rows = await db
+    .select({
+      id: batches.id,
+      name: batches.name,
+      endDate: batches.endDate,
+      programName: programs.name,
+      deliveryMode: programs.deliveryMode,
+      nextSeq: sql<number>`(
+        select coalesce(max(s.seq), 0)::int + 1
+        from sessions s
+        where s.batch_id = batches.id
+      )`,
+    })
+    .from(batches)
+    .innerJoin(programs, eq(programs.id, batches.programId))
+    .where(sql`${batches.status} not in ('CANCELLED', 'COMPLETED')`)
+    .orderBy(asc(programs.name), asc(batches.name))
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    programName: row.programName,
+    deliveryMode: row.deliveryMode,
+    endDate: row.endDate,
+    nextSeq: Number(row.nextSeq),
+  }))
+}

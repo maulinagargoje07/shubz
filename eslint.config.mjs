@@ -15,6 +15,10 @@ const eslintConfig = [
     ignores: [
       "node_modules/**",
       ".next/**",
+      // Verification builds write here (see distDir in next.config.ts). It is
+      // generated output, not source, and linting it buries real findings
+      // under thousands of problems from compiled chunks.
+      ".next-check/**",
       "out/**",
       "build/**",
       "next-env.d.ts",

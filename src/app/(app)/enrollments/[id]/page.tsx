@@ -19,7 +19,7 @@ import {
   PAYMENT_METHOD_LABELS,
   SCHEDULE_STATUS_LABELS,
 } from "@/lib/labels"
-import { billingCycleLabel, programKindLabelOf } from "@/lib/programs"
+import { billingCycleLabel, programKindSuffixOf } from "@/lib/programs"
 import { getEnrollment, listSchedule } from "@/server/enrollments/queries"
 import { listPaymentsForEnrollment } from "@/server/payments/queries"
 import { RecordPaymentDialog } from "../../payments/payment-form"
@@ -52,12 +52,18 @@ export default async function EnrollmentDetailPage({
       <PageHeader
         back={{ href: "/enrollments", label: "Enrollments" }}
         title={String(enrollment.contactName)}
-        description={`${enrollment.programName} · ${programKindLabelOf(
-          enrollment.programType,
-          enrollment.deliveryMode
-        )}${enrollment.batchName ? ` · ${enrollment.batchName}` : ""}${
-          enrollment.seatNumber ? ` · Seat ${enrollment.seatNumber}` : ""
-        }`}
+        description={[
+          enrollment.programName,
+          programKindSuffixOf(
+            enrollment.programName,
+            enrollment.programType,
+            enrollment.deliveryMode
+          ),
+          enrollment.batchName,
+          enrollment.seatNumber ? `Seat ${enrollment.seatNumber}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
         actions={
           <>
             <Button variant="outline" render={<Link href={`/enrollments/${id}/edit`} />}>

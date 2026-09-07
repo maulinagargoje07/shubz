@@ -2,14 +2,16 @@ import Link from "next/link"
 import { IndianRupee, Receipt } from "lucide-react"
 
 import { EmptyState } from "@/components/ui/status"
+import { SubLabel } from "@/components/ui/sub-label"
 import { DataTable, type Column } from "@/components/data-table/table"
 import { FilterBar, Pagination } from "@/components/data-table/filters"
 import { PageHeader } from "@/components/page-header"
 import { requirePermissionPage } from "@/lib/session"
+import { enumParam, idParam, pageParam, textParam } from "@/lib/search-params"
 import { formatDate } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
 import { PAYMENT_METHOD_LABELS, toOptions } from "@/lib/labels"
-import { programKindLabelOf } from "@/lib/programs"
+import { programKindSuffixOf } from "@/lib/programs"
 import { paymentListParamsSchema } from "@/lib/validation/payment"
 import { listPayments } from "@/server/payments/queries"
 import { listPrograms } from "@/server/programs/queries"
@@ -75,9 +77,9 @@ const columns: Column<Row>[] = [
     cell: (row) => (
       <div className="min-w-0">
         <p className="truncate">{row.programName}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {programKindLabelOf(row.programType, row.deliveryMode)}
-        </p>
+        <SubLabel
+          parts={[programKindSuffixOf(row.programName, row.programType, row.deliveryMode)]}
+        />
       </div>
     ),
   },
@@ -134,15 +136,14 @@ export default async function PaymentsPage({
   await requirePermissionPage("VIEW_FINANCIALS")
 
   const raw = await searchParams
-  const str = (v: string | string[] | undefined) =>
-    typeof v === "string" && v !== "" ? v : undefined
+
 
   const params = paymentListParamsSchema.parse({
-    from: str(raw.from),
-    to: str(raw.to),
-    method: str(raw.method),
-    programId: str(raw.program),
-    page: str(raw.page) ?? 1,
+    from: textParam(raw.from),
+    to: textParam(raw.to),
+    method: enumParam(raw.method, Object.keys(PAYMENT_METHOD_LABELS)),
+    programId: idParam(raw.program),
+    page: pageParam(raw.page),
     perPage: 25,
   })
 

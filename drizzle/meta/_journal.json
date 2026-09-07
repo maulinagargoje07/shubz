@@ -29,6 +29,13 @@
       "when": 1788717875933,
       "tag": "0003_superadmin_rbac",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788775173962,
+      "tag": "0004_unique_batch_name_per_program",
+      "breakpoints": true
     }
   ]
 }

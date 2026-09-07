@@ -6,7 +6,7 @@ import { requirePermissionPage } from "@/lib/session"
 import { formatDate, financialYearLabel } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
 import { PAYMENT_METHOD_LABELS } from "@/lib/labels"
-import { programKindLabelOf } from "@/lib/programs"
+import { programKindSuffixOf } from "@/lib/programs"
 import { formatE164 } from "@/lib/phone-format"
 import { getReceipt } from "@/server/payments/queries"
 import { PrintButton } from "./print-button"
@@ -73,9 +73,19 @@ export default async function ReceiptPage({
 
           <Row label="Program">
             {receipt.programName}
-            <span className="block text-muted-foreground">
-              {programKindLabelOf(receipt.programType, receipt.deliveryMode)}
-            </span>
+            {programKindSuffixOf(
+              receipt.programName,
+              receipt.programType,
+              receipt.deliveryMode
+            ) ? (
+              <span className="block text-muted-foreground">
+                {programKindSuffixOf(
+                  receipt.programName,
+                  receipt.programType,
+                  receipt.deliveryMode
+                )}
+              </span>
+            ) : null}
           </Row>
           {receipt.batchName ? <Row label="Batch">{receipt.batchName}</Row> : null}
 

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -18,6 +19,7 @@ import {
   type FormContext,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -37,28 +39,47 @@ import {
 import { createBatch, updateBatch } from "@/server/batches/actions"
 import type { Batch, DeliveryMode, ProgramType } from "@/db/schema"
 
+export type BatchFormProgram = {
+  id: string
+  name: string
+  type: ProgramType
+  deliveryMode: DeliveryMode
+}
+
+/**
+ * @param program   fixed parent — used when creating from inside a program.
+ * @param programs  selectable list — used by /batches/new, where the batch is
+ *                  being created without having navigated into a program first.
+ */
 export function BatchForm({
   program,
+  programs,
   batch,
 }: {
-  program: { id: string; name: string; type: ProgramType; deliveryMode: DeliveryMode }
+  program?: BatchFormProgram
+  programs?: BatchFormProgram[]
   batch?: Batch
 }) {
   const router = useRouter()
   const isEdit = Boolean(batch)
 
+  const options = programs ?? (program ? [program] : [])
+  const [programId, setProgramId] = useState(program?.id ?? options[0]?.id ?? "")
+  const selected = options.find((p) => p.id === programId) ?? options[0]
+
   /**
    * The parent program's delivery mode decides which half of this form exists.
    * An online batch asks for a meeting link; an offline one asks for a venue.
    * Never both — showing both would invite half-filled records where nobody
-   * knows whether the class is on Zoom or in Kharadi.
+   * knows whether the class is on Zoom or in Kharadi. Changing the program
+   * therefore swaps which half is shown.
    */
-  const isOnline = program.deliveryMode === "ONLINE"
+  const isOnline = selected?.deliveryMode === "ONLINE"
 
   const form = useForm<BatchFormValues, FormContext, BatchFormParsed>({
     resolver: zodResolver(batchFormSchema),
     defaultValues: {
-      programId: program.id,
+      programId: programId,
       name: batch?.name ?? "",
       code: batch?.code ?? "",
       startDate: batch?.startDate ?? "",
@@ -71,9 +92,22 @@ export function BatchForm({
       venueAddress: batch?.venueAddress ?? "",
       seatCapacity: batch?.seatCapacity ?? "",
       status: batch?.status ?? "PLANNED",
-      deliveryMode: program.deliveryMode,
+      deliveryMode: selected?.deliveryMode ?? "ONLINE",
     },
   })
+
+  function onProgramChange(next: string) {
+    setProgramId(next)
+    form.setValue("programId", next)
+    const chosen = options.find((p) => p.id === next)
+    if (chosen) form.setValue("deliveryMode", chosen.deliveryMode)
+    // The other branch's fields no longer apply; clearing them stops a stale
+    // venue travelling with a batch that just became online.
+    form.setValue("meetingLink", "")
+    form.setValue("venueName", "")
+    form.setValue("venueAddress", "")
+    form.setValue("seatCapacity", "")
+  }
 
   async function onSubmit() {
     const raw = form.getValues()
@@ -92,16 +126,34 @@ export function BatchForm({
     }
 
     toast.success(isEdit ? "Batch updated" : "Batch created")
-    router.push(`/programs/${program.id}/batches/${result.data.id}`)
+    router.push(`/programs/${programId}/batches/${result.data.id}`)
     router.refresh()
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-3xl space-y-6 px-4 py-4 sm:px-6">
+        {options.length > 1 && !isEdit ? (
+          <div className="grid gap-1.5">
+            <Label htmlFor="program">Program</Label>
+            <select
+              id="program"
+              value={programId}
+              onChange={(e) => onProgramChange(e.target.value)}
+              className="h-10 w-full rounded-lg border border-border/80 bg-card px-3 text-sm outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
+            >
+              {options.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} — {programKindLabel(p)}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+
         <Alert>
           <AlertDescription>
-            {program.name} is <strong>{programKindLabel(program)}</strong>, so this batch
+            {selected?.name} is <strong>{selected ? programKindLabel(selected) : ""}</strong>, so this batch
             needs {isOnline ? "a meeting link" : "a venue"}.
           </AlertDescription>
         </Alert>

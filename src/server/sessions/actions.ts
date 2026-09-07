@@ -1,14 +1,23 @@
 "use server"
 
 import { revalidateEverything } from "@/lib/revalidate"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 
 import { db } from "@/db"
 import { batches, classSessions } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { newId } from "@/lib/ids"
 import { checkPermission } from "@/lib/session"
-import { sessionFormSchema, updateSessionSchema } from "@/lib/validation/session"
+import {
+  sessionFormSchema,
+  sessionSeriesSchema,
+  updateSessionSchema,
+} from "@/lib/validation/session"
+import {
+  generateSeriesDates,
+  renderTitle,
+  type Weekday,
+} from "@/lib/sessions/schedule"
 import type { ActionResult } from "@/lib/validation/shared"
 
 function fieldErrorsOf(error: { issues: { path: PropertyKey[]; message: string }[] }) {
@@ -149,4 +158,111 @@ export async function deleteSession(id: string): Promise<ActionResult> {
 
   revalidateEverything()
   return { ok: true, data: undefined }
+}
+
+
+/**
+ * Create a whole run of sessions in one go.
+ *
+ * Sequence numbers are assigned here, continuing from the batch's current
+ * maximum, rather than being typed per session — `(batch_id, seq)` is unique,
+ * so hand-entered numbers were a collision waiting to happen and produced a
+ * raw constraint error when two people scheduled at once.
+ *
+ * The whole run is one transaction: a partially created series would leave the
+ * numbering broken and force the user to work out which classes already exist.
+ */
+export async function createSessionSeries(
+  input: unknown
+): Promise<ActionResult<{ created: number; first: string; last: string }>> {
+  const gate = await checkPermission("MANAGE_PROGRAMS")
+  if (!gate.ok) return gate
+  const user = gate.user
+
+  const parsed = sessionSeriesSchema.safeParse(input)
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: fieldErrorsOf(parsed.error),
+    }
+  }
+
+  const values = parsed.data
+
+  const [batch] = await db
+    .select({
+      id: batches.id,
+      programId: batches.programId,
+      endDate: batches.endDate,
+    })
+    .from(batches)
+    .where(eq(batches.id, values.batchId))
+    .limit(1)
+  if (!batch) return { ok: false, error: "That batch no longer exists." }
+
+  // The batch's own end date caps the run, so scheduling twenty classes into a
+  // batch that finishes next month quietly stops at the end rather than
+  // creating sessions past it.
+  const dates = generateSeriesDates({
+    startDate: values.startDate,
+    weekdays: values.weekdays as Weekday[],
+    count: values.count,
+    endDate: batch.endDate,
+  })
+
+  if (dates.length === 0) {
+    return {
+      ok: false,
+      error: "That pattern produces no sessions before the batch ends.",
+      fieldErrors: { startDate: "No dates match" },
+    }
+  }
+
+  const created = await mutate(user, async ({ tx, audit }) => {
+    const [{ maxSeq }] = await tx
+      .select({ maxSeq: sql<number | null>`max(${classSessions.seq})` })
+      .from(classSessions)
+      .where(eq(classSessions.batchId, values.batchId))
+
+    const startSeq = Number(maxSeq ?? 0) + 1
+
+    const rows = dates.map((date, index) => {
+      const seq = startSeq + index
+      return {
+        id: newId(),
+        batchId: values.batchId,
+        seq,
+        title: renderTitle(values.titleTemplate, seq),
+        scheduledAt: istLocalToInstant(`${date}T${values.time}`),
+        durationMinutes: values.durationMinutes,
+        meetingLink: values.meetingLink,
+        roomOrDesk: values.roomOrDesk,
+        status: "SCHEDULED" as const,
+      }
+    })
+
+    await tx.insert(classSessions).values(rows)
+
+    await audit({
+      action: "SESSION_SERIES_CREATED",
+      entity: "batches",
+      entityId: values.batchId,
+      after: {
+        count: rows.length,
+        from: dates[0],
+        to: dates[dates.length - 1],
+        weekdays: values.weekdays,
+        time: values.time,
+      },
+    })
+
+    return rows.length
+  })
+
+  revalidateEverything()
+  return {
+    ok: true,
+    data: { created, first: dates[0], last: dates[dates.length - 1] },
+  }
 }

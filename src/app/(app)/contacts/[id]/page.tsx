@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { Pencil, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { SubLabel } from "@/components/ui/sub-label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   EmptyState,
@@ -25,7 +26,7 @@ import {
   PAYMENT_METHOD_LABELS,
   SOURCE_LABELS,
 } from "@/lib/labels"
-import { programKindLabelOf } from "@/lib/programs"
+import { programKindSuffixOf } from "@/lib/programs"
 import { diffFields } from "@/lib/audit"
 import { contactAttendanceRate, listAttendanceForContact } from "@/server/attendance/queries"
 import {
@@ -223,11 +224,17 @@ export default async function ContactDetailPage({
                     >
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">{String(row.programName)}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {programKindLabelOf(row.programType, row.deliveryMode)}
-                          {row.batchName ? ` · ${row.batchName}` : ""}
-                          {row.seatNumber ? ` · Seat ${row.seatNumber}` : ""}
-                        </p>
+                        <SubLabel
+                          parts={[
+                            programKindSuffixOf(
+                              String(row.programName),
+                              row.programType,
+                              row.deliveryMode
+                            ),
+                            row.batchName,
+                            row.seatNumber ? `Seat ${row.seatNumber}` : null,
+                          ]}
+                        />
                       </div>
                       {showMoney ? (
                         <span className="tabular-nums text-muted-foreground">
@@ -271,8 +278,16 @@ export default async function ContactDetailPage({
                         {formatINR(payment.amountPaise)}
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {payment.programName} ·{" "}
-                        {programKindLabelOf(payment.programType, payment.deliveryMode)}
+                        {[
+                          payment.programName,
+                          programKindSuffixOf(
+                            payment.programName,
+                            payment.programType,
+                            payment.deliveryMode
+                          ),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </p>
                     </div>
                     <span className="text-xs text-muted-foreground">

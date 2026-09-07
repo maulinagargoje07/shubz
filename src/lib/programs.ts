@@ -171,6 +171,30 @@ export function programKindLabelOf(
   return `${TYPE_LABELS[type]} (${MODE_LABELS[deliveryMode]})`
 }
 
+/**
+ * The kind label, but only when it says something the program's own name does
+ * not already say.
+ *
+ * Programs are routinely named after their kind — here the live catalogue is
+ * literally "Mentorship (Online)", "Trading Floor (Offline)" and so on — and
+ * rendering the name beside the derived label produced rows reading
+ * "Mentorship (Online) · Mentorship (Online) · B25". Comparing the two and
+ * dropping the repeat keeps the label doing its job for programs with a
+ * distinct name ("SMC Mentorship Pune"), without stuttering for those without.
+ *
+ * Returns null when the label would be redundant, so callers can skip the
+ * separator as well as the text.
+ */
+export function programKindSuffixOf(
+  programName: string,
+  type: ProgramType,
+  deliveryMode: DeliveryMode
+): string | null {
+  const kind = programKindLabelOf(type, deliveryMode)
+  const normalise = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ")
+  return normalise(kind) === normalise(programName) ? null : kind
+}
+
 /** "SMC Mentorship Pune — Mentorship (Offline)" for pickers and receipts. */
 export function programLabel(
   program: { name: string; type: ProgramType; deliveryMode: DeliveryMode }

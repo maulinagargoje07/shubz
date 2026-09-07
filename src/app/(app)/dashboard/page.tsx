@@ -16,7 +16,7 @@ import { requireUser } from "@/lib/session"
 import { can } from "@/lib/permissions"
 import { formatIST } from "@/lib/fy"
 import { formatINRShort } from "@/lib/money"
-import { programKindLabelOf } from "@/lib/programs"
+import { programKindLabelOf, programKindSuffixOf } from "@/lib/programs"
 import {
   activeBatchCount,
   activeStudentCount,
@@ -203,9 +203,17 @@ export default async function DashboardPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{session.title}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {session.programName} ·{" "}
-                        {programKindLabelOf(session.programType, session.deliveryMode)}
-                        {session.venueName ? ` · ${session.venueName}` : ""}
+                        {[
+                          session.programName,
+                          programKindSuffixOf(
+                            session.programName,
+                            session.programType,
+                            session.deliveryMode
+                          ),
+                          session.venueName,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </p>
                     </div>
                     <StatusPill tone="info">

@@ -6,20 +6,27 @@ import { EmptyState, StatusPill } from "@/components/ui/status"
 import { PageHeader } from "@/components/page-header"
 import { formatIST } from "@/lib/fy"
 import { SESSION_STATUS_LABELS } from "@/lib/labels"
-import { programKindLabelOf } from "@/lib/programs"
-import { listAllSessions } from "@/server/sessions/queries"
+import { programKindSuffixOf } from "@/lib/programs"
+import { listAllSessions, listSchedulableBatches } from "@/server/sessions/queries"
+import { ScheduleSessionsDialog } from "@/components/sessions/schedule-sessions-dialog"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Sessions" }
 
 export default async function SessionsPage() {
-  const sessions = await listAllSessions(100)
+  const [sessions, schedulable] = await Promise.all([
+    listAllSessions(100),
+    listSchedulableBatches(),
+  ])
 
   return (
     <div className="pb-8">
       <PageHeader
         title="Sessions"
         description="Every class across all batches, most recent first."
+        // Sessions could previously only be created from four levels down,
+        // inside a batch. This is the obvious place to look for it.
+        actions={<ScheduleSessionsDialog batches={schedulable} />}
       />
 
       <div className="px-4 py-4 sm:px-6">
@@ -27,12 +34,8 @@ export default async function SessionsPage() {
           <EmptyState
             icon={<CalendarDays className="size-5" />}
             title="No sessions scheduled"
-            description="Sessions are added from inside a batch."
-            action={
-              <Button variant="outline" render={<Link href="/programs" />}>
-                Go to programs
-              </Button>
-            }
+            description="Schedule a run of classes for a batch — pick the days and how many, and they are all created at once."
+            action={<ScheduleSessionsDialog batches={schedulable} />}
           />
         ) : (
           <ul className="divide-y overflow-hidden rounded-xl border bg-card">
@@ -56,9 +59,17 @@ export default async function SessionsPage() {
                     {session.title}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {session.programName} ·{" "}
-                    {programKindLabelOf(session.programType, session.deliveryMode)} ·{" "}
-                    {session.batchName}
+                    {[
+                      session.programName,
+                      programKindSuffixOf(
+                        session.programName,
+                        session.programType,
+                        session.deliveryMode
+                      ),
+                      session.batchName,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground sm:hidden">
                     {formatIST(session.scheduledAt)}

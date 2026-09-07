@@ -2,13 +2,14 @@ import Link from "next/link"
 import { AlertTriangle, CheckCircle2 } from "lucide-react"
 
 import { EmptyState, StatTile, StatusPill } from "@/components/ui/status"
+import { SubLabel } from "@/components/ui/sub-label"
 import { DataTable, type Column } from "@/components/data-table/table"
 import { PageHeader, SectionHeading } from "@/components/page-header"
 import { requirePermissionPage } from "@/lib/session"
 import { formatDate } from "@/lib/fy"
 import { formatINR, formatINRShort } from "@/lib/money"
 import { formatE164 } from "@/lib/phone-format"
-import { programKindLabelOf } from "@/lib/programs"
+import { programKindSuffixOf } from "@/lib/programs"
 import {
   collectedThisMonth,
   collectionByProgram,
@@ -75,10 +76,12 @@ const overdueColumns: Column<OverdueRow>[] = [
     cell: (row) => (
       <div className="min-w-0">
         <p className="truncate">{row.programName}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {programKindLabelOf(row.programType, row.deliveryMode)}
-          {row.batchName ? ` · ${row.batchName}` : ""}
-        </p>
+        <SubLabel
+          parts={[
+            programKindSuffixOf(row.programName, row.programType, row.deliveryMode),
+            row.batchName,
+          ]}
+        />
       </div>
     ),
   },
@@ -172,9 +175,19 @@ export default async function FeesPage() {
                       <Link href={`/programs/${row.programId}`} className="hover:underline">
                         <span className="block truncate">{row.programName}</span>
                       </Link>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {programKindLabelOf(row.programType, row.deliveryMode)}
-                      </span>
+                      {programKindSuffixOf(
+                        row.programName,
+                        row.programType,
+                        row.deliveryMode
+                      ) ? (
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {programKindSuffixOf(
+                            row.programName,
+                            row.programType,
+                            row.deliveryMode
+                          )}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       {formatINR(Number(row.collectedThisMonthPaise))}

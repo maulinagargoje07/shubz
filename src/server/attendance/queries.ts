@@ -3,7 +3,7 @@
  *
  * The percentage formula, decided deliberately:
  *
- *   (PRESENT + LATE) / (sessions with status COMPLETED, minus EXCUSED rows)
+ *   (PRESENT + LATE) / (sessions that have been HELD, minus EXCUSED rows)
  *
  * Only sessions that actually happened count, so a batch half-way through does
  * not show everyone at 40%. Cancelled and future sessions are excluded, an
@@ -64,13 +64,23 @@ export async function contactAttendanceRate(contactId: string): Promise<{
 }> {
   const [row] = await db
     .select({
-      // Sessions that actually happened, in batches this contact is enrolled in.
+      /*
+       * "Held" is derived from the clock, not only from the status field.
+       *
+       * Relying on status = 'COMPLETED' alone meant the percentage depended on
+       * somebody remembering to edit each session after teaching it. Nothing
+       * in the app did that, so a fully marked register still reported "no
+       * sessions held". A session counts as held once its time has passed, or
+       * once it is explicitly marked complete — and never if it was cancelled.
+       */
       eligible: sql<number>`count(*) filter (
-        where ${classSessions.status} = 'COMPLETED'
+        where ${classSessions.status} <> 'CANCELLED'
+          and (${classSessions.status} = 'COMPLETED' or ${classSessions.scheduledAt} <= now())
           and coalesce(${attendance.status}::text, '') <> 'EXCUSED'
       )::int`,
       attended: sql<number>`count(*) filter (
-        where ${classSessions.status} = 'COMPLETED'
+        where ${classSessions.status} <> 'CANCELLED'
+          and (${classSessions.status} = 'COMPLETED' or ${classSessions.scheduledAt} <= now())
           and ${attendance.status} in ('PRESENT', 'LATE')
       )::int`,
     })

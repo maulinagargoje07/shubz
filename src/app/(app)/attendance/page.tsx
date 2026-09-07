@@ -4,7 +4,7 @@ import { ClipboardCheck, MapPin, Video } from "lucide-react"
 import { EmptyState, StatusPill } from "@/components/ui/status"
 import { PageHeader } from "@/components/page-header"
 import { formatIST } from "@/lib/fy"
-import { programKindLabelOf } from "@/lib/programs"
+import { programKindSuffixOf } from "@/lib/programs"
 import { listAllSessions } from "@/server/sessions/queries"
 
 export const dynamic = "force-dynamic"
@@ -49,9 +49,17 @@ export default async function AttendancePage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{session.title}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {session.programName} ·{" "}
-                        {programKindLabelOf(session.programType, session.deliveryMode)} ·{" "}
-                        {session.batchName}
+                        {[
+                          session.programName,
+                          programKindSuffixOf(
+                            session.programName,
+                            session.programType,
+                            session.deliveryMode
+                          ),
+                          session.batchName,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {formatIST(session.scheduledAt)}

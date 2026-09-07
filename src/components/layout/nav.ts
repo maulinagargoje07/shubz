@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   GraduationCap,
   IndianRupee,
+  Layers,
   LayoutDashboard,
   Megaphone,
   MessageSquareText,
@@ -46,6 +47,7 @@ export const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
     heading: "Catalogue",
     items: [
       { href: "/programs", label: "Programs", icon: BookOpen },
+      { href: "/batches", label: "Batches", icon: Layers, permission: "MANAGE_PROGRAMS" },
       { href: "/sessions", label: "Sessions", icon: CalendarDays },
       { href: "/attendance", label: "Attendance", icon: ClipboardCheck },
     ],

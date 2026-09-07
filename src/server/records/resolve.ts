@@ -129,50 +129,61 @@ export async function resolveBatch(
   const name = label.trim()
   if (name === "") return null
 
-  const [existing] = await tx
-    .select({ id: batches.id })
-    .from(batches)
-    .where(
-      and(
-        eq(batches.programId, programId),
-        sql`lower(trim(${batches.name})) = ${name.toLowerCase()}`
+  const findExisting = async () => {
+    const [row] = await tx
+      .select({ id: batches.id })
+      .from(batches)
+      .where(
+        and(
+          eq(batches.programId, programId),
+          sql`lower(trim(${batches.name})) = ${name.toLowerCase()}`
+        )
       )
-    )
-    .limit(1)
+      .limit(1)
+    return row?.id ?? null
+  }
 
-  if (existing) return existing.id
+  // Reuse before creating. This is what stops "B4" typed on the enrolment form
+  // from becoming a second batch alongside the "B4" that already exists.
+  const existing = await findExisting()
+  if (existing) return existing
 
-  // Codes are globally unique, so scope by program to avoid colliding with a
-  // "B1" under a different program.
-  const code = `${programCode}-${name.toUpperCase().replace(/[^A-Z0-9]+/g, "-")}`.slice(0, 32)
+  /*
+   * Codes are globally unique while names are unique per program, so the code
+   * is derived from both. A long program code plus a long batch name could
+   * still truncate into a collision, so a couple of suffixed attempts follow
+   * before giving up.
+   */
+  const base = `${programCode}-${name.toUpperCase().replace(/[^A-Z0-9]+/g, "-")}`
 
-  const [created] = await tx
-    .insert(batches)
-    .values({
-      id: newId(),
-      programId,
-      name,
-      code,
-      status: "RUNNING",
-    })
-    .onConflictDoNothing({ target: batches.code })
-    .returning({ id: batches.id })
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const code = (attempt === 0 ? base : `${base}-${attempt + 1}`).slice(0, 32)
 
-  if (created) return created.id
+    /*
+     * `onConflictDoNothing()` with NO target, deliberately.
+     *
+     * Naming a single index would leave the other one to raise — and an
+     * unhandled unique violation aborts the whole transaction, taking the
+     * student, the enrolment and the payment down with it. Catching every
+     * conflict lets the lookup below decide what actually happened.
+     */
+    const [created] = await tx
+      .insert(batches)
+      .values({ id: newId(), programId, name, code, status: "RUNNING" })
+      .onConflictDoNothing()
+      .returning({ id: batches.id })
 
-  // Lost a race, or the code was already taken by another program's batch.
-  const [fallback] = await tx
-    .select({ id: batches.id })
-    .from(batches)
-    .where(
-      and(
-        eq(batches.programId, programId),
-        sql`lower(trim(${batches.name})) = ${name.toLowerCase()}`
-      )
-    )
-    .limit(1)
+    if (created) return created.id
 
-  return fallback?.id ?? null
+    // Someone else created this batch between the lookup and the insert.
+    const raced = await findExisting()
+    if (raced) return raced
+
+    // Otherwise the CODE collided with a different program's batch; try again
+    // with a suffix.
+  }
+
+  return null
 }
 
 /**

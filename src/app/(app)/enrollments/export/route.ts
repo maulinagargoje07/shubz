@@ -13,6 +13,8 @@
 import { redirect } from "next/navigation"
 
 import { getSessionUser } from "@/lib/session"
+import { ENROLLMENT_STATUS_LABELS } from "@/lib/labels"
+import { enumParam, idParam, textParam } from "@/lib/search-params"
 import { can } from "@/lib/permissions"
 import { todayIST } from "@/lib/fy"
 import { listEnrollmentRecords, toCsv } from "@/server/records/export"
@@ -30,18 +32,18 @@ export async function GET(request: Request) {
   }
 
   const params = new URL(request.url).searchParams
-  const str = (key: string) => {
-    const value = params.get(key)
-    return value && value !== "" ? value : undefined
-  }
 
   // The export honours whatever filters the list was showing, so what is
-  // downloaded matches what was on screen.
+  // downloaded matches what was on screen — including how the list treats a
+  // filter it cannot parse, which is to ignore it.
   const rows = await listEnrollmentRecords({
-    programId: str("program"),
-    status: str("status"),
-    overdueOnly: str("overdue") === "1",
-    batchId: str("batch"),
+    programId: idParam(params.get("program") ?? undefined),
+    status: enumParam(
+      params.get("status") ?? undefined,
+      Object.keys(ENROLLMENT_STATUS_LABELS)
+    ),
+    overdueOnly: textParam(params.get("overdue") ?? undefined) === "1",
+    batchId: idParam(params.get("batch") ?? undefined, ["none"]),
   })
 
   const csv = toCsv(rows)

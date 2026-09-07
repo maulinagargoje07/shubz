@@ -15,7 +15,10 @@
     "db:backup": "tsx scripts/backup.ts",
     "db:reset": "tsx scripts/reset.ts",
     "setup:superadmin": "tsx scripts/setup-superadmin.ts",
-    "db:repair": "tsx scripts/repair.ts"
+    "db:repair": "tsx scripts/repair.ts",
+    "db:merge-batches": "tsx scripts/merge-duplicate-batches.ts",
+    "db:demo": "tsx scripts/demo-data.ts",
+    "build:check": "NEXT_DIST_DIR=.next-check next build"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

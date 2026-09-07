@@ -7,6 +7,7 @@ import { DataTable } from "@/components/data-table/table"
 import { FilterBar, Pagination } from "@/components/data-table/filters"
 import { PageHeader } from "@/components/page-header"
 import { LIFECYCLE_LABELS, SOURCE_LABELS, toOptions } from "@/lib/labels"
+import { enumParam, idParam, pageParam, textParam } from "@/lib/search-params"
 import { contactListParamsSchema } from "@/lib/validation/contact"
 import { listAllTags, listContacts } from "@/server/contacts/queries"
 import { listBatchOptions } from "@/server/batches/options"
@@ -21,18 +22,17 @@ export default async function ContactsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const raw = await searchParams
-  const str = (v: string | string[] | undefined) =>
-    typeof v === "string" && v !== "" ? v : undefined
-
   // A stale bookmark should still load the list, so unparseable params fall
-  // back to defaults rather than throwing.
+  // back to defaults rather than throwing. The id filters go through idParam
+  // because the schema checks they are strings, not that they are uuids, and
+  // a non-uuid reaches Postgres as one and takes the page down.
   const params = contactListParamsSchema.parse({
-    q: str(raw.q),
-    stage: str(raw.stage),
-    source: str(raw.source),
-    tag: str(raw.tag),
-    batch: str(raw.batch),
-    page: str(raw.page) ?? 1,
+    q: textParam(raw.q),
+    stage: enumParam(raw.stage, Object.keys(LIFECYCLE_LABELS)),
+    source: enumParam(raw.source, Object.keys(SOURCE_LABELS)),
+    tag: idParam(raw.tag),
+    batch: idParam(raw.batch, ["none"]),
+    page: pageParam(raw.page),
     perPage: 25,
     sort: "createdAt",
     dir: "desc",
