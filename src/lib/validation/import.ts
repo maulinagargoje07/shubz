@@ -1,16 +1,13 @@
 import { z } from "zod"
 
-import { IMPORTABLE_FIELDS } from "@/lib/csv"
 import { CONTACT_SOURCES } from "./contact"
 import { uuidSchema } from "./shared"
-
-const fieldKeys = IMPORTABLE_FIELDS.map((f) => f.key) as [string, ...string[]]
 
 export const importPreviewSchema = z.object({
   filename: z.string().min(1),
   /** The raw file text. Kept small by the row cap below. */
   content: z.string().min(1, "The file is empty"),
-  columnMap: z.record(z.enum(fieldKeys), z.string()),
+  columnMap: z.record(z.string(), z.string().nullish()).default({}),
   source: z.enum(CONTACT_SOURCES).default("IMPORT"),
   /**
    * Optional name for the batch of people this file brings in, applied as a

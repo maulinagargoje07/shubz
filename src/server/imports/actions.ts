@@ -59,6 +59,17 @@ export async function previewImport(
 
   const { filename, content, columnMap, source, listName } = parsed.data
 
+  const cleanMap: Partial<Record<ImportableField, string>> = {}
+  for (const [k, v] of Object.entries(columnMap)) {
+    if (v && v !== "__skip" && typeof v === "string" && v.trim() !== "") {
+      cleanMap[k as ImportableField] = v.trim()
+    }
+  }
+
+  if (!cleanMap.fullName || !cleanMap.phone) {
+    return { ok: false, error: "Name and phone must both be mapped." }
+  }
+
   const { rows } = parseCsv(content)
   if (rows.length === 0) {
     return { ok: false, error: "That file has no data rows." }
@@ -71,7 +82,7 @@ export async function previewImport(
   }
 
   const pick = (row: Record<string, string>, field: ImportableField): string => {
-    const column = (columnMap as Partial<Record<ImportableField, string>>)[field]
+    const column = cleanMap[field]
     return column ? (row[column] ?? "").trim() : ""
   }
 
@@ -178,7 +189,7 @@ export async function previewImport(
         validCount,
         dupCount,
         invalidCount,
-        columnMap: { ...columnMap, __source: source, __list: listName ?? "" },
+        columnMap: { ...cleanMap, __source: source, __list: listName ?? "" },
         status: "VALIDATED",
       })
       .returning()
@@ -298,7 +309,7 @@ export async function commitImport(
       const raw = (row.raw ?? {}) as Record<string, string>
       const pick = (field: ImportableField): string | null => {
         const column = columnMap[field]
-        const value = column ? (raw[column] ?? "").trim() : ""
+        const value = column && column !== "__skip" ? (raw[column] ?? "").trim() : ""
         return value === "" ? null : value
       }
 

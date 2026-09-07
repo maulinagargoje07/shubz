@@ -87,11 +87,18 @@ export function ImportWizard() {
       return
     }
 
+    const cleanMap: Record<string, string> = {}
+    for (const [key, value] of Object.entries(columnMap)) {
+      if (value && value !== "__skip" && typeof value === "string" && value.trim() !== "") {
+        cleanMap[key] = value.trim()
+      }
+    }
+
     setBusy(true)
     const result = await previewImport({
       filename,
       content,
-      columnMap,
+      columnMap: cleanMap,
       source,
       listName: listName.trim() || undefined,
     })
@@ -220,10 +227,15 @@ export function ImportWizard() {
               <Select
                 value={columnMap[field.key] ?? "__skip"}
                 onValueChange={(v) =>
-                  setColumnMap((m) => ({
-                    ...m,
-                    [field.key]: !v || v === "__skip" ? undefined : v,
-                  }))
+                  setColumnMap((m) => {
+                    const next = { ...m }
+                    if (!v || v === "__skip") {
+                      delete next[field.key]
+                    } else {
+                      next[field.key] = v
+                    }
+                    return next
+                  })
                 }
               >
                 <SelectTrigger id={field.key}>
@@ -349,16 +361,18 @@ export function ImportWizard() {
 
   return (
     <div className="p-6">
-        <div className="rounded-xl border bg-card p-6">
-          <CheckCircle2 className="size-8 text-paid" aria-hidden />
-          <p className="font-medium">Import complete</p>
-          <div className="flex gap-2">
-            <Button onClick={reset}>Import another file</Button>
-            <Button variant="outline" onClick={() => router.push("/contacts")}>
-              View contacts
-            </Button>
-          </div>
+      <div className="max-w-md space-y-4 rounded-xl border bg-card p-6">
+        <div className="flex items-center gap-3">
+          <CheckCircle2 className="size-6 text-paid" aria-hidden />
+          <p className="text-lg font-medium">Import complete</p>
         </div>
+        <div className="flex gap-2">
+          <Button onClick={reset}>Import another file</Button>
+          <Button variant="outline" onClick={() => router.push("/contacts")}>
+            View contacts
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
