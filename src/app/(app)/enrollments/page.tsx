@@ -13,6 +13,10 @@ import { ENROLLMENT_STATUS_LABELS, toOptions } from "@/lib/labels"
 import { programKindLabelOf } from "@/lib/programs"
 import { listEnrollments } from "@/server/enrollments/queries"
 import { listPrograms } from "@/server/programs/queries"
+import {
+  countUnbatchedEnrollments,
+  listBatchOptions,
+} from "@/server/batches/options"
 import type { DeliveryMode, ProgramType } from "@/db/schema"
 import { EnrollmentRowActions } from "./[id]/record-actions"
 
@@ -98,7 +102,9 @@ const columns: Column<Row>[] = [
   {
     id: "batch",
     header: "Batch",
-    priority: "tertiary",
+    // Promoted from tertiary: batch is now a filter people work by, so it
+    // needs to be visible on the rows they filtered.
+    priority: "secondary",
     cell: (row) =>
       row.batchName ? (
         row.batchName
@@ -172,6 +178,7 @@ export default async function EnrollmentsPage({
     status: str(raw.status),
     program: str(raw.program),
     overdue: str(raw.overdue),
+    batch: str(raw.batch),
   }
 
   // The export gets the same filters the list is showing.
@@ -179,15 +186,18 @@ export default async function EnrollmentsPage({
     Object.entries(active).filter(([, v]) => Boolean(v)) as [string, string][]
   ).toString()
 
-  const [{ rows, total }, programs] = await Promise.all([
+  const [{ rows, total }, programs, batchOptions, unbatched] = await Promise.all([
     listEnrollments({
       page,
       perPage,
       programId: active.program,
       status: active.status,
       overdueOnly: active.overdue === "1",
+      batchId: active.batch,
     }),
     listPrograms(),
+    listBatchOptions(),
+    countUnbatchedEnrollments(),
   ])
 
   return (
@@ -231,12 +241,25 @@ export default async function EnrollmentsPage({
               label: "Programs",
               options: programs.map((p) => ({ value: p.id, label: p.name })),
             },
+            {
+              key: "batch",
+              label: "Batches",
+              // Grouped by program: "B1" exists under several, and a flat list
+              // would show the same label more than once.
+              groupBy: (option) => batchOptions.find((b) => b.value === option.value)?.group,
+              options: [
+                ...(unbatched > 0
+                  ? [{ value: "none", label: `No batch (${unbatched})` }]
+                  : []),
+                ...batchOptions.map((b) => ({ value: b.value, label: b.label })),
+              ],
+            },
             { key: "overdue", label: "Any", options: [{ value: "1", label: "Overdue only" }] },
           ]}
         />
       </div>
 
-      {total === 0 && !active.status && !active.program && !active.overdue ? (
+      {total === 0 && !active.status && !active.program && !active.overdue && !active.batch ? (
         <div className="px-4 sm:px-6">
           <EmptyState
             icon={<Receipt className="size-5" />}

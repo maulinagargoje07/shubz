@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header"
 import { LIFECYCLE_LABELS, SOURCE_LABELS, toOptions } from "@/lib/labels"
 import { contactListParamsSchema } from "@/lib/validation/contact"
 import { listAllTags, listContacts } from "@/server/contacts/queries"
+import { listBatchOptions } from "@/server/batches/options"
 import { contactColumns } from "./contact-columns"
 
 export const dynamic = "force-dynamic"
@@ -30,19 +31,25 @@ export default async function ContactsPage({
     stage: str(raw.stage),
     source: str(raw.source),
     tag: str(raw.tag),
+    batch: str(raw.batch),
     page: str(raw.page) ?? 1,
     perPage: 25,
     sort: "createdAt",
     dir: "desc",
   })
 
-  const [{ rows, total }, tags] = await Promise.all([listContacts(params), listAllTags()])
+  const [{ rows, total }, tags, batchOptions] = await Promise.all([
+    listContacts(params),
+    listAllTags(),
+    listBatchOptions(),
+  ])
 
   const active = {
     q: params.q || undefined,
     stage: params.stage,
     source: params.source,
     tag: params.tag,
+    batch: params.batch,
   }
 
   return (
@@ -66,6 +73,13 @@ export default async function ContactsPage({
           filters={[
             { key: "stage", label: "Stages", options: toOptions(LIFECYCLE_LABELS) },
             { key: "source", label: "Sources", options: toOptions(SOURCE_LABELS) },
+            {
+              key: "batch",
+              label: "Batches",
+              groupBy: (option) =>
+                batchOptions.find((b) => b.value === option.value)?.group,
+              options: batchOptions.map((b) => ({ value: b.value, label: b.label })),
+            },
             ...(tags.length
               ? [
                   {
@@ -79,7 +93,7 @@ export default async function ContactsPage({
         />
       </div>
 
-      {rows.length === 0 && !params.q && !params.stage && !params.source ? (
+      {rows.length === 0 && !params.q && !params.stage && !params.source && !params.batch ? (
         <div className="px-4 sm:px-6">
           <EmptyState
             icon={<Users className="size-5" />}

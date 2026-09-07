@@ -45,8 +45,22 @@ export async function listEnrollments(params: {
   status?: string
   contactId?: string
   overdueOnly?: boolean
+  /**
+   * A batch id, or the literal "none" for enrollments with no batch at all.
+   * "none" is a real answer to "which batch is this student in", so it needs
+   * to be selectable rather than indistinguishable from "no filter".
+   */
+  batchId?: string
 }) {
-  const { page = 1, perPage = 25, programId, status, contactId, overdueOnly } = params
+  const {
+    page = 1,
+    perPage = 25,
+    programId,
+    status,
+    contactId,
+    overdueOnly,
+    batchId,
+  } = params
 
   // The contact guard matters: joining contacts without it left a deleted
   // student's enrollments showing in Records under their name.
@@ -55,6 +69,8 @@ export async function listEnrollments(params: {
   if (status) filters.push(sql`${enrollments.status} = ${status}`)
   if (contactId) filters.push(eq(enrollments.contactId, contactId))
   if (overdueOnly) filters.push(sql`${enrollmentBalances.isOverdue} = true`)
+  if (batchId === "none") filters.push(isNull(enrollments.batchId))
+  else if (batchId) filters.push(eq(enrollments.batchId, batchId))
 
   const where = and(...filters)
 

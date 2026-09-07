@@ -1,3 +1,4 @@
+import { isValidElement } from "react"
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
@@ -39,16 +40,42 @@ const buttonVariants = cva(
   }
 )
 
+/**
+ * Does this `render` prop produce an actual <button>?
+ *
+ * Base UI's `nativeButton` defaults to true, and it warns when the rendered
+ * element turns out not to be a button — which is the case for every
+ * `render={<Link/>}` (an anchor), `render={<a/>}` and `render={<label/>}` in
+ * this app. Answering the question here, once, is far better than repeating
+ * `nativeButton={false}` at thirty call sites and forgetting it at the
+ * thirty-first.
+ *
+ * Only an intrinsic `"button"` element counts. A component (`Link`, or any
+ * custom one) is opaque from here — we cannot know what it renders — so the
+ * safe answer is "not a native button", which is exactly what Base UI needs to
+ * be told to stop assuming otherwise.
+ */
+function rendersNativeButton(render: unknown): boolean {
+  if (render == null) return true // no override: Base UI renders its own <button>
+  if (isValidElement(render)) return render.type === "button"
+  return false // a render function; its output is unknown from here
+}
+
 function Button({
   className,
   variant = "default",
   size = "default",
+  nativeButton,
+  render,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      // An explicit prop always wins; otherwise infer it from `render`.
+      nativeButton={nativeButton ?? rendersNativeButton(render)}
+      render={render}
       {...props}
     />
   )

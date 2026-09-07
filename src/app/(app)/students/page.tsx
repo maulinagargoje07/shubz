@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header"
 import { SOURCE_LABELS, toOptions } from "@/lib/labels"
 import { contactListParamsSchema } from "@/lib/validation/contact"
 import { listContacts } from "@/server/contacts/queries"
+import { listBatchOptions } from "@/server/batches/options"
 import { contactColumns } from "../contacts/contact-columns"
 
 export const dynamic = "force-dynamic"
@@ -32,14 +33,22 @@ export default async function StudentsPage({
     q: str(raw.q),
     stage: "STUDENT",
     source: str(raw.source),
+    batch: str(raw.batch),
     page: str(raw.page) ?? 1,
     perPage: 25,
     sort: "fullName",
     dir: "asc",
   })
 
-  const { rows, total } = await listContacts(params)
-  const active = { q: params.q || undefined, source: params.source }
+  const [{ rows, total }, batchOptions] = await Promise.all([
+    listContacts(params),
+    listBatchOptions(),
+  ])
+  const active = {
+    q: params.q || undefined,
+    source: params.source,
+    batch: params.batch,
+  }
 
   return (
     <div>
@@ -58,11 +67,20 @@ export default async function StudentsPage({
           action="/students"
           params={active}
           searchPlaceholder="Search students"
-          filters={[{ key: "source", label: "Sources", options: toOptions(SOURCE_LABELS) }]}
+          filters={[
+            { key: "source", label: "Sources", options: toOptions(SOURCE_LABELS) },
+            {
+              key: "batch",
+              label: "Batches",
+              groupBy: (option) =>
+                batchOptions.find((b) => b.value === option.value)?.group,
+              options: batchOptions.map((b) => ({ value: b.value, label: b.label })),
+            },
+          ]}
         />
       </div>
 
-      {total === 0 && !params.q && !params.source ? (
+      {total === 0 && !params.q && !params.source && !params.batch ? (
         <div className="px-4 sm:px-6">
           <EmptyState
             icon={<GraduationCap className="size-5" />}

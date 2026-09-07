@@ -27,6 +27,33 @@ export type FilterSpec = {
   key: string
   label: string
   options: FilterOption[]
+  /**
+   * Optional group heading per option, rendered as <optgroup>.
+   *
+   * Batch names repeat across programs — "B1" exists under several — so a flat
+   * list would offer the same label several times with no way to tell them
+   * apart. Grouping by program makes the choice unambiguous.
+   */
+  groupBy?: (option: FilterOption) => string | undefined
+}
+
+/**
+ * Bucket options by their group, preserving the order they arrived in so the
+ * caller controls sorting. Ungrouped options come back under an empty key and
+ * render loose, above the groups.
+ */
+function groupOptions(
+  options: FilterOption[],
+  groupBy: (option: FilterOption) => string | undefined
+): [string, FilterOption[]][] {
+  const buckets = new Map<string, FilterOption[]>()
+  for (const option of options) {
+    const key = groupBy(option) ?? ""
+    const bucket = buckets.get(key)
+    if (bucket) bucket.push(option)
+    else buckets.set(key, [option])
+  }
+  return [...buckets.entries()]
 }
 
 export function FilterBar({
@@ -84,11 +111,30 @@ export function FilterBar({
                   className="h-10 w-full rounded-lg border border-border/80 bg-card px-3 text-sm text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
                 >
                   <option value="">All {filter.label.toLowerCase()}</option>
-                  {filter.options.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+                  {filter.groupBy
+                    ? groupOptions(filter.options, filter.groupBy).map(
+                        ([group, options]) =>
+                          group ? (
+                            <optgroup key={group} label={group}>
+                              {options.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </optgroup>
+                          ) : (
+                            options.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))
+                          )
+                      )
+                    : filter.options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                 </select>
               </label>
             ))}

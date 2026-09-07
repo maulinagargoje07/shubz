@@ -41,6 +41,7 @@ export async function GET(request: Request) {
     programId: str("program"),
     status: str("status"),
     overdueOnly: str("overdue") === "1",
+    batchId: str("batch"),
   })
 
   const csv = toCsv(rows)

@@ -133,6 +133,11 @@ export function ImportWizard() {
             className="sr-only"
             onChange={onFile}
           />
+          {/*
+            A <label> pointing at the hidden file input, styled as a button —
+            the accessible way to trigger a file picker with no JavaScript.
+            Button infers that this is not a native <button>; see button.tsx.
+          */}
           <Button render={<label htmlFor="csv" />}>
             <Upload className="size-4" />
             Select file

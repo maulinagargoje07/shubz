@@ -28,7 +28,7 @@ export async function listContacts(params: ContactListParams): Promise<{
   rows: ContactListRow[]
   total: number
 }> {
-  const { q, stage, source, tag, page, perPage, sort, dir } = params
+  const { q, stage, source, tag, batch, page, perPage, sort, dir } = params
 
   const filters = [isNull(contacts.deletedAt)]
 
@@ -51,6 +51,33 @@ export async function listContacts(params: ContactListParams): Promise<{
 
   if (stage) filters.push(eq(contacts.lifecycleStage, stage))
   if (source) filters.push(eq(contacts.source, source))
+
+  /**
+   * Filtering people by batch.
+   *
+   * An EXISTS rather than a join: a contact can hold several enrollments, and
+   * joining would return them once per matching row, silently inflating the
+   * list and the count.
+   */
+  if (batch === "none") {
+    filters.push(
+      sql`not exists (
+        select 1 from enrollments e
+        where e.contact_id = ${contacts.id}
+          and e.batch_id is not null
+          and e.deleted_at is null
+      )`
+    )
+  } else if (batch) {
+    filters.push(
+      sql`exists (
+        select 1 from enrollments e
+        where e.contact_id = ${contacts.id}
+          and e.batch_id = ${batch}::uuid
+          and e.deleted_at is null
+      )`
+    )
+  }
 
   if (tag) {
     filters.push(

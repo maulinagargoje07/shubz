@@ -23,6 +23,8 @@ export type ExportFilters = {
   programId?: string
   status?: string
   overdueOnly?: boolean
+  /** A batch id, or "none" for records with no batch. */
+  batchId?: string
 }
 
 export async function listEnrollmentRecords(filters: ExportFilters = {}) {
@@ -31,6 +33,10 @@ export async function listEnrollmentRecords(filters: ExportFilters = {}) {
   if (filters.programId) conditions.push(eq(enrollments.programId, filters.programId))
   if (filters.status) conditions.push(sql`${enrollments.status} = ${filters.status}`)
   if (filters.overdueOnly) conditions.push(eq(enrollmentBalances.isOverdue, true))
+  // The export honours the same batch filter the list is showing, so what
+  // downloads matches what is on screen.
+  if (filters.batchId === "none") conditions.push(isNull(enrollments.batchId))
+  else if (filters.batchId) conditions.push(eq(enrollments.batchId, filters.batchId))
 
   return db
     .select({

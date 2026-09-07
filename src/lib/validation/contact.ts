@@ -70,6 +70,8 @@ export const contactListParamsSchema = z.object({
   stage: z.enum(LIFECYCLE_STAGES).optional(),
   source: z.enum(CONTACT_SOURCES).optional(),
   tag: z.string().optional(),
+  /** A batch id, or "none" for contacts enrolled in no batch. */
+  batch: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   perPage: z.coerce.number().int().min(10).max(200).default(25),
   sort: z.enum(["createdAt", "fullName", "lifecycleStage"]).default("createdAt"),
