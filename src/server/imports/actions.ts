@@ -4,12 +4,13 @@ import { revalidateEverything } from "@/lib/revalidate"
 import { and, eq, inArray, isNull } from "drizzle-orm"
 
 import { db } from "@/db"
-import { contacts, importRows, imports } from "@/db/schema"
+import { contactTags, contacts, importRows, imports, tags } from "@/db/schema"
 import { mutate } from "@/lib/audit"
-import { parseCsv, type ImportableField } from "@/lib/csv"
+import { parseCsv, parseSheetTimestamp, type ImportableField } from "@/lib/csv"
 import { newId } from "@/lib/ids"
 import { tryParsePhone } from "@/lib/phone"
 import { checkPermission } from "@/lib/session"
+import { CONTACT_SOURCES } from "@/lib/validation/contact"
 import {
   importCommitSchema,
   importPreviewSchema,
@@ -56,7 +57,7 @@ export async function previewImport(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Could not read that file." }
   }
 
-  const { filename, content, columnMap, source } = parsed.data
+  const { filename, content, columnMap, source, listName } = parsed.data
 
   const { rows } = parseCsv(content)
   if (rows.length === 0) {
@@ -177,7 +178,7 @@ export async function previewImport(
         validCount,
         dupCount,
         invalidCount,
-        columnMap: { ...columnMap, __source: source },
+        columnMap: { ...columnMap, __source: source, __list: listName ?? "" },
         status: "VALIDATED",
       })
       .returning()
@@ -251,7 +252,19 @@ export async function commitImport(
 
   const columnMap = (batch.columnMap ?? {}) as Partial<Record<ImportableField, string>> & {
     __source?: string
+    __list?: string
   }
+
+  // The source chosen in the wizard was being stored and then ignored, so
+  // every imported lead read as "IMPORT" no matter which campaign it came
+  // from. Honour it, falling back only when it is missing or unrecognised.
+  const importSource = (CONTACT_SOURCES as readonly string[]).includes(
+    columnMap.__source ?? ""
+  )
+    ? (columnMap.__source as (typeof CONTACT_SOURCES)[number])
+    : "IMPORT"
+
+  const listName = (columnMap.__list ?? "").trim()
 
   const staged = await db
     .select()
@@ -264,6 +277,22 @@ export async function commitImport(
 
   const created = await mutate(user, async ({ tx, audit }) => {
     let count = 0
+
+    /*
+     * The list tag is resolved once, before the loop, and reused. Tag names are
+     * unique, so a repeat import into the same list joins the existing tag
+     * rather than failing; onConflictDoNothing plus a re-select covers both the
+     * first run and every one after it.
+     */
+    let listTagId: string | null = null
+    if (listName) {
+      await tx
+        .insert(tags)
+        .values({ id: newId(), name: listName, colour: "#7c3aed" })
+        .onConflictDoNothing()
+      const [tag] = await tx.select({ id: tags.id }).from(tags).where(eq(tags.name, listName))
+      listTagId = tag?.id ?? null
+    }
 
     for (const row of staged) {
       const raw = (row.raw ?? {}) as Record<string, string>
@@ -292,9 +321,15 @@ export async function commitImport(
           state: pick("state"),
           telegramUsername: pick("telegramUsername"),
           tradingviewUsername: pick("tradingviewUsername"),
+          tradingExperience: pick("tradingExperience"),
+          // A sheet timestamp that cannot be read is left null rather than
+          // guessed at: "we do not know when this lead came in" is honest,
+          // and today's date would be a lie that later sorting believes.
+          leadCapturedAt: parseSheetTimestamp(pick("capturedAt") ?? ""),
           notes: pick("notes"),
           lifecycleStage: "LEAD",
-          source: "IMPORT",
+          leadStatus: "NEW",
+          source: importSource,
           createdBy: user.id,
         })
         .onConflictDoNothing()
@@ -307,6 +342,13 @@ export async function commitImport(
           .set({ status: "DUPLICATE", errorMessage: "Added by someone else during import" })
           .where(eq(importRows.id, row.id))
         continue
+      }
+
+      if (listTagId) {
+        await tx
+          .insert(contactTags)
+          .values({ contactId: contact.id, tagId: listTagId })
+          .onConflictDoNothing()
       }
 
       await tx
@@ -326,7 +368,7 @@ export async function commitImport(
       action: "IMPORT_COMMITTED",
       entity: "imports",
       entityId: importId,
-      after: { created: count },
+      after: { created: count, source: importSource, list: listName || null },
     })
 
     return count

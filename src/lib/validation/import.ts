@@ -12,6 +12,12 @@ export const importPreviewSchema = z.object({
   content: z.string().min(1, "The file is empty"),
   columnMap: z.record(z.enum(fieldKeys), z.string()),
   source: z.enum(CONTACT_SOURCES).default("IMPORT"),
+  /**
+   * Optional name for the batch of people this file brings in, applied as a
+   * tag. It is what turns one import into a list that can be messaged later —
+   * "Webinar 12 Sep" rather than an anonymous heap of new leads.
+   */
+  listName: z.string().trim().max(60).optional(),
 })
 
 export const importCommitSchema = z.object({

@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { StatusPill } from "@/components/ui/status"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -17,6 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { guessColumnMap, IMPORTABLE_FIELDS, parseCsv, type ImportableField } from "@/lib/csv"
+import { SOURCE_LABELS } from "@/lib/labels"
+import { CONTACT_SOURCES } from "@/lib/validation/contact"
 import { commitImport, previewImport } from "@/server/imports/actions"
 
 type Step = "upload" | "map" | "preview" | "done"
@@ -46,6 +49,16 @@ export function ImportWizard() {
   const [columnMap, setColumnMap] = useState<Partial<Record<ImportableField, string>>>({})
   const [preview, setPreview] = useState<PreviewResult | null>(null)
   const [busy, setBusy] = useState(false)
+  /*
+   * Where these people came from, and what to call the batch.
+   *
+   * Both were previously fixed: every import landed as source "IMPORT" with no
+   * grouping, so a month later there was no way to tell the September webinar
+   * sign-ups from a scraped list. The source feeds the leads filter and the
+   * list name becomes a tag, which is the segment a campaign later sends to.
+   */
+  const [source, setSource] = useState<string>("IMPORT")
+  const [listName, setListName] = useState("")
 
   async function onFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -75,7 +88,13 @@ export function ImportWizard() {
     }
 
     setBusy(true)
-    const result = await previewImport({ filename, content, columnMap, source: "IMPORT" })
+    const result = await previewImport({
+      filename,
+      content,
+      columnMap,
+      source,
+      listName: listName.trim() || undefined,
+    })
     setBusy(false)
 
     if (!result.ok) {
@@ -110,6 +129,8 @@ export function ImportWizard() {
     setHeaders([])
     setColumnMap({})
     setPreview(null)
+    setSource("IMPORT")
+    setListName("")
   }
 
   if (step === "upload") {
@@ -156,6 +177,38 @@ export function ImportWizard() {
             column mapping below.
           </AlertDescription>
         </Alert>
+
+        <div className="grid gap-4 rounded-xl border border-border/80 bg-card p-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="import-source">Where these came from</Label>
+            <select
+              id="import-source"
+              value={source}
+              onChange={(event) => setSource(event.target.value)}
+              className="mt-1 h-10 w-full rounded-lg border border-border/80 bg-card px-3 text-sm outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
+            >
+              {CONTACT_SOURCES.map((value) => (
+                <option key={value} value={value}>
+                  {SOURCE_LABELS[value as keyof typeof SOURCE_LABELS] ?? value}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="import-list">List name (optional)</Label>
+            <Input
+              id="import-list"
+              value={listName}
+              onChange={(event) => setListName(event.target.value)}
+              placeholder="Webinar 12 Sep"
+              autoComplete="off"
+              className="mt-1"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Groups this batch so you can filter and message them together later.
+            </p>
+          </div>
+        </div>
 
         <div className="space-y-3">
           {IMPORTABLE_FIELDS.map((field) => (

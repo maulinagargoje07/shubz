@@ -13,6 +13,7 @@ import {
   Receipt,
   Upload,
   ShieldCheck,
+  UserPlus,
   UserRound,
   Users,
   type LucideIcon,
@@ -39,6 +40,7 @@ export const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
   {
     heading: "People",
     items: [
+      { href: "/leads", label: "Leads", icon: UserPlus, permission: "MANAGE_CONTACTS" },
       { href: "/contacts", label: "Contacts", icon: Users },
       { href: "/students", label: "Students", icon: GraduationCap },
     ],

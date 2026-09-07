@@ -90,11 +90,18 @@ export async function createStudentRecord(input: unknown): Promise<
 
       if (existing) {
         contactId = existing.id
-        // Enrolling someone makes them a student, whatever they were before.
+        /*
+         * Enrolling someone makes them a student, whatever they were before —
+         * and closes them out of the lead pipeline. Without the second half a
+         * converted lead kept whatever outreach status they had, so "how many
+         * of this campaign's leads actually enrolled" had no answer and the
+         * Converted count on the leads page stayed at zero forever.
+         */
         const [after] = await tx
           .update(contacts)
           .set({
             lifecycleStage: "STUDENT",
+            leadStatus: "CONVERTED",
             email: values.email ?? undefined,
             city: values.city ?? undefined,
             updatedAt: new Date(),
@@ -119,6 +126,7 @@ export async function createStudentRecord(input: unknown): Promise<
             email: values.email,
             city: values.city,
             lifecycleStage: "STUDENT",
+            leadStatus: "CONVERTED",
             source: "WALK_IN",
             createdBy: user.id,
           })

@@ -4,7 +4,7 @@ import { revalidateEverything } from "@/lib/revalidate"
 import { and, eq, isNull } from "drizzle-orm"
 
 import { db } from "@/db"
-import { enrollments, paymentSchedule, payments, programs } from "@/db/schema"
+import { contacts, enrollments, paymentSchedule, payments, programs } from "@/db/schema"
 import { mutate } from "@/lib/audit"
 import { planSchedule } from "@/lib/billing"
 import { newId } from "@/lib/ids"
@@ -104,6 +104,33 @@ export async function createEnrollment(
           createdBy: user.id,
         })
         .returning()
+
+      /*
+       * Move the contact out of the lead pipeline.
+       *
+       * This path previously wrote the enrollment and nothing else, so someone
+       * enrolled through the advanced form stayed a LEAD and kept appearing in
+       * the leads list as work still to do. The simple record form already did
+       * this; the two now agree.
+       */
+      const [contactAfter] = await tx
+        .update(contacts)
+        .set({
+          lifecycleStage: "STUDENT",
+          leadStatus: "CONVERTED",
+          updatedAt: new Date(),
+        })
+        .where(eq(contacts.id, values.contactId))
+        .returning()
+
+      if (contactAfter) {
+        await audit({
+          action: "UPDATE",
+          entity: "contacts",
+          entityId: values.contactId,
+          after: { lifecycleStage: "STUDENT", leadStatus: "CONVERTED" },
+        })
+      }
 
       // Materialise what is owed and when. One representation for both
       // one-time installments and recurring cycles.

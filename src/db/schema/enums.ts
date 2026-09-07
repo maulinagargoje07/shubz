@@ -33,6 +33,22 @@ export const contactSourceEnum = pgEnum("contact_source", [
   "OTHER",
 ])
 
+/**
+ * How far outreach has got with a lead.
+ *
+ * Deliberately separate from lifecycle_stage. The lifecycle says where someone
+ * is in the customer journey (LEAD -> STUDENT -> ALUMNI); this says what has
+ * happened on the phone. A lead can sit at LEAD for weeks while moving NEW ->
+ * CONTACTED -> INTERESTED, and collapsing the two would lose one or the other.
+ */
+export const leadStatusEnum = pgEnum("lead_status", [
+  "NEW",
+  "CONTACTED",
+  "INTERESTED",
+  "NOT_INTERESTED",
+  "CONVERTED",
+])
+
 export const consentChannelEnum = pgEnum("consent_channel", [
   "WHATSAPP",
   "EMAIL",

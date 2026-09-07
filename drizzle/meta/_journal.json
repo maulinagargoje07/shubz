@@ -36,6 +36,13 @@
       "when": 1788775173962,
       "tag": "0004_unique_batch_name_per_program",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788783407926,
+      "tag": "0005_lead_pipeline_fields",
+      "breakpoints": true
     }
   ]
 }

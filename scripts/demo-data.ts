@@ -151,6 +151,58 @@ const DEMO_CONTACTS: DemoContact[] = [
   { name: "Aarti Nimbalkar", phone: "8806100036", city: "Pune", stage: "CHURNED", source: "INSTAGRAM" },
 ]
 
+/**
+ * Leads, as they arrive from a registration sheet.
+ *
+ * Separate from DEMO_CONTACTS because these are not students and never become
+ * enrolled: they exist to give the leads pipeline something to work through.
+ * The experience wording is copied from the real Google Form, capture dates are
+ * spread over recent weeks so the date filter has something to bite on, and the
+ * statuses are mixed so every column of the pipeline is populated.
+ */
+type DemoLead = {
+  name: string
+  phone: string
+  city: string
+  experience: "Beginner" | "Intermediate (6 months - 2 years)" | "Advance (2+ years)"
+  source: "YOUTUBE" | "INSTAGRAM" | "TELEGRAM" | "WEBSITE" | "ADS" | "REFERRAL"
+  status: "NEW" | "CONTACTED" | "INTERESTED" | "NOT_INTERESTED"
+  /** Days before today the form was submitted. */
+  capturedDaysAgo: number
+  /** Which imported list this lead came in with. */
+  list: 0 | 1
+  email?: string
+}
+
+const BEGINNER = "Beginner" as const
+const INTERMEDIATE = "Intermediate (6 months - 2 years)" as const
+const ADVANCED = "Advance (2+ years)" as const
+
+const DEMO_LEAD_LISTS = ["Webinar — Sep intake (Demo)", "YouTube funnel (Demo)"] as const
+
+const DEMO_LEADS: DemoLead[] = [
+  { name: "Rutuja Kulkarni", phone: "8806200001", city: "Pune", experience: BEGINNER, source: "YOUTUBE", status: "NEW", capturedDaysAgo: 2, list: 0, email: "rutuja.k@example.in" },
+  { name: "Akash Deshmukh", phone: "8806200002", city: "Pune", experience: INTERMEDIATE, source: "YOUTUBE", status: "NEW", capturedDaysAgo: 2, list: 0 },
+  { name: "Sayali Pawar", phone: "8806200003", city: "Nashik", experience: BEGINNER, source: "INSTAGRAM", status: "NEW", capturedDaysAgo: 3, list: 0 },
+  { name: "Nilesh Gaikwad", phone: "8806200004", city: "Pimpri-Chinchwad", experience: ADVANCED, source: "TELEGRAM", status: "CONTACTED", capturedDaysAgo: 5, list: 0, email: "nilesh.g@example.in" },
+  { name: "Trupti Jadhav", phone: "8806200005", city: "Pune", experience: INTERMEDIATE, source: "YOUTUBE", status: "CONTACTED", capturedDaysAgo: 5, list: 0 },
+  { name: "Ganesh Shelke", phone: "8806200006", city: "Solapur", experience: BEGINNER, source: "ADS", status: "NEW", capturedDaysAgo: 6, list: 0 },
+  { name: "Pallavi Rane", phone: "8806200007", city: "Mumbai", experience: ADVANCED, source: "REFERRAL", status: "INTERESTED", capturedDaysAgo: 8, list: 0, email: "pallavi.rane@example.in" },
+  { name: "Sourabh Patil", phone: "8806200008", city: "Kolhapur", experience: INTERMEDIATE, source: "WEBSITE", status: "INTERESTED", capturedDaysAgo: 9, list: 0 },
+  { name: "Ketaki Bhave", phone: "8806200009", city: "Pune", experience: BEGINNER, source: "INSTAGRAM", status: "NOT_INTERESTED", capturedDaysAgo: 11, list: 0 },
+  { name: "Vishal Kadam", phone: "8806200010", city: "Pune", experience: INTERMEDIATE, source: "YOUTUBE", status: "NEW", capturedDaysAgo: 12, list: 0 },
+  { name: "Anjali Sharma", phone: "8806200011", city: "Nagpur", experience: BEGINNER, source: "YOUTUBE", status: "NEW", capturedDaysAgo: 14, list: 1, email: "anjali.s@example.in" },
+  { name: "Rohan Mehta", phone: "8806200012", city: "Mumbai", experience: ADVANCED, source: "YOUTUBE", status: "CONTACTED", capturedDaysAgo: 15, list: 1 },
+  { name: "Swapnil Joshi", phone: "8806200013", city: "Pune", experience: INTERMEDIATE, source: "YOUTUBE", status: "CONTACTED", capturedDaysAgo: 16, list: 1 },
+  { name: "Madhuri Naik", phone: "8806200014", city: "Thane", experience: BEGINNER, source: "YOUTUBE", status: "NEW", capturedDaysAgo: 18, list: 1 },
+  { name: "Kiran Bhosale", phone: "8806200015", city: "Pune", experience: INTERMEDIATE, source: "YOUTUBE", status: "INTERESTED", capturedDaysAgo: 20, list: 1, email: "kiran.b@example.in" },
+  { name: "Devendra Patil", phone: "8806200016", city: "Satara", experience: BEGINNER, source: "YOUTUBE", status: "NEW", capturedDaysAgo: 22, list: 1 },
+  { name: "Shraddha Kale", phone: "8806200017", city: "Pune", experience: ADVANCED, source: "YOUTUBE", status: "INTERESTED", capturedDaysAgo: 25, list: 1 },
+  { name: "Aniruddha Sane", phone: "8806200018", city: "Pune", experience: INTERMEDIATE, source: "YOUTUBE", status: "NOT_INTERESTED", capturedDaysAgo: 28, list: 1 },
+  { name: "Poonam Yadav", phone: "8806200019", city: "Nashik", experience: BEGINNER, source: "YOUTUBE", status: "NEW", capturedDaysAgo: 31, list: 1 },
+  { name: "Mangesh Tambe", phone: "8806200020", city: "Pune", experience: INTERMEDIATE, source: "YOUTUBE", status: "CONTACTED", capturedDaysAgo: 34, list: 1 },
+]
+
 // ------------------------------------------------------------- enrollments
 
 type DemoPlan = {
@@ -291,6 +343,16 @@ async function removeDemo(db: ReturnType<typeof drizzle<typeof schema>>) {
     await db.delete(tags).where(eq(tags.id, tag.id))
   }
 
+  // The lead list tags are demo-only too, and named for it.
+  const listTags = await db
+    .select({ id: tags.id })
+    .from(tags)
+    .where(inArray(tags.name, [...DEMO_LEAD_LISTS]))
+  for (const { id } of listTags) {
+    await db.delete(contactTags).where(eq(contactTags.tagId, id))
+    await db.delete(tags).where(eq(tags.id, id))
+  }
+
   return {
     contacts: contactIds.length,
     enrollments: removedEnrollments,
@@ -363,7 +425,10 @@ async function main() {
 
   // Refuse to reuse a phone number that already belongs to a live contact.
   // The partial unique index would reject it anyway; failing here says why.
-  const wantedPhones = DEMO_CONTACTS.map((c) => `+91${c.phone}`)
+  const wantedPhones = [
+    ...DEMO_CONTACTS.map((c) => `+91${c.phone}`),
+    ...DEMO_LEADS.map((l) => `+91${l.phone}`),
+  ]
   const clashes = await db
     .select({ phone: contacts.phoneE164, name: contacts.fullName })
     .from(contacts)
@@ -382,6 +447,9 @@ async function main() {
   await db.insert(tags).values({ id: tagId, name: DEMO_TAG, colour: "#7c3aed" })
 
   const contactIds = DEMO_CONTACTS.map(() => newId())
+  // Everyone who ends up with an enrollment is a converted lead, which is what
+  // the app itself now writes when a record is created.
+  const enrolledIndexes = new Set(DEMO_PLANS.map((p) => p.who))
   await db.insert(contacts).values(
     DEMO_CONTACTS.map((c, i) => ({
       id: contactIds[i],
@@ -392,12 +460,49 @@ async function main() {
       city: c.city,
       state: "Maharashtra",
       lifecycleStage: c.stage,
+      leadStatus: enrolledIndexes.has(i) ? ("CONVERTED" as const) : ("NEW" as const),
       source: c.source,
       createdBy: owner.id,
     }))
   )
   await db.insert(contactTags).values(contactIds.map((id) => ({ contactId: id, tagId })))
   console.log(`  ${contactIds.length} contacts`)
+
+  // ----------------------------------------------------------------- leads
+  /*
+   * Leads carry the demo tag too, so the same teardown removes them, plus a
+   * list tag each — which is what an import produces and what a campaign will
+   * later target.
+   */
+  const listTagIds = DEMO_LEAD_LISTS.map(() => newId())
+  await db.insert(tags).values(
+    DEMO_LEAD_LISTS.map((name, i) => ({ id: listTagIds[i], name, colour: "#0ea5e9" }))
+  )
+
+  const leadIds = DEMO_LEADS.map(() => newId())
+  await db.insert(contacts).values(
+    DEMO_LEADS.map((l, i) => ({
+      id: leadIds[i],
+      fullName: l.name,
+      phoneE164: `+91${l.phone}`,
+      phoneRaw: l.phone,
+      email: l.email ?? null,
+      city: l.city,
+      state: "Maharashtra",
+      lifecycleStage: "LEAD" as const,
+      leadStatus: l.status,
+      source: l.source,
+      tradingExperience: l.experience,
+      // Mid-evening, which is when this form actually gets filled in.
+      leadCapturedAt: istAt(-l.capturedDaysAgo, 20, 15),
+      createdBy: owner.id,
+    }))
+  )
+  await db.insert(contactTags).values([
+    ...leadIds.map((id) => ({ contactId: id, tagId })),
+    ...leadIds.map((id, i) => ({ contactId: id, tagId: listTagIds[DEMO_LEADS[i].list] })),
+  ])
+  console.log(`  ${leadIds.length} leads in ${DEMO_LEAD_LISTS.length} lists`)
 
   // ------------------------------------------------------------- batches
   const batchDefs = {

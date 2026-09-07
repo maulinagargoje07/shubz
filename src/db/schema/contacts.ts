@@ -25,6 +25,7 @@ import {
   consentActionEnum,
   consentChannelEnum,
   contactSourceEnum,
+  leadStatusEnum,
   lifecycleStageEnum,
 } from "./enums"
 
@@ -47,6 +48,21 @@ export const contacts = pgTable(
 
     lifecycleStage: lifecycleStageEnum("lifecycle_stage").notNull().default("LEAD"),
     source: contactSourceEnum("source").notNull().default("OTHER"),
+
+    /** Outreach progress. Only meaningful while the lifecycle stage is a lead. */
+    leadStatus: leadStatusEnum("lead_status").notNull().default("NEW"),
+    /**
+     * Free text, not an enum: it arrives from a Google Form whose options the
+     * business changes between campaigns ("Beginner", "Intermediate (6 months
+     * - 2 years)"), and an enum would reject next month's wording.
+     */
+    tradingExperience: text("trading_experience"),
+    /**
+     * When the lead was captured at source — the form submission time — as
+     * opposed to created_at, which is when the row reached this database. An
+     * import run today can carry leads captured months ago.
+     */
+    leadCapturedAt: timestamp("lead_captured_at", { withTimezone: true }),
 
     telegramUsername: text("telegram_username"),
     tradingviewUsername: text("tradingview_username"),
@@ -75,6 +91,9 @@ export const contacts = pgTable(
 
     index("contacts_lifecycle_stage_idx").on(t.lifecycleStage),
     index("contacts_source_idx").on(t.source),
+    // The leads list filters on status and orders by capture time.
+    index("contacts_lead_status_idx").on(t.leadStatus),
+    index("contacts_lead_captured_at_idx").on(t.leadCapturedAt),
     index("contacts_email_idx").on(t.email),
     index("contacts_created_at_idx").on(t.createdAt),
     // Backs the list page's name search.
