@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     default: "ShubzTrader",
     template: "%s · ShubzTrader",
   },
-  description: "Student management and CRM for ShubzTrader",
+  description: "ShubzTrader indicator admin: subscribers, payments and TradingView access",
   icons: {
     icon: "/icon.png",
     apple: "/icon.png",

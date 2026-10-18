@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation"
 import { Menu } from "lucide-react"
 import { cn } from "cn"
 
-import { isActivePath, MOBILE_TABS } from "./nav"
+import type { Permission } from "@/lib/permissions"
+import { LinkPending } from "./link-pending"
+import { isActivePath, visibleTabs } from "./nav"
 
 /**
  * The phone tab bar.
@@ -13,14 +15,26 @@ import { isActivePath, MOBILE_TABS } from "./nav"
  * A hamburger drawer is the wrong primary navigation for a tool used standing
  * up at a desk with one hand: it hides every destination behind a tap and puts
  * them at the top of a tall screen. A fixed bottom bar keeps the four things
- * this job actually involves within thumb reach, with "More" opening the full
- * menu for everything else.
+ * pages this job actually involves within thumb reach, with "More" opening the
+ * full menu for everything else.
  *
  * `pb-[env(safe-area-inset-bottom)]` keeps the bar clear of the iOS home
  * indicator; without it the last few pixels of every tab are unpressable.
  */
-export function MobileTabs({ onOpenMenu }: { onOpenMenu: () => void }) {
+// Literal class names, so Tailwind sees every one of them.
+const GRID_COLS = ["grid-cols-1", "grid-cols-2", "grid-cols-3", "grid-cols-4", "grid-cols-5"]
+
+export function MobileTabs({
+  onOpenMenu,
+  permissions,
+  role,
+}: {
+  onOpenMenu: () => void
+  permissions: Permission[]
+  role: string
+}) {
   const pathname = usePathname()
+  const tabs = visibleTabs(permissions, role)
 
   return (
     <nav
@@ -28,9 +42,9 @@ export function MobileTabs({ onOpenMenu }: { onOpenMenu: () => void }) {
       style={{ paddingBottom: "calc(0.25rem + env(safe-area-inset-bottom))" }}
       aria-label="Primary"
     >
-      <ul className="grid grid-cols-5 items-center py-1">
-        {MOBILE_TABS.map((tab) => {
-          const active = isActivePath(pathname, tab.href)
+      <ul className={cn("grid items-center py-1", GRID_COLS[tabs.length])}>
+        {tabs.map((tab) => {
+          const active = isActivePath(pathname, tab)
           const Icon = tab.icon
 
           return (
@@ -50,7 +64,9 @@ export function MobileTabs({ onOpenMenu }: { onOpenMenu: () => void }) {
                     aria-hidden
                     className="absolute -top-1 size-1 rounded-full bg-primary gold-glow-sm"
                   />
-                ) : null}
+                ) : (
+                  <LinkPending className="absolute -top-1" />
+                )}
                 <div
                   className={cn(
                     "flex size-7 items-center justify-center rounded-lg transition-colors",

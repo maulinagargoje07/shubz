@@ -24,6 +24,7 @@ import { auth } from "@/lib/auth"
 import {
   can,
   effectivePermissions,
+  homePathFor,
   isRole,
   type Permission,
   type Role,
@@ -62,7 +63,10 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
     if (!row || !row.active) return null
 
-    const role: Role = isRole(row.role) ? row.role : "OPERATOR"
+    // A role this app no longer knows (an old manager or operator account
+    // that predates migration 0007) gets no access at all rather than a guess.
+    if (!isRole(row.role)) return null
+    const role: Role = row.role
 
     return {
       id: row.id,
@@ -128,7 +132,7 @@ export class ForbiddenError extends Error {
  */
 export async function requireRole(allowed: readonly Role[]): Promise<SessionUser> {
   const user = await requireUser()
-  if (!hasRole(user, allowed)) redirect("/dashboard?denied=1")
+  if (!hasRole(user, allowed)) redirect(`${homePathFor(user)}?denied=1`)
   return user
 }
 
@@ -136,7 +140,7 @@ export async function requirePermissionPage(
   permission: Permission
 ): Promise<SessionUser> {
   const user = await requireUser()
-  if (!can(user, permission)) redirect("/dashboard?denied=1")
+  if (!can(user, permission)) redirect(`${homePathFor(user)}?denied=1`)
   return user
 }
 
@@ -165,7 +169,7 @@ export async function requirePermission(
  * same shape the actions already handle, so a denied click reads as a normal
  * refusal.
  *
- *   const gate = await checkPermission("RECORD_PAYMENTS")
+ *   const gate = await checkPermission("MANAGE_TRADINGVIEW_ACCESS")
  *   if (!gate.ok) return gate
  *   const user = gate.user
  */

@@ -57,7 +57,8 @@ export async function listTeamMembers(
     .orderBy(asc(users.role), asc(users.name))
 
   return rows.map((row) => {
-    const role: Role = isRole(row.role) ? row.role : "OPERATOR"
+    // Display only; an unknown role gets no access at sign-in (lib/session.ts).
+    const role: Role = isRole(row.role) ? row.role : "ADMIN"
     const overrides = row.permissions as Permission[] | null
     return {
       id: row.id,
@@ -94,7 +95,7 @@ async function listTeamMembersById(id: string) {
     .limit(1)
 
   return rows.map((row) => {
-    const role: Role = isRole(row.role) ? row.role : "OPERATOR"
+    const role: Role = isRole(row.role) ? row.role : "ADMIN"
     const overrides = row.permissions as Permission[] | null
     return {
       ...row,

@@ -70,8 +70,16 @@ function createAuth() {
 
     emailAndPassword: {
       enabled: true,
-      // Single-admin internal tool: no email service is wired up, so there is
-      // nothing to verify against and no reset link to send.
+      /**
+       * Nobody signs themselves up. Without this, Better Auth's public
+       * /api/auth/sign-up/email endpoint would create a working account for
+       * anyone who posted to it — and this app holds buyers' personal details.
+       * Accounts are made by a superadmin from Team (server/team/actions.ts)
+       * or by `npm run setup:superadmin`, both of which write the rows directly.
+       */
+      disableSignUp: true,
+      // Internal tool: no email service is wired up, so there is nothing to
+      // verify against and no reset link to send.
       requireEmailVerification: false,
       minPasswordLength: 10,
     },
@@ -81,8 +89,8 @@ function createAuth() {
         role: {
           type: "string",
           required: false,
-          defaultValue: "OPERATOR",
-          // Roles are assigned by an admin, never chosen at signup.
+          defaultValue: "ADMIN",
+          // Roles are assigned by a superadmin, never chosen by the user.
           input: false,
         },
         active: {

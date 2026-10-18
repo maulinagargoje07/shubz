@@ -54,7 +54,7 @@ import {
 } from "@/server/team/actions"
 import { PermissionPicker } from "./permission-picker"
 
-/** Radio-card role selector — four options, each needing a line of explanation. */
+/** Radio-card role selector — each option needs a line of explanation. */
 function RoleChoice({
   value,
   onChange,
@@ -119,7 +119,7 @@ export function AddTeamMemberDialog({ actorRole }: { actorRole: Role }) {
       name: "",
       email: "",
       password: "",
-      role: "OPERATOR",
+      role: "ADMIN",
       permissions: null,
     },
   })

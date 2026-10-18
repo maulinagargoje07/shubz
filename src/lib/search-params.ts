@@ -30,8 +30,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 /**
  * An id filter: a uuid, or one of the sentinels the caller explicitly allows.
  *
- * `allow` exists for values that are a real answer rather than an id — the
- * enrollment list's "none", meaning "students with no batch at all".
+ * `allow` exists for values that are a real answer rather than an id, such as
+ * a "none" option meaning "has no value at all".
  */
 export function idParam(
   value: RawParam,

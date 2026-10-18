@@ -5,8 +5,4 @@
 
 export * from "./enums"
 export * from "./auth"
-export * from "./contacts"
-export * from "./catalogue"
-export * from "./enrollment"
 export * from "./ops"
-export * from "./messaging"

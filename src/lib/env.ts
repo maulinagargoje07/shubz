@@ -93,3 +93,52 @@ export const env = new Proxy({} as Env, {
 export function isProduction(): boolean {
   return loadEnv().NODE_ENV === "production"
 }
+
+// ------------------------------------------------------- payments service
+
+/**
+ * Where the indicator data comes from: the shubztrader-payments service on
+ * Railway, read through its admin API (see server/indicator/api.ts).
+ *
+ * Checked separately from the schema above and never thrown: if these are
+ * missing, the Indicator pages say exactly what to set, while sign-in, Team
+ * and Profile carry on working.
+ *
+ *   PAYMENTS_API_URL    optional; defaults to the production payments service
+ *   PAYMENTS_ADMIN_KEY  the same value as ADMIN_API_KEY on that service
+ */
+const DEFAULT_PAYMENTS_API_URL = "https://shubztrader-payments-production.up.railway.app"
+const MIN_PAYMENTS_ADMIN_KEY_LENGTH = 32
+
+export type PaymentsApiConfig =
+  | { ok: true; url: string; key: string }
+  | { ok: false; problem: string }
+
+export function paymentsApiConfig(): PaymentsApiConfig {
+  const raw = process.env.PAYMENTS_API_URL?.trim() || DEFAULT_PAYMENTS_API_URL
+
+  let url: URL
+  try {
+    url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`)
+  } catch {
+    return { ok: false, problem: "PAYMENTS_API_URL is not a valid web address." }
+  }
+  const local = url.hostname === "localhost" || url.hostname === "127.0.0.1"
+  if (url.protocol !== "https:" && !local) {
+    // The admin key travels in a header; never send it unencrypted.
+    return { ok: false, problem: "PAYMENTS_API_URL must start with https://." }
+  }
+
+  const key = process.env.PAYMENTS_ADMIN_KEY?.trim() ?? ""
+  if (!key) {
+    return { ok: false, problem: "PAYMENTS_ADMIN_KEY is not set on this CRM service." }
+  }
+  if (key.length < MIN_PAYMENTS_ADMIN_KEY_LENGTH) {
+    return {
+      ok: false,
+      problem: `PAYMENTS_ADMIN_KEY is shorter than ${MIN_PAYMENTS_ADMIN_KEY_LENGTH} characters.`,
+    }
+  }
+
+  return { ok: true, url: url.origin, key }
+}

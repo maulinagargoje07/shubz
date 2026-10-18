@@ -41,7 +41,8 @@ export function LoginForm() {
       return
     }
 
-    router.push("/dashboard")
+    // The root page sends each person to wherever their access starts.
+    router.push("/")
     router.refresh()
   }
 

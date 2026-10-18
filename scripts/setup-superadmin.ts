@@ -1,8 +1,8 @@
 /**
  * Create or update the root superadmin. Idempotent, and safe to re-run.
  *
- * Touches only the auth tables — no contact, enrollment or payment data is
- * read or written, so this can be run against a live database at any time.
+ * Touches only the auth tables, so this can be run against a live database at
+ * any time.
  *
  * The password is taken from the environment, never from this file. A
  * credential committed to a repository is a credential that has leaked, and

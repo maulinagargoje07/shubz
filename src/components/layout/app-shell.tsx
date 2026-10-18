@@ -15,9 +15,12 @@ import type { Permission } from "@/lib/permissions"
 
 export function AppShell({
   user,
+  homeHref,
   children,
 }: {
   user: { name: string; email: string; role: string; permissions: Permission[] }
+  /** Where the logo goes: the indicator overview, or the profile for anyone without it. */
+  homeHref: string
   children: React.ReactNode
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -54,7 +57,7 @@ export function AppShell({
   return (
     <div className="min-h-svh bg-background text-foreground">
       <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/80 bg-background/90 px-4 backdrop-blur-md sm:px-6">
-        <Link href="/dashboard" className="flex items-center gap-2.5 font-semibold tracking-tight transition-opacity hover:opacity-90">
+        <Link href={homeHref} className="flex items-center gap-2.5 font-semibold tracking-tight transition-opacity hover:opacity-90">
           <Image
             src="/logo.png"
             alt="ShubzTrader"
@@ -69,12 +72,6 @@ export function AppShell({
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
-          <Link
-            href="/enrollments/new"
-            className="hidden items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20 sm:inline-flex"
-          >
-            + Record
-          </Link>
           <UserMenu
             name={user.name}
             email={user.email}
@@ -99,7 +96,11 @@ export function AppShell({
         </main>
       </div>
 
-      <MobileTabs onOpenMenu={() => setMenuOpen(true)} />
+      <MobileTabs
+        onOpenMenu={() => setMenuOpen(true)}
+        permissions={user.permissions}
+        role={user.role}
+      />
 
       {menuOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
@@ -131,22 +132,6 @@ export function AppShell({
             </div>
 
             <div className="p-3">
-              <div className="mb-3 grid grid-cols-2 gap-2">
-                <Link
-                  href="/enrollments/new"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 py-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
-                >
-                  + New Record
-                </Link>
-                <Link
-                  href="/contacts/new"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary py-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary/80"
-                >
-                  + Add Contact
-                </Link>
-              </div>
               <SidebarNav
                 onNavigate={() => setMenuOpen(false)}
                 permissions={user.permissions}

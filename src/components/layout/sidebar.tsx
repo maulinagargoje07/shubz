@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "cn"
 
+import { LinkPending } from "./link-pending"
 import { isActivePath, visibleSections } from "./nav"
 import type { Permission } from "@/lib/permissions"
 
@@ -15,7 +16,7 @@ import type { Permission } from "@/lib/permissions"
 export function SidebarNav({
   onNavigate,
   permissions = [],
-  role = "OPERATOR",
+  role = "ADMIN",
 }: {
   onNavigate?: () => void
   permissions?: Permission[]
@@ -33,7 +34,7 @@ export function SidebarNav({
           </p>
           <ul className="space-y-1">
             {section.items.map((item) => {
-              const active = isActivePath(pathname, item.href)
+              const active = isActivePath(pathname, item)
               const Icon = item.icon
 
               return (
@@ -57,11 +58,7 @@ export function SidebarNav({
                       aria-hidden
                     />
                     <span className="truncate">{item.label}</span>
-                    {item.comingSoon ? (
-                      <span className="ml-auto rounded border border-border/50 bg-secondary px-1.5 py-0.5 text-[0.625rem] uppercase tracking-wide text-muted-foreground">
-                        Soon
-                      </span>
-                    ) : null}
+                    <LinkPending className="ml-auto" />
                   </Link>
                 </li>
               )

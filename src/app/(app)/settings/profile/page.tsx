@@ -1,5 +1,6 @@
 import { CheckCircle2, Mail, ShieldCheck } from "lucide-react"
 
+import { DeniedNotice } from "@/components/denied-notice"
 import { PageHeader, SectionHeading } from "@/components/page-header"
 import { StatusPill } from "@/components/ui/status"
 import { formatIST } from "@/lib/fy"
@@ -18,8 +19,13 @@ import { ChangePasswordForm, EditNameForm, SignOutButton } from "./profile-forms
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Your profile" }
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const user = await requireUser()
+  const { denied } = await searchParams
 
   const [row] = await db
     .select({ createdAt: users.createdAt, permissions: users.permissions })
@@ -37,6 +43,7 @@ export default async function ProfilePage() {
         description="Your account, and what it can do."
         actions={<SignOutButton />}
       />
+      <DeniedNotice show={denied === "1"} />
 
       <div className="grid gap-6 px-4 py-4 sm:px-6 lg:grid-cols-2">
         <section className="space-y-6">

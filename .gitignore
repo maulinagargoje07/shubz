@@ -45,3 +45,6 @@ next-env.d.ts
 
 # Database backups — contain personal data, never commit.
 /backups
+
+# Claude Code personal settings for this folder — never commit.
+/.claude/settings.local.json

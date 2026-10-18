@@ -1,19 +1,10 @@
 import type { Permission } from "@/lib/permissions"
 
 import {
-  BookOpen,
-  CalendarDays,
-  ClipboardCheck,
-  GraduationCap,
+  CircleAlert,
   IndianRupee,
-  Layers,
   LayoutDashboard,
-  Megaphone,
-  MessageSquareText,
-  Receipt,
-  Upload,
   ShieldCheck,
-  UserPlus,
   UserRound,
   Users,
   type LucideIcon,
@@ -23,43 +14,23 @@ export type NavItem = {
   href: string
   label: string
   icon: LucideIcon
-  /** Marks routes that exist but are not built in this pass. */
-  comingSoon?: boolean
   /**
    * Hide this item unless the viewer holds the permission. Presentation only —
    * the page itself re-checks, since hiding a link is not access control.
    */
   permission?: Permission
+  /** Lit only on this exact path, not the pages below it. */
+  exact?: boolean
 }
 
 export const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
   {
-    heading: "Overview",
-    items: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
-  },
-  {
-    heading: "People",
+    heading: "Indicator",
     items: [
-      { href: "/leads", label: "Leads", icon: UserPlus, permission: "MANAGE_CONTACTS" },
-      { href: "/contacts", label: "Contacts", icon: Users },
-      { href: "/students", label: "Students", icon: GraduationCap },
-    ],
-  },
-  {
-    heading: "Catalogue",
-    items: [
-      { href: "/programs", label: "Programs", icon: BookOpen },
-      { href: "/batches", label: "Batches", icon: Layers, permission: "MANAGE_PROGRAMS" },
-      { href: "/sessions", label: "Sessions", icon: CalendarDays },
-      { href: "/attendance", label: "Attendance", icon: ClipboardCheck },
-    ],
-  },
-  {
-    heading: "Money",
-    items: [
-      { href: "/enrollments", label: "Enrollments", icon: Receipt },
-      { href: "/payments", label: "Payments", icon: IndianRupee, permission: "VIEW_FINANCIALS" },
-      { href: "/fees", label: "Fees", icon: IndianRupee, permission: "VIEW_FINANCIALS" },
+      { href: "/indicator", label: "Overview", icon: LayoutDashboard, permission: "VIEW_INDICATOR", exact: true },
+      { href: "/indicator/subscribers", label: "Subscribers", icon: Users, permission: "VIEW_INDICATOR" },
+      { href: "/indicator/payments", label: "Payments", icon: IndianRupee, permission: "VIEW_INDICATOR" },
+      { href: "/indicator/failed", label: "Failed payments", icon: CircleAlert, permission: "VIEW_INDICATOR" },
     ],
   },
   {
@@ -70,47 +41,42 @@ export const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
       { href: "/settings/team", label: "Team", icon: ShieldCheck, permission: "MANAGE_USERS" },
     ],
   },
-  {
-    heading: "Tools",
-    items: [
-      { href: "/imports", label: "Import", icon: Upload },
-      { href: "/campaigns", label: "Campaigns", icon: Megaphone, comingSoon: true },
-      { href: "/templates", label: "Templates", icon: MessageSquareText, comingSoon: true },
-    ],
-  },
 ]
 
-export const ALL_NAV_ITEMS = NAV_SECTIONS.flatMap((s) => s.items)
+function holds(permissions: readonly Permission[], role: string, item: NavItem): boolean {
+  return !item.permission || role === "SUPERADMIN" || permissions.includes(item.permission)
+}
 
 /** Sections filtered to what this viewer may see, dropping any left empty. */
 export function visibleSections(permissions: readonly Permission[], role: string) {
-  const holds = (p: Permission) => role === "SUPERADMIN" || permissions.includes(p)
   return NAV_SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter((item) => !item.permission || holds(item.permission)),
+    items: section.items.filter((item) => holds(permissions, role, item)),
   })).filter((section) => section.items.length > 0)
 }
 
 /**
- * The five destinations that get a permanent slot in the phone tab bar.
- *
- * Chosen from what the daily job actually is: check what is owed, look someone
- * up, mark a register. Everything else stays one tap away behind "More", which
- * is the right trade for a bar that must not scroll.
+ * The destinations that get a permanent slot in the phone tab bar: the four
+ * Indicator pages. Everything else stays one tap away behind "More".
  */
 export const MOBILE_TABS: NavItem[] = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/enrollments", label: "Records", icon: Receipt },
-  { href: "/fees", label: "Fees", icon: IndianRupee },
-  { href: "/attendance", label: "Mark", icon: ClipboardCheck },
+  { href: "/indicator", label: "Overview", icon: LayoutDashboard, permission: "VIEW_INDICATOR", exact: true },
+  { href: "/indicator/subscribers", label: "Subscribers", icon: Users, permission: "VIEW_INDICATOR" },
+  { href: "/indicator/payments", label: "Payments", icon: IndianRupee, permission: "VIEW_INDICATOR" },
+  { href: "/indicator/failed", label: "Failed", icon: CircleAlert, permission: "VIEW_INDICATOR" },
 ]
+
+export function visibleTabs(permissions: readonly Permission[], role: string): NavItem[] {
+  return MOBILE_TABS.filter((item) => holds(permissions, role, item))
+}
 
 /**
  * Whether a nav item should render as current.
  *
- * Prefix matching so /contacts/<id> keeps Contacts lit, but exact-only for
- * "/" style roots that would otherwise match everything below them.
+ * Prefix matching so /indicator/subscribers?page=2 keeps Subscribers lit, but
+ * exact-only for items like the overview, whose path sits above the others.
  */
-export function isActivePath(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`)
+export function isActivePath(pathname: string, item: Pick<NavItem, "href" | "exact">): boolean {
+  if (pathname === item.href) return true
+  return !item.exact && pathname.startsWith(`${item.href}/`)
 }

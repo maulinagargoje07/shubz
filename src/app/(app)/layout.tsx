@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/layout/app-shell"
+import { homePathFor } from "@/lib/permissions"
 import { requireUser } from "@/lib/session"
 
 /**
@@ -17,6 +18,7 @@ export default async function AppLayout({
 
   return (
     <AppShell
+      homeHref={homePathFor(user)}
       user={{
         name: user.name,
         email: user.email,

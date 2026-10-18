@@ -1,16 +1,18 @@
 import Image from "next/image"
 import { redirect } from "next/navigation"
 
+import { homePathFor } from "@/lib/permissions"
 import { getSessionUser } from "@/lib/session"
 import { LoginForm } from "./login-form"
 
 export const dynamic = "force-dynamic"
 
-export const metadata = { title: "Sign in · ShubzTrader" }
+export const metadata = { title: "Sign in" }
 
 export default async function LoginPage() {
   // Already signed in — no reason to show the form again.
-  if (await getSessionUser()) redirect("/dashboard")
+  const user = await getSessionUser()
+  if (user) redirect(homePathFor(user))
 
   return (
     <main className="flex min-h-svh items-center justify-center p-6 bg-background">
@@ -30,7 +32,7 @@ export default async function LoginPage() {
             $hubz<span className="font-semibold text-primary">Trader</span>
           </h1>
           <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
-            Student Management &amp; CRM
+            Indicator Admin
           </p>
         </div>
 

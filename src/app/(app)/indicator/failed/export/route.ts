@@ -1,0 +1,31 @@
+/**
+ * Excel or CSV of the failed payments matching the list's filters, every page.
+ * Route handlers don't run the (app) layout, so access is checked here.
+ */
+
+import { redirect } from "next/navigation"
+
+import { can } from "@/lib/permissions"
+import { getSessionUser } from "@/lib/session"
+import { fetchAll, listFailedPayments, PaymentsApiError } from "@/server/indicator/api"
+import { exportFailedPayments, exportFailure, exportFormat } from "@/server/indicator/export"
+import { failedFilters, fromUrl } from "@/server/indicator/filters"
+
+export const dynamic = "force-dynamic"
+
+export async function GET(request: Request) {
+  const user = await getSessionUser()
+  if (!user) redirect("/login")
+  if (!can(user, "VIEW_INDICATOR") || !can(user, "EXPORT_DATA")) redirect("/indicator/failed?denied=1")
+
+  const url = new URL(request.url)
+  const { mode, q, recovered } = failedFilters(fromUrl(url))
+
+  try {
+    const { rows, meta } = await fetchAll((page) => listFailedPayments({ mode, q, recovered, ...page }))
+    return exportFailedPayments(rows, meta.mode, exportFormat(url.searchParams.get("format")))
+  } catch (error) {
+    if (error instanceof PaymentsApiError) return exportFailure(error)
+    throw error
+  }
+}

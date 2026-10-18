@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 
+import { homePathFor } from "@/lib/permissions"
 import { getSessionUser } from "@/lib/session"
 
 /**
@@ -9,5 +10,6 @@ import { getSessionUser } from "@/lib/session"
 export const dynamic = "force-dynamic"
 
 export default async function RootPage() {
-  redirect((await getSessionUser()) ? "/dashboard" : "/login")
+  const user = await getSessionUser()
+  redirect(user ? homePathFor(user) : "/login")
 }

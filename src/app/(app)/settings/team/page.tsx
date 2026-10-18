@@ -19,18 +19,9 @@ import {
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Team" }
 
-/** Privilege reads at a glance: root account, then descending. */
+/** Privilege reads at a glance: the root account stands out. */
 function roleTone(role: Role): StatusTone {
-  switch (role) {
-    case "SUPERADMIN":
-      return "info"
-    case "ADMIN":
-      return "paid"
-    case "MANAGER":
-      return "pending"
-    default:
-      return "muted"
-  }
+  return role === "SUPERADMIN" ? "info" : "paid"
 }
 
 export default async function TeamPage({
@@ -145,7 +136,8 @@ export default async function TeamPage({
     },
   ]
 
-  const withoutPassword = members.filter((m) => !m.hasPassword)
+  // A switched-off account can't sign in anyway, so only active ones need a nudge.
+  const withoutPassword = members.filter((m) => !m.hasPassword && m.active)
 
   return (
     <div className="pb-8">

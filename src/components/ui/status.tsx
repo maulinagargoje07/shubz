@@ -1,16 +1,18 @@
 /**
  * Status pills and money tiles — SERVER components.
  *
- * Financial state is the thing an admin scans this app for, so it gets one
+ * Payment state is the thing an admin scans this app for, so it gets one
  * consistent visual language everywhere it appears: the same emerald for
- * settled, the same rose for overdue, on the fees dashboard, the enrollment
- * page, the contact profile and the schedule rows. Defining it once here is
- * what stops those drifting apart.
+ * paying, the same amber for "needs a look", the same rose for "act on this",
+ * on the overview, the subscriber list and the payment lists. Defining it once
+ * here is what stops those drifting apart.
  */
 
 import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 import { cn } from "cn"
+
+import { LinkPending } from "@/components/layout/link-pending"
 
 export type StatusTone =
   | "neutral"
@@ -51,61 +53,26 @@ export function StatusPill({
   )
 }
 
-/** Maps a payment-schedule status onto its tone, so the mapping lives once. */
-export function scheduleTone(status: string): StatusTone {
+/**
+ * Maps a Razorpay subscription status onto its tone, so the mapping lives once:
+ * paying is green, a retrying renewal is amber, a halted one needs attention.
+ */
+export function subscriptionTone(status: string): StatusTone {
   switch (status) {
-    case "PAID":
+    case "authenticated":
+    case "active":
       return "paid"
-    case "OVERDUE":
-      return "overdue"
-    case "PARTIAL":
+    case "pending":
       return "pending"
-    case "WAIVED":
+    case "halted":
+      return "overdue"
+    case "paused":
+    case "cancelled":
+    case "completed":
+    case "expired":
       return "muted"
     default:
       return "neutral"
-  }
-}
-
-export function enrollmentTone(status: string): StatusTone {
-  switch (status) {
-    case "ACTIVE":
-      return "paid"
-    case "PAUSED":
-      return "pending"
-    case "DROPPED":
-    case "CANCELLED":
-      return "overdue"
-    default:
-      return "neutral"
-  }
-}
-
-export function lifecycleTone(stage: string): StatusTone {
-  switch (stage) {
-    case "STUDENT":
-      return "paid"
-    case "REGISTERED":
-      return "info"
-    case "ALUMNI":
-      return "neutral"
-    case "CHURNED":
-      return "overdue"
-    default:
-      return "muted"
-  }
-}
-
-export function attendanceTone(status: string): StatusTone {
-  switch (status) {
-    case "PRESENT":
-      return "paid"
-    case "LATE":
-      return "pending"
-    case "ABSENT":
-      return "overdue"
-    default:
-      return "muted"
   }
 }
 
@@ -138,7 +105,8 @@ export function StatTile({
           </p>
         </div>
         {href ? (
-          <span className="text-muted-foreground/40 transition-colors group-hover:text-primary">
+          <span className="flex items-center gap-1.5 text-muted-foreground/40 transition-colors group-hover:text-primary">
+            <LinkPending />
             <ArrowUpRight className="size-3.5" aria-hidden />
           </span>
         ) : null}

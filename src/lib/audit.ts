@@ -10,8 +10,8 @@
  * Usage:
  *
  *   await mutate(actor, async ({ tx, audit }) => {
- *     const [row] = await tx.insert(contacts).values(...).returning()
- *     await audit({ action: "CREATE", entity: "contacts", entityId: row.id, after: row })
+ *     const [row] = await tx.update(users).set({ name }).where(...).returning()
+ *     await audit({ action: "PROFILE_UPDATED", entity: "user", entityId: row.id, after: row })
  *     return row
  *   })
  */
@@ -21,9 +21,9 @@ import { auditLog } from "@/db/schema"
 import { newId } from "@/lib/ids"
 
 export type AuditEntry = {
-  /** CREATE | UPDATE | DELETE | RESTORE, or a domain verb: PAYMENT_RECORDED. */
+  /** A verb for what happened: USER_CREATED, TRADINGVIEW_ACCESS_GRANTED... */
   action: string
-  /** The table name: "contacts", "enrollments", "payments"... */
+  /** What changed: "user", or "subscriber" for an indicator buyer. */
   entity: string
   entityId: string
   before?: unknown

@@ -1,51 +1,44 @@
 /**
- * Cheap, dependency-free phone checks safe to run in the browser.
+ * Showing phone numbers. Dependency-free, so it is safe in client components.
  *
- * The authoritative parse lives in lib/phone.ts and uses libphonenumber-js,
- * which carries ~150 kB of country metadata. Importing that into the shared
- * zod schemas dragged it into every form bundle in the app — a large download
- * to tell someone their phone number is too short.
- *
- * So the split follows the rule the rest of the app already uses: client-side
- * validation is a convenience, the server is the authority. This module
- * rejects obvious nonsense instantly and in a few bytes; the server action
- * then runs the real parse, normalises to E.164, and returns a field error if
- * libphonenumber disagrees. Nothing reaches the database without that parse.
+ * Buyers' numbers arrive from the payments service already normalised to
+ * E.164 ("+919876543210") — the checkout page built them from a country code
+ * picker plus the local number, and the payments service validated them. All
+ * that is left here is making them readable and clickable.
  */
 
-/** E.164 permits 4–15 digits; anything outside that cannot be a phone number. */
-const MIN_DIGITS = 7
-const MAX_DIGITS = 15
+/**
+ * The country codes the checkout page offers, longest first so "+971" is
+ * matched before anything shorter. None of them is a prefix of another.
+ */
+const COUNTRY_CODES = [
+  "971", "966", "974", "965", "968", "973", "977", "880", "353", "254", "234",
+  "91", "44", "61", "64", "65", "60", "94", "49", "33", "31", "27",
+  "1",
+]
 
 export function phoneDigits(input: string): string {
   return input.replace(/\D/g, "")
 }
 
 /**
- * Is this plausibly a phone number? Deliberately permissive about country —
- * a Pune business still stores the occasional overseas number, and deciding
- * that is the server's job.
+ * "+919876543210" -> "+91 98765 43210"; "+971501234567" -> "+971 501234567".
+ * Anything unrecognised comes back as it was.
  */
-export function looksLikePhone(input: string): boolean {
-  const trimmed = input.trim()
-  if (trimmed === "") return false
+export function formatPhone(e164: string | null | undefined): string {
+  if (!e164) return "—"
+  const match = /^\+(\d{7,15})$/.exec(e164.trim())
+  if (!match) return e164
+  const digits = match[1]
 
-  // Reject letters outright; everything else is punctuation we can ignore.
-  if (/[A-Za-z]/.test(trimmed)) return false
-
-  const digits = phoneDigits(trimmed)
-  if (digits.length < MIN_DIGITS || digits.length > MAX_DIGITS) return false
-
-  // A bare 10-digit Indian mobile must start 6–9. Catches transposed or
-  // truncated numbers at the point of typing rather than after a round-trip.
-  if (digits.length === 10 && !/^[6-9]/.test(digits)) return false
-
-  return true
+  if (digits.startsWith("91") && digits.length === 12) {
+    return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`
+  }
+  const code = COUNTRY_CODES.find((c) => digits.startsWith(c))
+  return code ? `+${code} ${digits.slice(code.length)}` : e164
 }
 
-/** Format an already-normalised E.164 for display, without the metadata tables. */
-export function formatE164(e164: string): string {
-  const match = /^\+91(\d{5})(\d{5})$/.exec(e164)
-  if (match) return `+91 ${match[1]} ${match[2]}`
-  return e164
+/** A wa.me link, which opens a chat in WhatsApp on phone or desktop. */
+export function whatsappHref(e164: string): string {
+  return `https://wa.me/${phoneDigits(e164)}`
 }

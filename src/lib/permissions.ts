@@ -2,78 +2,58 @@
  * Roles and capabilities.
  *
  * Roles are the thing a human assigns; permissions are the thing the code
- * checks. Keeping those separate means a guard reads `can(user, "RECORD_PAYMENTS")`
- * rather than enumerating which roles happen to be allowed today — so adding a
- * role later does not mean hunting through every call site.
+ * checks. Keeping those separate means a guard reads
+ * `can(user, "MANAGE_TRADINGVIEW_ACCESS")` rather than enumerating which roles
+ * happen to be allowed today — so changing what a role includes does not mean
+ * hunting through every call site.
  *
  * This module is deliberately pure: no database, no session, no server-only
  * imports. Both the server guards and the permission-toggle UI read the same
- * definitions, so what an admin sees ticked is exactly what the server enforces.
+ * definitions, so what a superadmin sees ticked is exactly what the server
+ * enforces.
  */
 
-export const ROLES = ["SUPERADMIN", "ADMIN", "MANAGER", "OPERATOR"] as const
+export const ROLES = ["SUPERADMIN", "ADMIN"] as const
 export type Role = (typeof ROLES)[number]
 
 export const PERMISSIONS = [
-  "MANAGE_USERS",
-  "MANAGE_SETTINGS",
-  "VIEW_FINANCIALS",
-  "RECORD_PAYMENTS",
-  "MANAGE_ENROLLMENTS",
-  "MANAGE_PROGRAMS",
-  "MANAGE_CONTACTS",
-  "MANAGE_ATTENDANCE",
-  "SEND_CAMPAIGNS",
+  /** See subscribers, payments and failed payments. */
+  "VIEW_INDICATOR",
+  /** Tick or untick "TradingView access given" on a subscriber. */
+  "MANAGE_TRADINGVIEW_ACCESS",
+  /** Download the Excel and CSV exports. */
   "EXPORT_DATA",
-  "DELETE_RECORDS",
+  /** Add admins, change their access, reset passwords, switch accounts off. */
+  "MANAGE_USERS",
 ] as const
 export type Permission = (typeof PERMISSIONS)[number]
 
 export const ROLE_LABELS: Record<Role, string> = {
   SUPERADMIN: "Superadmin",
   ADMIN: "Admin",
-  MANAGER: "Manager",
-  OPERATOR: "Operator",
 }
 
 export const ROLE_DESCRIPTIONS: Record<Role, string> = {
-  SUPERADMIN: "Full system control, including team management and settings.",
-  ADMIN: "Operations: programs, batches, enrollments, payments and reports.",
-  MANAGER: "Daily work: enrollments, attendance, contacts and campaigns.",
-  OPERATOR: "Front desk: attendance, contact enquiries and notes.",
+  SUPERADMIN: "Everything, including adding admins and deciding what they can do.",
+  ADMIN: "Sees subscribers and payments, ticks TradingView access and downloads exports.",
 }
 
 export const PERMISSION_LABELS: Record<Permission, string> = {
+  VIEW_INDICATOR: "See subscribers and payments",
+  MANAGE_TRADINGVIEW_ACCESS: "Tick TradingView access",
+  EXPORT_DATA: "Download Excel and CSV exports",
   MANAGE_USERS: "Manage team members",
-  MANAGE_SETTINGS: "Change system settings",
-  VIEW_FINANCIALS: "View fees and revenue",
-  RECORD_PAYMENTS: "Record and void payments",
-  MANAGE_ENROLLMENTS: "Create and edit enrollments",
-  MANAGE_PROGRAMS: "Manage programs, batches and sessions",
-  MANAGE_CONTACTS: "Create and edit contacts",
-  MANAGE_ATTENDANCE: "Mark attendance",
-  SEND_CAMPAIGNS: "Send campaigns",
-  EXPORT_DATA: "Export data to CSV",
-  DELETE_RECORDS: "Delete records",
 }
 
 /** Grouping for the permission-toggle UI, so the list is scannable. */
 export const PERMISSION_GROUPS: { heading: string; permissions: Permission[] }[] = [
   {
-    heading: "Money",
-    permissions: ["VIEW_FINANCIALS", "RECORD_PAYMENTS", "MANAGE_ENROLLMENTS"],
-  },
-  {
-    heading: "Catalogue & people",
-    permissions: ["MANAGE_PROGRAMS", "MANAGE_CONTACTS", "MANAGE_ATTENDANCE"],
-  },
-  {
-    heading: "Data",
-    permissions: ["EXPORT_DATA", "SEND_CAMPAIGNS", "DELETE_RECORDS"],
+    heading: "Indicator",
+    permissions: ["VIEW_INDICATOR", "MANAGE_TRADINGVIEW_ACCESS", "EXPORT_DATA"],
   },
   {
     heading: "Administration",
-    permissions: ["MANAGE_USERS", "MANAGE_SETTINGS"],
+    permissions: ["MANAGE_USERS"],
   },
 ]
 
@@ -86,31 +66,10 @@ export const PERMISSION_GROUPS: { heading: string; permissions: Permission[] }[]
  *
  * ADMIN deliberately does NOT get MANAGE_USERS. Team management is the
  * superadmin's, and handing it out by default would let any admin promote
- * themselves. A superadmin can still grant it to a specific admin as an
- * override.
+ * themselves. A superadmin can still grant it to a specific admin.
  */
 const ROLE_PERMISSIONS: Record<Exclude<Role, "SUPERADMIN">, Permission[]> = {
-  ADMIN: [
-    "VIEW_FINANCIALS",
-    "RECORD_PAYMENTS",
-    "MANAGE_ENROLLMENTS",
-    "MANAGE_PROGRAMS",
-    "MANAGE_CONTACTS",
-    "MANAGE_ATTENDANCE",
-    "SEND_CAMPAIGNS",
-    "EXPORT_DATA",
-    "DELETE_RECORDS",
-  ],
-  MANAGER: [
-    "VIEW_FINANCIALS",
-    "RECORD_PAYMENTS",
-    "MANAGE_ENROLLMENTS",
-    "MANAGE_CONTACTS",
-    "MANAGE_ATTENDANCE",
-    "SEND_CAMPAIGNS",
-    "EXPORT_DATA",
-  ],
-  OPERATOR: ["MANAGE_ATTENDANCE", "MANAGE_CONTACTS"],
+  ADMIN: ["VIEW_INDICATOR", "MANAGE_TRADINGVIEW_ACCESS", "EXPORT_DATA"],
 }
 
 export function defaultPermissionsFor(role: Role): Permission[] {
@@ -146,20 +105,6 @@ export function can(
   return user.permissions.includes(permission)
 }
 
-export function canAll(
-  user: { role: Role; permissions: Permission[] },
-  permissions: Permission[]
-): boolean {
-  return permissions.every((p) => can(user, p))
-}
-
-export function canAny(
-  user: { role: Role; permissions: Permission[] },
-  permissions: Permission[]
-): boolean {
-  return permissions.some((p) => can(user, p))
-}
-
 export function isRole(value: unknown): value is Role {
   return typeof value === "string" && (ROLES as readonly string[]).includes(value)
 }
@@ -176,5 +121,31 @@ export function isPermission(value: unknown): value is Permission {
  */
 export function assignableRoles(actorRole: Role): Role[] {
   if (actorRole === "SUPERADMIN") return [...ROLES]
-  return ["ADMIN", "MANAGER", "OPERATOR"]
+  return ["ADMIN"]
+}
+
+/**
+ * Where a signed-in user lands: the indicator overview if they may see it,
+ * otherwise their profile, which everyone has. Never a page that would bounce
+ * them straight back, so a denied redirect can't loop.
+ */
+export function homePathFor(user: { role: Role; permissions: Permission[] }): string {
+  return can(user, "VIEW_INDICATOR") ? "/indicator" : "/settings/profile"
+}
+
+/**
+ * Every permission is reachable from the team settings UI.
+ *
+ * The picker renders PERMISSION_GROUPS, not PERMISSIONS, so a permission left
+ * out of a group exists in the model and in the guards but can never be granted
+ * or revoked by hand — invisible, and therefore unusable. This keeps the two
+ * lists honest: adding a permission without grouping it fails here rather than
+ * being discovered months later by someone who cannot switch it off.
+ */
+const GROUPED = new Set(PERMISSION_GROUPS.flatMap((g) => g.permissions))
+const UNGROUPED = PERMISSIONS.filter((p) => !GROUPED.has(p))
+if (UNGROUPED.length > 0) {
+  throw new Error(
+    `Permissions missing from PERMISSION_GROUPS, so they cannot be granted in the UI: ${UNGROUPED.join(", ")}`
+  )
 }

@@ -62,6 +62,9 @@ export function FilterBar({
   searchPlaceholder,
   filters = [],
   showSearch = true,
+  hidden = {},
+  clearHref,
+  hasActive: hasActiveOverride,
   children,
 }: {
   /** The list route this form submits back to. */
@@ -71,10 +74,17 @@ export function FilterBar({
   searchPlaceholder?: string
   filters?: FilterSpec[]
   showSearch?: boolean
+  /** Params the form carries along unchanged, such as the live/test mode. */
+  hidden?: Record<string, string | undefined>
+  /** Where Clear goes. Defaults to `action`. */
+  clearHref?: string
+  /** For filters passed as children, which this cannot see. */
+  hasActive?: boolean
   children?: React.ReactNode
 }) {
   const hasActive =
-    Boolean(params.q) || filters.some((filter) => Boolean(params[filter.key]))
+    hasActiveOverride ??
+    (Boolean(params.q) || filters.some((filter) => Boolean(params[filter.key])))
 
   return (
     <form
@@ -82,6 +92,9 @@ export function FilterBar({
       method="get"
       className="flex flex-col gap-2.5 px-4 pb-4 sm:flex-row sm:flex-wrap sm:items-end sm:px-6"
     >
+      {Object.entries(hidden).map(([name, value]) =>
+        value ? <input key={name} type="hidden" name={name} value={value} /> : null
+      )}
       <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
         {showSearch ? (
           <div className="relative w-full min-w-0 sm:max-w-72 sm:flex-1">
@@ -158,7 +171,7 @@ export function FilterBar({
             variant="ghost"
             size="sm"
             className="h-10 text-muted-foreground hover:text-foreground active:scale-95"
-            render={<Link href={action} />}
+            render={<Link href={clearHref ?? action} />}
           >
             <X className="size-4" />
             Clear

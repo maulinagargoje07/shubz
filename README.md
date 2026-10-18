@@ -1,45 +1,48 @@
-# ShubzTrader — Student Management + CRM
+# ShubzTrader — indicator admin
 
-Internal platform for ShubzTrader (Pune): contacts, programs, batches,
-sessions, enrollments, fees and receipts, attendance, and CSV import.
+The admin panel at crm.shubztrader.com for the 7 Godfather Strategies
+TradingView indicator:
 
-Conventions live in [AGENTS.md](AGENTS.md). Read that before writing code —
-several rules there (integer paise, E.164 phones, timestamptz, never storing a
-balance) are correctness requirements, not preferences.
+- **Overview** — active subscribers, money collected this month and in total,
+  who is waiting for TradingView access, who should lose it, and failed
+  payments to follow up. Updates itself every 10 seconds.
+- **Subscribers** — everyone who paid, with the **TradingView access given**
+  tick, search and filters.
+- **Payments** — every successful charge, with month and date filters.
+- **Failed payments** — declined checkout attempts, with Razorpay's reason and
+  whether the buyer paid later.
+- **Excel and CSV downloads** on each list, matching the filters on screen.
+- **Team** — the superadmin adds admins and decides what they can do.
 
-## Setting up the database
+The subscribers and payments themselves live in the `shubztrader-payments`
+service, which runs the Razorpay checkout; this app reads them through its
+admin API. Conventions are in [AGENTS.md](AGENTS.md).
 
-The app and its Postgres live in ONE Railway project.
+## Settings (Railway → this service → Variables)
 
-1. Go to [railway.app](https://railway.app) → **New Project**.
-2. **+ New** → **Database** → **Add PostgreSQL**.
-3. Open the Postgres service → **Variables** tab.
-4. Copy **`DATABASE_PUBLIC_URL`** — the public proxy endpoint, used for local
-   development. It looks like:
-   ```
-   postgresql://postgres:PASSWORD@shinkansen.proxy.rlwy.net:12345/railway
-   ```
+| Variable | |
+| --- | --- |
+| `DATABASE_URL` | Reference to this project's Postgres |
+| `BETTER_AUTH_SECRET` | Signs session cookies (`openssl rand -base64 32`) |
+| `BETTER_AUTH_URL` | `https://crm.shubztrader.com` |
+| `PAYMENTS_ADMIN_KEY` | The same value as `ADMIN_API_KEY` on shubztrader-payments |
+| `PAYMENTS_API_URL` | Optional; defaults to the production payments service |
 
-Then locally:
+Set the service's **Pre-deploy command** to `npm run db:migrate`, so each
+deploy applies new migrations before it starts.
+
+## Local development
 
 ```bash
-cp .env.example .env
-# paste the URL into DATABASE_URL
-# generate a session secret:
-openssl rand -base64 32   # paste into BETTER_AUTH_SECRET
-
+cp .env.example .env      # fill in DATABASE_URL, BETTER_AUTH_SECRET, PAYMENTS_ADMIN_KEY
 npm install
-npm run db:migrate        # creates all tables + the enrollment_balances view
-npm run db:seed           # demo programs, batches, contacts, payments
+npm run db:migrate
 npm run dev
 ```
 
-When the app is later deployed to the same Railway project, add
-`DATABASE_URL` as a **service reference variable** pointing at the Postgres
-service so it uses the internal network (`postgres.railway.internal`) rather
-than the public proxy.
-
-`.env` is gitignored and must never be committed.
+Create or reset the root superadmin with `SUPERADMIN_EMAIL`,
+`SUPERADMIN_PASSWORD` (and optionally `SUPERADMIN_NAME`) in `.env`, then
+`npm run setup:superadmin`.
 
 ## Commands
 
@@ -48,29 +51,10 @@ than the public proxy.
 | `npm run dev` | Development server |
 | `npm run build` | Production build |
 | `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | ESLint |
 | `npm run db:generate` | Generate a migration from schema changes |
 | `npm run db:migrate` | Apply pending migrations |
-| `npm run db:seed` | Seed demo data (idempotent) |
-| `npm run db:backup` | Dump every business table to `backups/*.json` |
-| `npm run db:reset -- --yes` | Clear all business data, keep logins, provision the four programs |
+| `npm run setup:superadmin` | Create or reset the root superadmin |
 | `npm run db:studio` | Drizzle Studio |
 
-Migrations are generated and committed. `drizzle-kit push` is never used after
-the first deploy.
-
-## Starting fresh
-
-To clear demo data and begin entering real records:
-
-```bash
-npm run db:backup            # writes backups/backup-<timestamp>.json
-npm run db:reset -- --yes    # clears everything except your login
-```
-
-`db:reset` refuses to run without `--yes`. It preserves the auth tables, so
-you are not locked out, and provisions the four programs the student-record
-form offers (Mentorship Online/Offline, Trading Floor Online/Offline).
-
-Backups contain real contact details and are gitignored. Keep them somewhere
-private.
-# shubz
+`.env` is gitignored and must never be committed.
