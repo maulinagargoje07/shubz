@@ -77,6 +77,25 @@ export function subscriptionTone(status: string): StatusTone {
 }
 
 /**
+ * The sheet's colour key for access status: green active, amber expiring
+ * soon, red expired, and gold for a row whose plan couldn't be read.
+ */
+export function expiryTone(status: string | null | undefined): StatusTone {
+  switch (status) {
+    case "active":
+      return "paid"
+    case "expiring":
+      return "pending"
+    case "expired":
+      return "overdue"
+    case "check":
+      return "info"
+    default:
+      return "neutral"
+  }
+}
+
+/**
  * A headline figure. Optionally a link, because on the dashboard every tile
  * is really a doorway to the list behind it.
  */

@@ -10,14 +10,17 @@ import { toCsv, type CsvValue } from "@/lib/export/csv"
 import { buildXlsx, XLSX_CONTENT_TYPE, type XlsxColumnType, type XlsxValue } from "@/lib/export/xlsx"
 import { formatIST, todayIST } from "@/lib/fy"
 import {
+  expiryStatusLabel,
   paymentMethodLabel,
+  planLabel,
   subscriptionStatusLabel,
+  type Customer,
   type FailedPayment,
   type IndicatorMode,
   type Payment,
   type Subscriber,
 } from "@/lib/indicator"
-import { formatPhone } from "@/lib/phone-format"
+import { formatPhone, whatsappHref } from "@/lib/phone-format"
 import type { PaymentsApiError } from "@/server/indicator/api"
 
 export type ExportFormat = "xlsx" | "csv"
@@ -31,7 +34,9 @@ type Column<Row> = {
   csv?: (row: Row) => CsvValue
 }
 
-const yesNo = (value: boolean) => (value ? "Yes" : "No")
+const yesNo = (value: boolean | null | undefined) => (value ? "Yes" : "No")
+const todo = (action: "grant" | "remove" | null) =>
+  action === "grant" ? "Give access" : action === "remove" ? "Remove access" : ""
 
 const contactColumn = <Row extends { contactNumber: string }>(): Column<Row> => ({
   header: "Contact number",
@@ -47,17 +52,17 @@ const SUBSCRIBER_COLUMNS: Column<Subscriber>[] = [
   contactColumn<Subscriber>(),
   { header: "TradingView username", width: 22, value: (r) => r.tradingviewId },
   { header: "Status", width: 16, value: (r) => subscriptionStatusLabel(r.status) },
+  { header: "Plan", width: 12, value: (r) => planLabel(r.plan) },
+  { header: "Plan price (₹)", width: 13, type: "money", value: (r) => r.plan?.amountPaise ?? null },
   { header: "TradingView access given", width: 14, value: (r) => yesNo(r.access.granted) },
-  {
-    header: "To do on TradingView",
-    width: 18,
-    value: (r) => (r.access.action === "grant" ? "Give access" : r.access.action === "remove" ? "Remove access" : ""),
-  },
+  { header: "To do on TradingView", width: 18, value: (r) => todo(r.access.action) },
   { header: "Access ticked by", width: 18, value: (r) => r.access.updatedBy },
   { header: "Access ticked at", width: 18, type: "datetime", value: (r) => r.access.updatedAt },
   { header: "Payments", width: 10, type: "integer", value: (r) => r.paymentCount },
   { header: "Total paid (₹)", width: 14, type: "money", value: (r) => r.totalPaidPaise },
   { header: "Paid until", width: 14, type: "date", value: (r) => r.paidThrough },
+  { header: "Days left", width: 10, type: "integer", value: (r) => r.daysLeft ?? null },
+  { header: "Access status", width: 14, value: (r) => expiryStatusLabel(r.accessStatus) },
   { header: "Last payment", width: 18, type: "datetime", value: (r) => r.lastPaymentAt },
   { header: "Joined", width: 18, type: "datetime", value: (r) => r.createdAt },
   { header: "Razorpay subscription ID", width: 24, value: (r) => r.subscriptionId },
@@ -65,19 +70,62 @@ const SUBSCRIBER_COLUMNS: Column<Subscriber>[] = [
   { header: "Mode", width: 8, value: (r) => r.mode },
 ]
 
+// The sheet's Purchases tab: the export columns, then the calculated ones.
 const PAYMENT_COLUMNS: Column<Payment>[] = [
   { header: "Paid at", width: 18, type: "datetime", value: (r) => r.paidAt },
+  { header: "Purchase date", width: 14, type: "date", value: (r) => r.purchaseDate ?? null },
   { header: "Name", width: 24, value: (r) => r.fullName },
   { header: "Email", width: 30, value: (r) => r.email },
   contactColumn<Payment>(),
   { header: "TradingView username", width: 22, value: (r) => r.tradingviewId },
   { header: "Amount (₹)", width: 12, type: "money", value: (r) => r.amountPaise },
+  { header: "Razorpay fee (₹)", width: 14, type: "money", value: (r) => r.feePaise ?? null },
+  { header: "Net after fee (₹)", width: 15, type: "money", value: (r) => r.netPaise ?? r.amountPaise },
   { header: "Currency", width: 9, value: (r) => r.currency },
+  { header: "Plan", width: 12, value: (r) => planLabel(r.plan) },
+  { header: "Months", width: 8, type: "integer", value: (r) => r.plan?.months ?? null },
+  { header: "Expiry date", width: 14, type: "date", value: (r) => r.expiryDate ?? null },
+  { header: "Days left", width: 10, type: "integer", value: (r) => r.daysLeft ?? null },
+  { header: "Access status", width: 14, value: (r) => expiryStatusLabel(r.accessStatus) },
+  { header: "Repurchased", width: 12, value: (r) => yesNo(r.repurchased) },
+  { header: "Times repurchased", width: 16, type: "integer", value: (r) => r.timesRepurchased ?? null },
+  { header: "This purchase # (1 = first)", width: 22, type: "integer", value: (r) => r.purchaseNumber ?? null },
   { header: "Method", width: 12, value: (r) => paymentMethodLabel(r.method) },
-  { header: "Status", width: 11, value: (r) => r.status },
+  { header: "Payment status", width: 14, value: (r) => r.status },
+  { header: "AutoPay status", width: 16, value: (r) => (r.subscriptionStatus ? subscriptionStatusLabel(r.subscriptionStatus) : "") },
   { header: "Razorpay payment ID", width: 22, value: (r) => r.paymentId },
   { header: "Razorpay subscription ID", width: 24, value: (r) => r.subscriptionId },
   { header: "Razorpay invoice ID", width: 22, value: (r) => r.invoiceId },
+  { header: "Customer key", width: 22, value: (r) => r.customerKey ?? "" },
+  { header: "Mode", width: 8, value: (r) => r.mode },
+]
+
+// The sheet's Customers tab: one row per person.
+const CUSTOMER_COLUMNS: Column<Customer>[] = [
+  { header: "Name", width: 24, value: (r) => r.fullName },
+  { header: "TradingView username", width: 22, value: (r) => r.tradingviewId },
+  { header: "Email", width: 30, value: (r) => r.email },
+  contactColumn<Customer>(),
+  { header: "WhatsApp", width: 30, value: (r) => whatsappHref(r.contactNumber) },
+  { header: "Purchases", width: 10, type: "integer", value: (r) => r.purchaseCount },
+  { header: "Latest plan", width: 12, value: (r) => planLabel(r.latestPlan) },
+  { header: "First purchase", width: 14, type: "date", value: (r) => r.firstPurchase },
+  { header: "Latest purchase", width: 14, type: "date", value: (r) => r.latestPurchase },
+  { header: "Access valid till", width: 16, type: "date", value: (r) => r.validTill },
+  { header: "Days left", width: 10, type: "integer", value: (r) => r.daysLeft },
+  { header: "Status", width: 14, value: (r) => expiryStatusLabel(r.accessStatus) },
+  { header: "Total paid (₹)", width: 14, type: "money", value: (r) => r.totalPaidPaise },
+  { header: "Net after fees (₹)", width: 16, type: "money", value: (r) => r.netPaidPaise },
+  { header: "Repurchased", width: 12, value: (r) => yesNo(r.repurchased) },
+  { header: "Times repurchased", width: 16, type: "integer", value: (r) => r.timesRepurchased },
+  { header: "AutoPay status", width: 16, value: (r) => subscriptionStatusLabel(r.subscriptionStatus) },
+  { header: "TradingView access given", width: 14, value: (r) => yesNo(r.access.granted) },
+  { header: "To do on TradingView", width: 18, value: (r) => todo(r.access.action) },
+  { header: "Access ticked by", width: 18, value: (r) => r.access.updatedBy },
+  { header: "Access ticked at", width: 18, type: "datetime", value: (r) => r.access.updatedAt },
+  { header: "Subscriptions", width: 12, type: "integer", value: (r) => r.subscriptionCount },
+  { header: "Latest Razorpay subscription ID", width: 28, value: (r) => r.latestSubscriptionId },
+  { header: "Customer key", width: 22, value: (r) => r.customerKey },
   { header: "Mode", width: 8, value: (r) => r.mode },
 ]
 
@@ -165,7 +213,10 @@ export const exportSubscribers = (rows: Subscriber[], mode: IndicatorMode, forma
   fileResponse("subscribers", "Subscribers", SUBSCRIBER_COLUMNS, rows, mode, format)
 
 export const exportPayments = (rows: Payment[], mode: IndicatorMode, format: ExportFormat) =>
-  fileResponse("payments", "Payments", PAYMENT_COLUMNS, rows, mode, format)
+  fileResponse("purchases", "Purchases", PAYMENT_COLUMNS, rows, mode, format)
+
+export const exportCustomers = (rows: Customer[], mode: IndicatorMode, format: ExportFormat) =>
+  fileResponse("customers", "Customers", CUSTOMER_COLUMNS, rows, mode, format)
 
 export const exportFailedPayments = (rows: FailedPayment[], mode: IndicatorMode, format: ExportFormat) =>
   fileResponse("failed-payments", "Failed payments", FAILED_COLUMNS, rows, mode, format)

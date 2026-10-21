@@ -1,9 +1,12 @@
 # AGENTS.md — ShubzTrader indicator admin conventions
 
 Internal admin panel for ShubzTrader (Pune), at crm.shubztrader.com. It shows
-who bought the 7 Godfather Strategies TradingView indicator, their payments
+who bought the 7 Godfather Strategies TradingView indicator, their purchases
 and failed payments, and lets an admin tick "TradingView access given" once a
-buyer's username has been added on TradingView. Read this before writing code.
+buyer's username has been added on TradingView. Its dashboard, Customers and
+Purchases pages follow the spreadsheet tracker they replaced (one row per
+person merged on TradingView username; purchase date + months = expiry;
+expired / expiring soon (7 days) / active). Read this before writing code.
 
 Until migration 0007 this app was a student CRM (contacts, programs,
 enrollments, fees, attendance, messaging). All of that was removed, data
@@ -22,9 +25,24 @@ that service's admin API, from the server only:
   `server/indicator/*` or `lib/env.ts` into a client component.
 - `PAYMENTS_API_URL` defaults to the production payments service; it must be
   https outside localhost.
+- Two plans are sold: 1 month and 3 months. Each subscriber and purchase
+  carries its `plan` (key `1m`/`3m`, name, price, months). Lists filter with
+  `plan=1m|3m`.
+- **Every figure is computed by the payments service, never here.** Expiry
+  dates, days left, access status, the merge into customers, the dashboard's
+  three groups (access status today / sales / renewals) and the needs-access /
+  needs-removal flags all come from its one set of SQL rules, documented in
+  its README under "The dashboard's rules". This app only lays them out. If a
+  number looks wrong, fix it there (and its `test/dashboard.test.ts`).
+- Dates that are calendar days (`paidThrough`, `validTill`, `expiryDate`,
+  `purchaseDate`, `dashboard.today`) arrive as `yyyy-mm-dd` text. Show them
+  with `formatDate()`, never `formatIST()`, so no time zone shifts them.
 - The one write is the TradingView access tick
-  (`server/indicator/actions.ts`). The payments service stores it; this app
-  writes the audit row after that service confirms the change.
+  (`server/indicator/actions.ts`). The payments service stores it, on every
+  subscription of that customer at once (access belongs to a TradingView
+  username, not a subscription); this app writes the audit row after that
+  service confirms the change. The Customers page and the dashboard's to-do
+  lists tick through the customer's `latestSubscriptionId`.
 - If the payments service can't be reached or the key is wrong, Indicator
   pages show `components/indicator/unavailable.tsx`. Sign-in, Team and
   Profile must keep working regardless.
@@ -116,7 +134,8 @@ src/lib/                 money, fy, ids, env, audit, auth, permissions, session,
 src/server/indicator/    api (payments service), actions, filters, export
 src/server/team|profile/ team management and your own account
 src/app/(auth)/          login
-src/app/(app)/indicator/ overview, subscribers, payments, failed (+ export routes)
+src/app/(app)/indicator/ dashboard (page.tsx), customers, payments (the Purchases
+                         page; the path is kept), subscribers, failed (+ export routes)
 src/app/(app)/settings/  profile, team
 src/components/          ui primitives, data-table, layout, indicator
 ```

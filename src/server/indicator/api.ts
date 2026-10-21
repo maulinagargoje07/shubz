@@ -14,11 +14,15 @@
 import { paymentsApiConfig } from "@/lib/env"
 import type {
   AccessFilter,
+  CustomerList,
+  ExpiryStatusFilter,
   FailedPaymentList,
   IndicatorMode,
   IndicatorOverview,
   PaymentList,
+  PlanFilter,
   RecoveredFilter,
+  RepeatFilter,
   StatusFilter,
   Subscriber,
   SubscriberList,
@@ -123,6 +127,7 @@ export type SubscriberQuery = {
   q?: string
   status?: StatusFilter
   access?: AccessFilter
+  plan?: PlanFilter
   limit?: number
   offset?: number
 }
@@ -133,6 +138,23 @@ export type PaymentQuery = {
   /** "yyyy-MM-dd", India time, inclusive. */
   from?: string
   to?: string
+  plan?: PlanFilter
+  status?: ExpiryStatusFilter
+  repeat?: RepeatFilter
+  limit?: number
+  offset?: number
+}
+
+export type CustomerQuery = {
+  mode?: IndicatorMode
+  q?: string
+  status?: ExpiryStatusFilter
+  /** By the plan of their latest purchase. */
+  plan?: PlanFilter
+  access?: AccessFilter
+  repeat?: RepeatFilter
+  /** newest (default): latest purchase first. expiry: soonest to run out first. */
+  sort?: "newest" | "oldest" | "expiry"
   limit?: number
   offset?: number
 }
@@ -155,6 +177,10 @@ export function listSubscribers(query: SubscriberQuery = {}): Promise<Subscriber
 
 export function listPayments(query: PaymentQuery = {}): Promise<PaymentList> {
   return call("/payments", { query })
+}
+
+export function listCustomers(query: CustomerQuery = {}): Promise<CustomerList> {
+  return call("/customers", { query })
 }
 
 export function listFailedPayments(query: FailedPaymentQuery = {}): Promise<FailedPaymentList> {

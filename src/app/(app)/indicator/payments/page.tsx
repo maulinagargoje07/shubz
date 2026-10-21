@@ -4,14 +4,22 @@ import { cn } from "cn"
 
 import { DataTable, type Column } from "@/components/data-table/table"
 import { FilterBar, Pagination } from "@/components/data-table/filters"
-import { BuyerCell, RazorpayId, TradingViewCell, When } from "@/components/indicator/cells"
+import { AccessStatus, BuyerCell, RazorpayId, ValidTill, When } from "@/components/indicator/cells"
 import { ExportLinks } from "@/components/indicator/export-links"
 import { IndicatorToolbar } from "@/components/indicator/toolbar"
 import { IndicatorUnavailable } from "@/components/indicator/unavailable"
 import { PageHeader } from "@/components/page-header"
 import { EmptyState, StatusPill } from "@/components/ui/status"
 import { formatDate, todayIST } from "@/lib/fy"
-import { paymentMethodLabel, type Payment, type PaymentList } from "@/lib/indicator"
+import {
+  EXPIRY_STATUS_FILTERS,
+  paymentMethodLabel,
+  PLAN_FILTERS,
+  planLabel,
+  REPEAT_FILTERS,
+  type Payment,
+  type PaymentList,
+} from "@/lib/indicator"
 import { formatINR } from "@/lib/money"
 import { can } from "@/lib/permissions"
 import type { RawParam } from "@/lib/search-params"
@@ -20,7 +28,7 @@ import { listPayments, PaymentsApiError } from "@/server/indicator/api"
 import { filterParams, fromRecord, hrefWith, paymentFilters, PER_PAGE } from "@/server/indicator/filters"
 
 export const dynamic = "force-dynamic"
-export const metadata = { title: "Payments" }
+export const metadata = { title: "Purchases" }
 
 const PATH = "/indicator/payments"
 
@@ -31,7 +39,12 @@ function monthRange(year: number, month: number): { from: string; to: string } {
   return { from: `${year}-${mm}-01`, to: `${year}-${mm}-${String(last).padStart(2, "0")}` }
 }
 
-export default async function PaymentsPage({
+/**
+ * The sheet's Purchases tab: every successful payment (a first payment or an
+ * AutoPay renewal) with the calculated columns: plan, expiry date, days left,
+ * access status, and which purchase this is for the customer.
+ */
+export default async function PurchasesPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, RawParam>>
@@ -47,6 +60,9 @@ export default async function PaymentsPage({
       q: filters.q,
       from: filters.from,
       to: filters.to,
+      plan: filters.plan,
+      status: filters.status,
+      repeat: filters.repeat,
       limit: PER_PAGE,
       offset: (filters.page - 1) * PER_PAGE,
     })
@@ -54,14 +70,22 @@ export default async function PaymentsPage({
     if (!(error instanceof PaymentsApiError)) throw error
     return (
       <div className="pb-8">
-        <PageHeader title="Payments" />
+        <PageHeader title="Purchases" />
         <IndicatorUnavailable error={error} />
       </div>
     )
   }
 
   const mode = data.mode === data.serviceMode ? undefined : data.mode
-  const params = filterParams({ q: filters.q, from: filters.from, to: filters.to, mode })
+  const listFilters = {
+    q: filters.q,
+    from: filters.from,
+    to: filters.to,
+    plan: filters.plan,
+    status: filters.status,
+    repeat: filters.repeat,
+  }
+  const params = filterParams({ ...listFilters, mode })
 
   // Quick ranges, by the calendar in India.
   const [year, month] = todayIST().split("-").map(Number)
@@ -77,7 +101,7 @@ export default async function PaymentsPage({
       id: "buyer",
       header: "Buyer",
       priority: "primary",
-      cell: (row) => <BuyerCell name={row.fullName} email={row.email} />,
+      cell: (row) => <BuyerCell name={row.fullName} email={row.email} tradingviewId={row.tradingviewId} />,
     },
     {
       id: "amount",
@@ -85,28 +109,56 @@ export default async function PaymentsPage({
       priority: "primary",
       align: "right",
       hideLabelOnCard: true,
-      cell: (row) => <span className="font-semibold tabular-nums text-paid-foreground">{formatINR(row.amountPaise)}</span>,
+      cell: (row) => (
+        <span className="inline-flex flex-col items-end">
+          <span className="font-semibold tabular-nums text-paid-foreground">{formatINR(row.amountPaise)}</span>
+          {row.feePaise !== null && row.feePaise !== undefined && row.netPaise !== undefined ? (
+            <span className="text-xs text-muted-foreground tabular-nums" title="After Razorpay's fee">
+              net {formatINR(row.netPaise)}
+            </span>
+          ) : null}
+        </span>
+      ),
     },
     {
       id: "paid",
       header: "Paid at",
       priority: "secondary",
-      cell: (row) => <When iso={row.paidAt} />,
-    },
-    {
-      id: "tradingview",
-      header: "TradingView",
-      priority: "secondary",
-      cell: (row) => <TradingViewCell id={row.tradingviewId} />,
-    },
-    {
-      id: "method",
-      header: "Method",
-      priority: "tertiary",
       cell: (row) => (
-        <span className="inline-flex items-center gap-1.5">
-          {paymentMethodLabel(row.method)}
-          {row.status !== "captured" ? <StatusPill tone="pending">{row.status}</StatusPill> : null}
+        <span className="inline-flex flex-col">
+          <When iso={row.paidAt} />
+          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            {paymentMethodLabel(row.method)}
+            {row.status !== "captured" ? <StatusPill tone="pending">{row.status}</StatusPill> : null}
+          </span>
+        </span>
+      ),
+    },
+    {
+      id: "plan",
+      header: "Plan",
+      priority: "secondary",
+      cell: (row) => (
+        <span className="inline-flex flex-col">
+          <span className="whitespace-nowrap">{planLabel(row.plan)}</span>
+          {row.purchaseNumber ? (
+            <span className="whitespace-nowrap text-xs text-muted-foreground">
+              {row.purchaseCount && row.purchaseCount > 1
+                ? `#${row.purchaseNumber} of ${row.purchaseCount}`
+                : "first purchase"}
+            </span>
+          ) : null}
+        </span>
+      ),
+    },
+    {
+      id: "expiry",
+      header: "Expires",
+      priority: "secondary",
+      cell: (row) => (
+        <span className="inline-flex flex-col items-start gap-1">
+          <AccessStatus status={row.accessStatus} />
+          <ValidTill date={row.expiryDate} daysLeft={row.daysLeft} />
         </span>
       ),
     },
@@ -118,18 +170,18 @@ export default async function PaymentsPage({
     },
   ]
 
-  const filtered = Boolean(filters.q || filters.from || filters.to)
+  const filtered = Boolean(filters.q || filters.from || filters.to || filters.plan || filters.status || filters.repeat)
 
   return (
     <div className="pb-8">
       <PageHeader
-        title="Payments"
-        description="Every successful charge: first payments and monthly AutoPay renewals."
+        title="Purchases"
+        description="Every successful payment: first payments and AutoPay renewals, each with the plan it bought and when that runs out."
         actions={canExport ? <ExportLinks href={`${PATH}/export`} params={params} /> : undefined}
       />
       <IndicatorToolbar
         path={PATH}
-        params={filterParams({ q: filters.q, from: filters.from, to: filters.to })}
+        params={filterParams(listFilters)}
         mode={data.mode}
         serviceMode={data.serviceMode}
         generatedAt={data.generatedAt}
@@ -138,11 +190,16 @@ export default async function PaymentsPage({
       <div className="pt-4">
         <FilterBar
           action={PATH}
-          params={{ q: filters.q }}
+          params={{ q: filters.q, plan: filters.plan, status: filters.status, repeat: filters.repeat }}
           hidden={{ mode }}
           clearHref={hrefWith(PATH, { mode })}
           hasActive={filtered}
           searchPlaceholder="Name, email, phone, TradingView or pay_ ID"
+          filters={[
+            { key: "plan", label: "Plans", options: [...PLAN_FILTERS] },
+            { key: "status", label: "Statuses", options: [...EXPIRY_STATUS_FILTERS] },
+            { key: "repeat", label: "Buyers", options: [...REPEAT_FILTERS] },
+          ]}
         >
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             <label className="min-w-0">
@@ -173,7 +230,7 @@ export default async function PaymentsPage({
             return (
               <Link
                 key={range.label}
-                href={hrefWith(PATH, { q: filters.q, from: range.from, to: range.to, mode })}
+                href={hrefWith(PATH, { ...listFilters, from: range.from, to: range.to, mode })}
                 aria-current={active ? "true" : undefined}
                 className={cn(
                   "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
@@ -192,7 +249,13 @@ export default async function PaymentsPage({
       <div className="px-4 pb-3 sm:px-6">
         <p className="text-sm text-muted-foreground">
           <span className="font-semibold text-foreground tabular-nums">{formatINR(data.totalPaise)}</span> from{" "}
-          {data.total} {data.total === 1 ? "payment" : "payments"}
+          {data.total} {data.total === 1 ? "purchase" : "purchases"}
+          {data.netPaise !== undefined && data.netPaise !== data.totalPaise ? (
+            <>
+              {" "}
+              · <span className="tabular-nums">{formatINR(data.netPaise)}</span> after Razorpay fees
+            </>
+          ) : null}
           {filters.from || filters.to
             ? ` · ${filters.from ? formatDate(filters.from) : "the start"} to ${filters.to ? formatDate(filters.to) : "today"}`
             : ""}
@@ -203,9 +266,9 @@ export default async function PaymentsPage({
         <div className="px-4 sm:px-6">
           <EmptyState
             icon={<IndianRupee className="size-5" />}
-            title={filtered ? "No payments match those filters" : "No payments yet"}
+            title={filtered ? "No purchases match those filters" : "No purchases yet"}
             description={
-              filtered ? "Clear the filters to see every payment." : "Payments appear here the moment Razorpay confirms them."
+              filtered ? "Clear the filters to see every purchase." : "Purchases appear here the moment Razorpay confirms them."
             }
           />
         </div>

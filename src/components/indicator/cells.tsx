@@ -6,16 +6,28 @@
 import { MessageCircle } from "lucide-react"
 
 import { CopyButton } from "@/components/indicator/copy-button"
-import { StatusPill, subscriptionTone } from "@/components/ui/status"
-import { formatIST } from "@/lib/fy"
-import { subscriptionStatusHint, subscriptionStatusLabel } from "@/lib/indicator"
+import { expiryTone, StatusPill, subscriptionTone } from "@/components/ui/status"
+import { formatDate, formatIST } from "@/lib/fy"
+import {
+  daysLeftLabel,
+  expiryStatusHint,
+  expiryStatusLabel,
+  subscriptionStatusHint,
+  subscriptionStatusLabel,
+} from "@/lib/indicator"
 import { formatPhone, whatsappHref } from "@/lib/phone-format"
 
-export function BuyerCell({ name, email }: { name: string; email: string }) {
+export function BuyerCell({ name, email, tradingviewId }: { name: string; email: string; tradingviewId?: string }) {
   return (
     <div className="min-w-0">
       <p className="truncate font-medium text-foreground">{name}</p>
       <p className="truncate text-xs text-muted-foreground">{email}</p>
+      {tradingviewId ? (
+        <p className="mt-0.5 flex min-w-0 items-center gap-0.5 text-xs">
+          <span className="truncate font-mono text-foreground/90">{tradingviewId}</span>
+          <CopyButton value={tradingviewId} label={`Copy TradingView username ${tradingviewId}`} />
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -59,6 +71,27 @@ export function SubscriptionStatus({ status }: { status: string }) {
   return (
     <span title={subscriptionStatusHint(status)}>
       <StatusPill tone={subscriptionTone(status)}>{subscriptionStatusLabel(status)}</StatusPill>
+    </span>
+  )
+}
+
+/** The sheet's access status, in its colour. */
+export function AccessStatus({ status }: { status: string | null | undefined }) {
+  return (
+    <span title={expiryStatusHint(status)}>
+      <StatusPill tone={expiryTone(status)}>{expiryStatusLabel(status)}</StatusPill>
+    </span>
+  )
+}
+
+/** The date access runs out, with how far away that is. */
+export function ValidTill({ date, daysLeft }: { date: string | null | undefined; daysLeft: number | null | undefined }) {
+  if (!date) return <span className="text-muted-foreground">—</span>
+  const relative = daysLeftLabel(daysLeft)
+  return (
+    <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
+      <span className="whitespace-nowrap tabular-nums">{formatDate(date)}</span>
+      {relative ? <span className="text-xs text-muted-foreground">{relative}</span> : null}
     </span>
   )
 }

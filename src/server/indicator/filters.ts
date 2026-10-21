@@ -9,12 +9,18 @@
 
 import {
   ACCESS_FILTER_VALUES,
+  EXPIRY_STATUS_FILTER_VALUES,
   INDICATOR_MODES,
+  PLAN_FILTER_VALUES,
   RECOVERED_FILTER_VALUES,
+  REPEAT_FILTER_VALUES,
   STATUS_FILTER_VALUES,
   type AccessFilter,
+  type ExpiryStatusFilter,
   type IndicatorMode,
+  type PlanFilter,
   type RecoveredFilter,
+  type RepeatFilter,
   type StatusFilter,
 } from "@/lib/indicator"
 import { enumParam, pageParam, textParam, type RawParam } from "@/lib/search-params"
@@ -50,6 +56,7 @@ export type SubscriberFilters = {
   q?: string
   status?: StatusFilter
   access?: AccessFilter
+  plan?: PlanFilter
   page: number
 }
 
@@ -59,6 +66,7 @@ export function subscriberFilters(get: ParamReader): SubscriberFilters {
     q: textParam(get("q")),
     status: enumParam(get("status"), STATUS_FILTER_VALUES),
     access: enumParam(get("access"), ACCESS_FILTER_VALUES),
+    plan: enumParam(get("plan"), PLAN_FILTER_VALUES),
     page: pageParam(get("page")),
   }
 }
@@ -68,6 +76,9 @@ export type PaymentFilters = {
   q?: string
   from?: string
   to?: string
+  plan?: PlanFilter
+  status?: ExpiryStatusFilter
+  repeat?: RepeatFilter
   page: number
 }
 
@@ -77,8 +88,41 @@ export function paymentFilters(get: ParamReader): PaymentFilters {
     q: textParam(get("q")),
     from: dateParam(get("from")),
     to: dateParam(get("to")),
+    plan: enumParam(get("plan"), PLAN_FILTER_VALUES),
+    status: enumParam(get("status"), EXPIRY_STATUS_FILTER_VALUES),
+    repeat: enumParam(get("repeat"), REPEAT_FILTER_VALUES),
     page: pageParam(get("page")),
   }
+}
+
+export type CustomerFilters = {
+  mode?: IndicatorMode
+  q?: string
+  status?: ExpiryStatusFilter
+  plan?: PlanFilter
+  access?: AccessFilter
+  repeat?: RepeatFilter
+  page: number
+}
+
+export function customerFilters(get: ParamReader): CustomerFilters {
+  return {
+    mode: modeParam(get),
+    q: textParam(get("q")),
+    status: enumParam(get("status"), EXPIRY_STATUS_FILTER_VALUES),
+    plan: enumParam(get("plan"), PLAN_FILTER_VALUES),
+    access: enumParam(get("access"), ACCESS_FILTER_VALUES),
+    repeat: enumParam(get("repeat"), REPEAT_FILTER_VALUES),
+    page: pageParam(get("page")),
+  }
+}
+
+/**
+ * How a customers list is ordered: by soonest expiry when looking at who is
+ * running out (that is the order to chase them in), newest purchase otherwise.
+ */
+export function customerSort(filters: Pick<CustomerFilters, "status">): "newest" | "expiry" {
+  return filters.status === "expiring" || filters.status === "expired" ? "expiry" : "newest"
 }
 
 export type FailedFilters = {

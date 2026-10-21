@@ -22,10 +22,10 @@ export async function GET(request: Request) {
   if (!can(user, "VIEW_INDICATOR") || !can(user, "EXPORT_DATA")) redirect("/indicator/subscribers?denied=1")
 
   const url = new URL(request.url)
-  const { mode, q, status, access } = subscriberFilters(fromUrl(url))
+  const { mode, q, status, access, plan } = subscriberFilters(fromUrl(url))
 
   try {
-    const { rows, meta } = await fetchAll((page) => listSubscribers({ mode, q, status, access, ...page }))
+    const { rows, meta } = await fetchAll((page) => listSubscribers({ mode, q, status, access, plan, ...page }))
     return exportSubscribers(rows, meta.mode, exportFormat(url.searchParams.get("format")))
   } catch (error) {
     if (error instanceof PaymentsApiError) return exportFailure(error)

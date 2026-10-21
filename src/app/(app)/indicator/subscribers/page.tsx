@@ -4,14 +4,21 @@ import { ReceiptIndianRupee } from "lucide-react"
 import { DataTable, type Column } from "@/components/data-table/table"
 import { FilterBar, Pagination } from "@/components/data-table/filters"
 import { AccessToggle } from "@/components/indicator/access-toggle"
-import { BuyerCell, ContactCell, SubscriptionStatus, TradingViewCell, When } from "@/components/indicator/cells"
+import { AccessStatus, BuyerCell, ContactCell, SubscriptionStatus, ValidTill, When } from "@/components/indicator/cells"
 import { ExportLinks } from "@/components/indicator/export-links"
 import { IndicatorToolbar } from "@/components/indicator/toolbar"
 import { IndicatorUnavailable } from "@/components/indicator/unavailable"
 import { PageHeader } from "@/components/page-header"
 import { EmptyState } from "@/components/ui/status"
 import { formatIST } from "@/lib/fy"
-import { ACCESS_FILTERS, STATUS_FILTERS, type Subscriber, type SubscriberList } from "@/lib/indicator"
+import {
+  ACCESS_FILTERS,
+  PLAN_FILTERS,
+  planName,
+  STATUS_FILTERS,
+  type Subscriber,
+  type SubscriberList,
+} from "@/lib/indicator"
 import { formatINRShort } from "@/lib/money"
 import { can } from "@/lib/permissions"
 import type { RawParam } from "@/lib/search-params"
@@ -20,7 +27,7 @@ import { listSubscribers, PaymentsApiError } from "@/server/indicator/api"
 import { filterParams, fromRecord, hrefWith, PER_PAGE, subscriberFilters } from "@/server/indicator/filters"
 
 export const dynamic = "force-dynamic"
-export const metadata = { title: "Subscribers" }
+export const metadata = { title: "Subscriptions" }
 
 const PATH = "/indicator/subscribers"
 
@@ -41,6 +48,7 @@ export default async function SubscribersPage({
       q: filters.q,
       status: filters.status,
       access: filters.access,
+      plan: filters.plan,
       limit: PER_PAGE,
       offset: (filters.page - 1) * PER_PAGE,
     })
@@ -48,7 +56,7 @@ export default async function SubscribersPage({
     if (!(error instanceof PaymentsApiError)) throw error
     return (
       <div className="pb-8">
-        <PageHeader title="Subscribers" />
+        <PageHeader title="Subscriptions" />
         <IndicatorUnavailable error={error} />
       </div>
     )
@@ -56,14 +64,14 @@ export default async function SubscribersPage({
 
   // The mode goes into links only when it isn't the checkout's own.
   const mode = data.mode === data.serviceMode ? undefined : data.mode
-  const params = filterParams({ q: filters.q, status: filters.status, access: filters.access, mode })
+  const params = filterParams({ q: filters.q, status: filters.status, access: filters.access, plan: filters.plan, mode })
 
   const columns: Column<Subscriber>[] = [
     {
       id: "buyer",
       header: "Buyer",
       priority: "primary",
-      cell: (row) => <BuyerCell name={row.fullName} email={row.email} />,
+      cell: (row) => <BuyerCell name={row.fullName} email={row.email} tradingviewId={row.tradingviewId} />,
     },
     {
       id: "status",
@@ -72,12 +80,6 @@ export default async function SubscribersPage({
       align: "right",
       hideLabelOnCard: true,
       cell: (row) => <SubscriptionStatus status={row.status} />,
-    },
-    {
-      id: "tradingview",
-      header: "TradingView",
-      priority: "secondary",
-      cell: (row) => <TradingViewCell id={row.tradingviewId} />,
     },
     {
       id: "contact",
@@ -100,10 +102,19 @@ export default async function SubscribersPage({
             {" "}
             · {row.paymentCount}×
           </span>
-          {row.paidThrough ? (
-            <span className="block text-xs text-muted-foreground">until {formatIST(row.paidThrough, "d MMM yyyy")}</span>
-          ) : null}
+          {row.plan ? <span className="block text-xs text-muted-foreground">{planName(row.plan)}</span> : null}
         </Link>
+      ),
+    },
+    {
+      id: "validTill",
+      header: "Access valid till",
+      priority: "secondary",
+      cell: (row) => (
+        <span className="inline-flex flex-col items-start gap-1">
+          <AccessStatus status={row.accessStatus} />
+          <ValidTill date={row.paidThrough} daysLeft={row.daysLeft} />
+        </span>
       ),
     },
     {
@@ -130,18 +141,18 @@ export default async function SubscribersPage({
     },
   ]
 
-  const filtered = Boolean(filters.q || filters.status || filters.access)
+  const filtered = Boolean(filters.q || filters.status || filters.access || filters.plan)
 
   return (
     <div className="pb-8">
       <PageHeader
-        title="Subscribers"
-        description="Everyone who has paid. Tick “Access given” once their username is added on TradingView."
+        title="Subscriptions"
+        description="Every Razorpay AutoPay subscription and its status. Tick “Access given” once the username is added on TradingView. For one row per person, see Customers."
         actions={canExport ? <ExportLinks href={`${PATH}/export`} params={params} /> : undefined}
       />
       <IndicatorToolbar
         path={PATH}
-        params={filterParams({ q: filters.q, status: filters.status, access: filters.access })}
+        params={filterParams({ q: filters.q, status: filters.status, access: filters.access, plan: filters.plan })}
         mode={data.mode}
         serviceMode={data.serviceMode}
         generatedAt={data.generatedAt}
@@ -150,13 +161,14 @@ export default async function SubscribersPage({
       <div className="pt-4">
         <FilterBar
           action={PATH}
-          params={{ q: filters.q, status: filters.status, access: filters.access }}
+          params={{ q: filters.q, status: filters.status, access: filters.access, plan: filters.plan }}
           hidden={{ mode }}
           clearHref={hrefWith(PATH, { mode })}
           searchPlaceholder="Name, email, phone, TradingView or sub_ ID"
           filters={[
             { key: "status", label: "Statuses", options: [...STATUS_FILTERS] },
             { key: "access", label: "Access", options: [...ACCESS_FILTERS] },
+            { key: "plan", label: "Plans", options: [...PLAN_FILTERS] },
           ]}
         />
       </div>

@@ -2,6 +2,7 @@ import type { Permission } from "@/lib/permissions"
 
 import {
   CircleAlert,
+  Contact,
   IndianRupee,
   LayoutDashboard,
   ShieldCheck,
@@ -27,9 +28,10 @@ export const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
   {
     heading: "Indicator",
     items: [
-      { href: "/indicator", label: "Overview", icon: LayoutDashboard, permission: "VIEW_INDICATOR", exact: true },
-      { href: "/indicator/subscribers", label: "Subscribers", icon: Users, permission: "VIEW_INDICATOR" },
-      { href: "/indicator/payments", label: "Payments", icon: IndianRupee, permission: "VIEW_INDICATOR" },
+      { href: "/indicator", label: "Dashboard", icon: LayoutDashboard, permission: "VIEW_INDICATOR", exact: true },
+      { href: "/indicator/customers", label: "Customers", icon: Contact, permission: "VIEW_INDICATOR" },
+      { href: "/indicator/payments", label: "Purchases", icon: IndianRupee, permission: "VIEW_INDICATOR" },
+      { href: "/indicator/subscribers", label: "Subscriptions", icon: Users, permission: "VIEW_INDICATOR" },
       { href: "/indicator/failed", label: "Failed payments", icon: CircleAlert, permission: "VIEW_INDICATOR" },
     ],
   },
@@ -57,13 +59,14 @@ export function visibleSections(permissions: readonly Permission[], role: string
 
 /**
  * The destinations that get a permanent slot in the phone tab bar: the four
- * Indicator pages. Everything else stays one tap away behind "More".
+ * Indicator pages used most. Everything else (subscriptions, failed payments)
+ * stays one tap away behind "More". Four at most: the bar's grid stops there.
  */
 export const MOBILE_TABS: NavItem[] = [
-  { href: "/indicator", label: "Overview", icon: LayoutDashboard, permission: "VIEW_INDICATOR", exact: true },
-  { href: "/indicator/subscribers", label: "Subscribers", icon: Users, permission: "VIEW_INDICATOR" },
-  { href: "/indicator/payments", label: "Payments", icon: IndianRupee, permission: "VIEW_INDICATOR" },
-  { href: "/indicator/failed", label: "Failed", icon: CircleAlert, permission: "VIEW_INDICATOR" },
+  { href: "/indicator", label: "Dashboard", icon: LayoutDashboard, permission: "VIEW_INDICATOR", exact: true },
+  { href: "/indicator/customers", label: "Customers", icon: Contact, permission: "VIEW_INDICATOR" },
+  { href: "/indicator/payments", label: "Purchases", icon: IndianRupee, permission: "VIEW_INDICATOR" },
+  { href: "/indicator/subscribers", label: "AutoPay", icon: Users, permission: "VIEW_INDICATOR" },
 ]
 
 export function visibleTabs(permissions: readonly Permission[], role: string): NavItem[] {
