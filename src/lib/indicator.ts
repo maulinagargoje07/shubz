@@ -281,6 +281,12 @@ export const ACCESS_FILTERS = [
 export type AccessFilter = (typeof ACCESS_FILTERS)[number]["value"]
 export const ACCESS_FILTER_VALUES = ACCESS_FILTERS.map((f) => f.value)
 
+/**
+ * The indicator's page on TradingView, where an admin adds or removes a
+ * buyer's username under "Manage access". Linked next to the access tick.
+ */
+export const TRADINGVIEW_SCRIPT_URL = "https://in.tradingview.com/v/GyTy6yvo/"
+
 export const PLAN_FILTERS = [
   { value: "1m", label: "1 month" },
   { value: "3m", label: "3 months" },

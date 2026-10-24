@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Check } from "lucide-react"
+import { Check, ExternalLink } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "cn"
 
 import { StatusPill } from "@/components/ui/status"
-import type { AccessAction } from "@/lib/indicator"
+import { TRADINGVIEW_SCRIPT_URL, type AccessAction } from "@/lib/indicator"
 import { updateTradingViewAccess } from "@/server/indicator/actions"
 
 /**
@@ -90,6 +90,7 @@ export function AccessToggle({
     <div className="flex flex-col items-end gap-1">
       <div className="flex flex-wrap items-center justify-end gap-1.5">
         {shownAction ? <ActionPill action={shownAction} /> : null}
+        <TradingViewLink name={name} />
         <label
           className={cn(
             "inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm font-medium transition-colors pointer-coarse:min-h-11",
@@ -126,6 +127,25 @@ export function AccessToggle({
         </p>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * Opens the indicator on TradingView in a new tab, where the username is
+ * added under "Manage access" before the tick is made.
+ */
+function TradingViewLink({ name }: { name: string }) {
+  return (
+    <a
+      href={TRADINGVIEW_SCRIPT_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Open the indicator on TradingView to give ${name} access`}
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card px-2.5 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary pointer-coarse:min-h-11"
+    >
+      <ExternalLink className="size-3.5" aria-hidden />
+      TradingView
+    </a>
   )
 }
 
