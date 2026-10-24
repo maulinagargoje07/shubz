@@ -2,8 +2,8 @@
 
 /**
  * The sheet's Customers tab as a grid: one row per person, the sheet's
- * columns in the sheet's order, the row coloured by status, then the CRM's
- * own columns (AutoPay, the access tick, what to do).
+ * columns in the sheet's order, the row coloured by status, with the CRM's
+ * own AutoPay and access-tick columns pulled up next to the name.
  */
 
 import { MessageCircle } from "lucide-react"
@@ -33,6 +33,37 @@ export function CustomersGrid({
       header: "TradingView username",
       value: (r) => r.tradingviewId,
       cell: (r) => (r.tradingviewId ? <TradingViewCell id={r.tradingviewId} /> : <span className="text-muted-foreground">—</span>),
+    },
+    // AutoPay and the tick sit up front, so whether access is given is seen without scrolling.
+    {
+      id: "autopay",
+      header: "AutoPay",
+      value: (r) => subscriptionStatusLabel(r.subscriptionStatus),
+      cell: (r) => (
+        <span className="inline-flex items-center gap-1">
+          <SubscriptionStatus status={r.subscriptionStatus} />
+          {r.subscriptionCount > 1 ? <span className="text-xs text-muted-foreground">×{r.subscriptionCount}</span> : null}
+        </span>
+      ),
+    },
+    {
+      id: "accessGiven",
+      header: "Access given",
+      kind: "yesno",
+      value: (r) => r.access.granted,
+      cell: (r) => (
+        <AccessToggle
+          subscriptionId={r.latestSubscriptionId}
+          name={r.fullName}
+          granted={r.access.granted}
+          action={r.access.action}
+          updatedBy={r.access.updatedBy}
+          updatedLabel={r.access.updatedAt ? formatIST(r.access.updatedAt, "d MMM, h:mm a") : null}
+          canEdit={canTick}
+          hideAction
+          compact
+        />
+      ),
     },
     { id: "email", header: "Email", value: (r) => r.email },
     {
@@ -81,36 +112,6 @@ export function CustomersGrid({
       cell: (r) => <AccessStatus status={r.accessStatus} />,
     },
     { id: "totalPaid", header: "Total paid", kind: "money", align: "right", sum: true, value: (r) => r.totalPaidPaise },
-    {
-      id: "autopay",
-      header: "AutoPay",
-      value: (r) => subscriptionStatusLabel(r.subscriptionStatus),
-      cell: (r) => (
-        <span className="inline-flex items-center gap-1">
-          <SubscriptionStatus status={r.subscriptionStatus} />
-          {r.subscriptionCount > 1 ? <span className="text-xs text-muted-foreground">×{r.subscriptionCount}</span> : null}
-        </span>
-      ),
-    },
-    {
-      id: "accessGiven",
-      header: "Access given",
-      kind: "yesno",
-      value: (r) => r.access.granted,
-      cell: (r) => (
-        <AccessToggle
-          subscriptionId={r.latestSubscriptionId}
-          name={r.fullName}
-          granted={r.access.granted}
-          action={r.access.action}
-          updatedBy={r.access.updatedBy}
-          updatedLabel={r.access.updatedAt ? formatIST(r.access.updatedAt, "d MMM, h:mm a") : null}
-          canEdit={canTick}
-          hideAction
-          compact
-        />
-      ),
-    },
     {
       id: "todo",
       header: "To do",
