@@ -27,6 +27,7 @@ export function AccessToggle({
   updatedLabel,
   canEdit,
   hideAction = false,
+  compact = false,
 }: {
   subscriptionId: string
   name: string
@@ -38,6 +39,8 @@ export function AccessToggle({
   canEdit: boolean
   /** Leave out the "Needs access/removal" pill where the list already says it. */
   hideAction?: boolean
+  /** One short line for a grid cell: the tick, a TradingView icon, who ticked it in the tooltip. */
+  compact?: boolean
 }) {
   const router = useRouter()
   const [optimistic, setOptimistic] = useState<boolean | null>(null)
@@ -77,12 +80,49 @@ export function AccessToggle({
     router.refresh()
   }
 
+  const who = checked && updatedBy ? `Ticked by ${updatedBy}${updatedLabel ? ` · ${updatedLabel}` : ""}` : undefined
+
   if (!canEdit) {
     return (
-      <div className="flex flex-wrap items-center justify-end gap-1.5">
+      <div className={cn("flex flex-wrap items-center gap-1.5", compact ? "justify-start" : "justify-end")} title={who}>
         <StatusPill tone={checked ? "paid" : "muted"}>{checked ? "Access given" : "No access"}</StatusPill>
         {shownAction ? <ActionPill action={shownAction} /> : null}
       </div>
+    )
+  }
+
+  if (compact) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <label
+          title={who ?? (checked ? "Access given" : "Tick once the username is added on TradingView")}
+          className={cn(
+            "inline-flex cursor-pointer select-none items-center gap-1.5 rounded-md border px-1.5 py-0.5 text-xs font-medium transition-colors",
+            checked ? "border-paid/40 bg-paid-muted text-paid-foreground" : "border-border bg-card hover:bg-secondary/70",
+            saving && "cursor-wait opacity-70"
+          )}
+        >
+          <input
+            type="checkbox"
+            className="peer sr-only"
+            checked={checked}
+            disabled={saving}
+            onChange={toggle}
+            aria-label={`TradingView access given for ${name}`}
+          />
+          <span
+            aria-hidden
+            className={cn(
+              "flex size-3.5 shrink-0 items-center justify-center rounded border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ring/70",
+              checked ? "border-paid bg-paid text-black" : "border-muted-foreground/60"
+            )}
+          >
+            {checked ? <Check className="size-2.5" strokeWidth={3.5} /> : null}
+          </span>
+          {saving ? "Saving…" : checked ? "Yes" : "No"}
+        </label>
+        <TradingViewLink name={name} compact />
+      </span>
     )
   }
 
@@ -134,17 +174,21 @@ export function AccessToggle({
  * Opens the indicator on TradingView in a new tab, where the username is
  * added under "Manage access" before the tick is made.
  */
-function TradingViewLink({ name }: { name: string }) {
+function TradingViewLink({ name, compact = false }: { name: string; compact?: boolean }) {
   return (
     <a
       href={TRADINGVIEW_SCRIPT_URL}
       target="_blank"
       rel="noopener noreferrer"
       title={`Open the indicator on TradingView to give ${name} access`}
-      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card px-2.5 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary pointer-coarse:min-h-11"
+      aria-label={compact ? `Open the indicator on TradingView to give ${name} access` : undefined}
+      className={cn(
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary",
+        compact ? "size-6 justify-center rounded-md" : "px-2.5 py-1.5 text-sm pointer-coarse:min-h-11"
+      )}
     >
       <ExternalLink className="size-3.5" aria-hidden />
-      TradingView
+      {compact ? null : "TradingView"}
     </a>
   )
 }

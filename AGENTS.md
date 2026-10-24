@@ -97,15 +97,27 @@ Nobody signs themselves up: Better Auth's sign-up endpoint is disabled
 
 Used on a phone and on a laptop, on Indian mobile networks.
 
-- **Lists are server components** using `DataTable`
-  (`components/data-table/table.tsx`). Each column has a `priority`
-  (`primary` always, `secondary` from `sm`, `tertiary` from `lg`); below `sm`
-  rows become cards, with an `actions` column in the card footer. Never make a
-  table scroll sideways.
-- **Filters and pagination are a plain GET form and plain links**
-  (`components/data-table/filters.tsx`). Each list's Excel/CSV download takes
-  the same filters (`server/indicator/filters.ts`), so a download is always
-  exactly what is on screen, every page of it.
+- **Customers and Purchases are Excel-style grids** (`components/grid/grid.tsx`,
+  a client component; the columns live in `components/indicator/*-grid.tsx`).
+  The page loads the whole list (`fetchAll`) and the grid sorts and filters in
+  the browser: click a heading to sort, the funnel on each heading ticks
+  values / sets a from-to, filters combine, the bar shows what matched with
+  totals and downloads exactly those rows as CSV. Rows are tinted by access
+  status like the sheet. The grid scrolls sideways with the first column
+  pinned — on these two pages that is the point, the admin asked for a sheet.
+  Links into them (`?status=expiring`, `?access=grant`, `?plan=3m`,
+  `?repeat=yes`, `?q=`) become the grid's starting filters. Nothing is
+  calculated in the grid; it only arranges values the payments service sent.
+- **Subscriptions and Failed payments are server components** using
+  `DataTable` (`components/data-table/table.tsx`). Each column has a
+  `priority` (`primary` always, `secondary` from `sm`, `tertiary` from `lg`);
+  below `sm` rows become cards, with an `actions` column in the card footer.
+  Their filters and pagination are a plain GET form and plain links
+  (`components/data-table/filters.tsx`).
+- **The header's Excel/CSV downloads** (`*/export` routes) take the URL's
+  filters (`server/indicator/filters.ts`) and walk every page, so on
+  Subscriptions and Failed payments they match the screen; on Customers and
+  Purchases they are the whole list, and the grid's own button is the filtered one.
 - **Status has one visual language:** `StatusPill` tones and
   `subscriptionTone()` in `components/ui/status.tsx`. Don't hand-write
   emerald/rose classes at a call site.
