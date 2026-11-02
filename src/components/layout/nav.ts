@@ -6,6 +6,7 @@ import {
   IndianRupee,
   LayoutDashboard,
   ShieldCheck,
+  Ticket,
   UserRound,
   Users,
   type LucideIcon,
@@ -33,6 +34,7 @@ export const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
       { href: "/indicator/payments", label: "Purchases", icon: IndianRupee, permission: "VIEW_INDICATOR" },
       { href: "/indicator/subscribers", label: "Subscriptions", icon: Users, permission: "VIEW_INDICATOR" },
       { href: "/indicator/failed", label: "Failed payments", icon: CircleAlert, permission: "VIEW_INDICATOR" },
+      { href: "/indicator/coupons", label: "Coupons", icon: Ticket, permission: "VIEW_INDICATOR" },
     ],
   },
   {
@@ -59,8 +61,8 @@ export function visibleSections(permissions: readonly Permission[], role: string
 
 /**
  * The destinations that get a permanent slot in the phone tab bar: the four
- * Indicator pages used most. Everything else (subscriptions, failed payments)
- * stays one tap away behind "More". Four at most: the bar's grid stops there.
+ * Indicator pages used most. Everything else (subscriptions, failed payments,
+ * coupons) stays one tap away behind "More". Four at most: the bar's grid stops there.
  */
 export const MOBILE_TABS: NavItem[] = [
   { href: "/indicator", label: "Dashboard", icon: LayoutDashboard, permission: "VIEW_INDICATOR", exact: true },

@@ -310,6 +310,11 @@ export default async function IndicatorOverviewPage({
                 label={`Purchases in ${monthName}`}
                 value={dash.sales.thisMonth.purchases}
                 icon={<ShoppingBag className="size-3.5" />}
+                hint={
+                  data.subscribers.withCouponThisMonth
+                    ? `${plural(data.subscribers.withCouponThisMonth, "new subscription")} with a coupon`
+                    : undefined
+                }
                 href={link("/indicator/payments", { from: monthFrom, to: todayIST() })}
               />
               <StatTile

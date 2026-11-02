@@ -63,12 +63,21 @@ export type PlanOnSale = {
   error: string | null
 }
 
+/** The coupon a subscriber paid with. */
+export type SubscriberCoupon = {
+  code: string
+  offerId: string | null
+  /** "upi" or "card": the payment method the coupon's offer was for. */
+  method: string | null
+}
+
 export type Subscriber = {
   subscriptionId: string
   mode: IndicatorMode
   planId: string
   /** null if the payments service couldn't read the plan from Razorpay. */
   plan?: SubscriberPlan | null
+  coupon?: SubscriberCoupon | null
   customerId: string | null
   fullName: string
   email: string
@@ -181,6 +190,8 @@ export type FailedPayment = {
   recovered: boolean
   recoveredAt: string | null
   createdAt: string | null
+  /** The coupon they were trying to use, if any. */
+  couponCode?: string | null
 }
 
 export type ListMeta = {
@@ -236,6 +247,9 @@ export type IndicatorOverview = {
     newThisMonth: number
     /** Active and total subscribers per plan; key null is a plan sold in neither slot. */
     byPlan?: { key: string | null; current: number; total: number }[]
+    /** Subscribers who paid with a coupon. */
+    withCoupon?: number
+    withCouponThisMonth?: number
   }
   access: { entitled: number; granted: number; needsAccess: number; needsRemoval: number }
   revenue: {
@@ -258,6 +272,80 @@ export type IndicatorOverview = {
     payments: Payment[]
     failed: FailedPayment[]
   }
+}
+
+// ----------------------------------------------------------------- coupons
+
+export const PAYMENT_METHODS = ["upi", "card"] as const
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = { upi: "UPI", card: "Card" }
+
+export const DISCOUNT_TYPES = ["percent", "flat"] as const
+export type DiscountType = (typeof DISCOUNT_TYPES)[number]
+
+/** Percent (1-100) or paise off. */
+export type Discount = { type: DiscountType; value: number }
+
+export type Coupon = {
+  id: number
+  code: string
+  label: string | null
+  /** What it takes off the first payment, per plan it applies to. */
+  discounts: Partial<Record<string, Discount>>
+  startsAt: string | null
+  endsAt: string | null
+  maxUses: number | null
+  onePerBuyer: boolean
+  active: boolean
+  createdBy: string | null
+  createdAt: string
+  updatedAt: string
+  /** Times it was used (paid with) in the mode being viewed. */
+  uses: number
+  /** Per plan: which payment methods have a Razorpay offer registered in this mode. */
+  coverage: Partial<Record<string, { discount: Discount; methods: PaymentMethod[]; missing: PaymentMethod[] }>>
+  state: CouponState
+}
+
+export type CouponState = "live" | "paused" | "expired" | "used_up" | "scheduled" | "no_offers"
+
+export const COUPON_STATE_LABELS: Record<CouponState, string> = {
+  live: "Live",
+  paused: "Switched off",
+  expired: "Expired",
+  used_up: "Used up",
+  scheduled: "Not started",
+  no_offers: "No Razorpay offer",
+}
+
+/** A Razorpay offer (Subscriptions > Offers) registered for a discount. */
+export type RazorpayOffer = {
+  offerId: string
+  mode: IndicatorMode
+  planKey: string
+  method: PaymentMethod
+  discount: Discount
+  label: string | null
+  lastUsedAt: string | null
+  /** Why Razorpay last refused this offer, if it did. */
+  lastError: string | null
+  lastErrorAt: string | null
+  createdBy: string | null
+  createdAt: string
+}
+
+export type CouponsPayload = {
+  mode: IndicatorMode
+  serviceMode: IndicatorMode
+  generatedAt: string
+  coupons: Coupon[]
+  offers: RazorpayOffer[]
+  plans: PlanOnSale[]
+}
+
+export function describeDiscount(discount: Discount): string {
+  if (discount.type === "percent") return `${discount.value}% off`
+  return `₹${(discount.value / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })} off`
 }
 
 // ----------------------------------------------------------------- filters
@@ -325,7 +413,7 @@ const STATUS_LABELS: Record<string, string> = {
   active: "Active",
   pending: "Payment retrying",
   halted: "Halted",
-  paused: "Paused",
+  paused: "Switched off",
   cancelled: "Cancelled",
   completed: "Completed",
   expired: "Expired",

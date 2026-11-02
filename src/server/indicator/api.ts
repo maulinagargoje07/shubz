@@ -14,7 +14,10 @@
 import { paymentsApiConfig } from "@/lib/env"
 import type {
   AccessFilter,
+  Coupon,
+  CouponsPayload,
   CustomerList,
+  Discount,
   ExpiryStatusFilter,
   FailedPaymentList,
   IndicatorMode,
@@ -24,11 +27,14 @@ import type {
   RecoveredFilter,
   RepeatFilter,
   StatusFilter,
+  PaymentMethod,
+  RazorpayOffer,
   Subscriber,
   SubscriberList,
 } from "@/lib/indicator"
 
 export type PaymentsApiErrorKind =
+  | "conflict"
   | "not_configured"
   | "unauthorized"
   | "disabled"
@@ -56,7 +62,7 @@ const TIMEOUT_MS = 15_000
 
 async function call<T>(
   path: string,
-  options: { query?: Query; body?: unknown } = {}
+  options: { query?: Query; body?: unknown; method?: "GET" | "POST" | "PUT" | "DELETE" } = {}
 ): Promise<T> {
   const config = paymentsApiConfig()
   if (!config.ok) throw new PaymentsApiError("not_configured", config.problem)
@@ -69,7 +75,7 @@ async function call<T>(
   let res: Response
   try {
     res = await fetch(url, {
-      method: options.body === undefined ? "GET" : "POST",
+      method: options.method ?? (options.body === undefined ? "GET" : "POST"),
       headers: {
         authorization: `Bearer ${config.key}`,
         accept: "application/json",
@@ -114,7 +120,9 @@ async function call<T>(
     case 404:
       throw new PaymentsApiError("not_found", body?.message ?? "Not found.", 404)
     case 400:
-      throw new PaymentsApiError("bad_request", "The payments service rejected the request.", 400)
+      throw new PaymentsApiError("bad_request", body?.message ?? "The payments service rejected the request.", 400)
+    case 409:
+      throw new PaymentsApiError("conflict", body?.message ?? "That change clashes with something already there.", 409)
     default:
       throw new PaymentsApiError("server_error", "The payments service had a problem. Try again in a minute.", res.status)
   }
@@ -128,6 +136,8 @@ export type SubscriberQuery = {
   status?: StatusFilter
   access?: AccessFilter
   plan?: PlanFilter
+  /** A coupon code, or "any" for everyone who used one. */
+  coupon?: string
   limit?: number
   offset?: number
 }
@@ -234,4 +244,59 @@ export function setTradingViewAccess(
   return call(`/subscribers/${encodeURIComponent(subscriptionId)}/access`, {
     body: { granted, actor },
   })
+}
+
+// ---------------------------------------------------------------- coupons
+
+export function getCoupons(mode?: IndicatorMode): Promise<CouponsPayload> {
+  return call("/coupons", { query: { mode } })
+}
+
+export type CouponInput = {
+  code: string
+  label: string | null
+  discounts: Partial<Record<string, Discount | null>>
+  startsAt: string | null
+  endsAt: string | null
+  maxUses: number | null
+  onePerBuyer: boolean
+  active: boolean
+}
+
+export function createCoupon(input: CouponInput, actor: string): Promise<{ ok: true; coupon: Coupon }> {
+  return call("/coupons", { body: { ...input, actor } })
+}
+
+export function updateCoupon(id: number, input: CouponInput, actor: string): Promise<{ ok: true; coupon: Coupon }> {
+  return call(`/coupons/${id}`, { method: "PUT", body: { ...input, actor } })
+}
+
+export function setCouponActive(id: number, active: boolean, actor: string): Promise<{ ok: true; coupon: Coupon }> {
+  return call(`/coupons/${id}/active`, { body: { active, actor } })
+}
+
+/** The codes of one offer, switched off or on together: all of them or none. */
+export function setCouponsActive(ids: number[], active: boolean, actor: string): Promise<{ ok: true; coupons: Coupon[] }> {
+  return call("/coupons/active", { body: { ids, active, actor } })
+}
+
+export function deleteCoupon(id: number): Promise<{ ok: true }> {
+  return call(`/coupons/${id}`, { method: "DELETE" })
+}
+
+export type OfferInput = {
+  offerId: string
+  mode: IndicatorMode
+  planKey: string
+  method: PaymentMethod
+  discount: Discount
+  label: string | null
+}
+
+export function addRazorpayOffer(input: OfferInput, actor: string): Promise<{ ok: true; offer: RazorpayOffer }> {
+  return call("/razorpay-offers", { body: { ...input, actor } })
+}
+
+export function removeRazorpayOffer(offerId: string): Promise<{ ok: true }> {
+  return call(`/razorpay-offers/${encodeURIComponent(offerId)}`, { method: "DELETE" })
 }

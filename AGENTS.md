@@ -37,7 +37,16 @@ that service's admin API, from the server only:
 - Dates that are calendar days (`paidThrough`, `validTill`, `expiryDate`,
   `purchaseDate`, `dashboard.today`) arrive as `yyyy-mm-dd` text. Show them
   with `formatDate()`, never `formatIST()`, so no time zone shifts them.
-- The one write is the TradingView access tick
+- Coupon codes (`/indicator/coupons`, `server/indicator/coupon-actions.ts`)
+  live in the payments service too. A code is worth a discount per plan on
+  the first payment; Razorpay applies it through an offer that is tied to one
+  plan and one payment method, so each discount needs an offer per plan and
+  per method, registered on that page. Codes that share a label are shown as
+  one offer with one "Switch off / Switch on" button (the Diwali offer:
+  DIWALI20 and DIWALI30, which the payments service makes itself on first
+  start); each code has its own switch too. Changing coupons needs
+  `MANAGE_COUPONS`, which admins don't get by default.
+- The other write is the TradingView access tick
   (`server/indicator/actions.ts`). The payments service stores it, on every
   subscription of that customer at once (access belongs to a TradingView
   username, not a subscription); this app writes the audit row after that
@@ -143,11 +152,11 @@ scripts/                 migrate.ts, setup-superadmin.ts (run with tsx)
 src/db/schema/           enums, auth, ops (audit_log)
 src/lib/                 money, fy, ids, env, audit, auth, permissions, session,
                          indicator (types/labels), phone-format, export/, validation/
-src/server/indicator/    api (payments service), actions, filters, export
+src/server/indicator/    api (payments service), actions, coupon-actions, filters, export
 src/server/team|profile/ team management and your own account
 src/app/(auth)/          login
 src/app/(app)/indicator/ dashboard (page.tsx), customers, payments (the Purchases
-                         page; the path is kept), subscribers, failed (+ export routes)
+                         page; the path is kept), subscribers, failed (+ export routes), coupons
 src/app/(app)/settings/  profile, team
 src/components/          ui primitives, data-table, layout, indicator
 ```

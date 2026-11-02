@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ReceiptIndianRupee } from "lucide-react"
+import { ReceiptIndianRupee, Ticket } from "lucide-react"
 
 import { DataTable, type Column } from "@/components/data-table/table"
 import { FilterBar, Pagination } from "@/components/data-table/filters"
@@ -49,6 +49,7 @@ export default async function SubscribersPage({
       status: filters.status,
       access: filters.access,
       plan: filters.plan,
+      coupon: filters.coupon,
       limit: PER_PAGE,
       offset: (filters.page - 1) * PER_PAGE,
     })
@@ -64,7 +65,14 @@ export default async function SubscribersPage({
 
   // The mode goes into links only when it isn't the checkout's own.
   const mode = data.mode === data.serviceMode ? undefined : data.mode
-  const params = filterParams({ q: filters.q, status: filters.status, access: filters.access, plan: filters.plan, mode })
+  const params = filterParams({
+    q: filters.q,
+    status: filters.status,
+    access: filters.access,
+    plan: filters.plan,
+    coupon: filters.coupon,
+    mode,
+  })
 
   const columns: Column<Subscriber>[] = [
     {
@@ -103,6 +111,13 @@ export default async function SubscribersPage({
             · {row.paymentCount}×
           </span>
           {row.plan ? <span className="block text-xs text-muted-foreground">{planName(row.plan)}</span> : null}
+          {row.coupon ? (
+            <span className="block text-xs text-paid-foreground">
+              <Ticket className="mr-1 inline size-3 align-[-2px]" aria-hidden />
+              <span className="font-mono">{row.coupon.code}</span>
+              {row.coupon.method ? ` · ${row.coupon.method === "upi" ? "UPI" : "Card"}` : null}
+            </span>
+          ) : null}
         </Link>
       ),
     },
@@ -141,18 +156,24 @@ export default async function SubscribersPage({
     },
   ]
 
-  const filtered = Boolean(filters.q || filters.status || filters.access || filters.plan)
+  const filtered = Boolean(filters.q || filters.status || filters.access || filters.plan || filters.coupon)
 
   return (
     <div className="pb-8">
       <PageHeader
         title="Subscriptions"
-        description="Every Razorpay AutoPay subscription and its status. Tick “Access given” once the username is added on TradingView. For one row per person, see Customers."
+        description={
+          filters.coupon
+            ? filters.coupon === "any"
+              ? "Every AutoPay subscription that was started with a coupon."
+              : `Every AutoPay subscription started with the coupon ${filters.coupon}.`
+            : "Every Razorpay AutoPay subscription and its status. Tick “Access given” once the username is added on TradingView. For one row per person, see Customers."
+        }
         actions={canExport ? <ExportLinks href={`${PATH}/export`} params={params} /> : undefined}
       />
       <IndicatorToolbar
         path={PATH}
-        params={filterParams({ q: filters.q, status: filters.status, access: filters.access, plan: filters.plan })}
+        params={filterParams({ q: filters.q, status: filters.status, access: filters.access, plan: filters.plan, coupon: filters.coupon })}
         mode={data.mode}
         serviceMode={data.serviceMode}
         generatedAt={data.generatedAt}
@@ -162,8 +183,9 @@ export default async function SubscribersPage({
         <FilterBar
           action={PATH}
           params={{ q: filters.q, status: filters.status, access: filters.access, plan: filters.plan }}
-          hidden={{ mode }}
+          hidden={{ mode, coupon: filters.coupon }}
           clearHref={hrefWith(PATH, { mode })}
+          hasActive={filtered}
           searchPlaceholder="Name, email, phone, TradingView or sub_ ID"
           filters={[
             { key: "status", label: "Statuses", options: [...STATUS_FILTERS] },

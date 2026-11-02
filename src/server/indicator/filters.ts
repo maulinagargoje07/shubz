@@ -57,16 +57,20 @@ export type SubscriberFilters = {
   status?: StatusFilter
   access?: AccessFilter
   plan?: PlanFilter
+  /** A coupon code, or "any" for everyone who used one. */
+  coupon?: string
   page: number
 }
 
 export function subscriberFilters(get: ParamReader): SubscriberFilters {
+  const coupon = textParam(get("coupon"))
   return {
     mode: modeParam(get),
     q: textParam(get("q")),
     status: enumParam(get("status"), STATUS_FILTER_VALUES),
     access: enumParam(get("access"), ACCESS_FILTER_VALUES),
     plan: enumParam(get("plan"), PLAN_FILTER_VALUES),
+    coupon: coupon && /^[A-Za-z0-9_-]{1,40}$/.test(coupon) ? coupon.toUpperCase() === "ANY" ? "any" : coupon.toUpperCase() : undefined,
     page: pageParam(get("page")),
   }
 }

@@ -22,6 +22,11 @@ TradingView indicator:
 - **Subscriptions** — every Razorpay AutoPay subscription and its status.
 - **Failed payments** — declined checkout attempts, with Razorpay's reason and
   whether the buyer paid later.
+- **Coupons** — codes for money off a buyer's first payment, with the
+  Razorpay offers that apply them, limits, expiry and how often each was used.
+  Codes that share a name (the Diwali offer: DIWALI20 for the 1-month plan,
+  DIWALI30 for the 3-month plan) are one offer with one **Switch off / Switch
+  on** button; every code has its own too.
 - **Excel and CSV downloads** on each list, matching the filters on screen.
 - **Team** — the superadmin adds admins and decides what they can do.
 

@@ -23,6 +23,8 @@ export const PERMISSIONS = [
   "MANAGE_TRADINGVIEW_ACCESS",
   /** Download the Excel and CSV exports. */
   "EXPORT_DATA",
+  /** Make, pause and expire coupon codes, and register Razorpay offers. */
+  "MANAGE_COUPONS",
   /** Add admins, change their access, reset passwords, switch accounts off. */
   "MANAGE_USERS",
 ] as const
@@ -42,6 +44,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   VIEW_INDICATOR: "See subscribers and payments",
   MANAGE_TRADINGVIEW_ACCESS: "Tick TradingView access",
   EXPORT_DATA: "Download Excel and CSV exports",
+  MANAGE_COUPONS: "Manage coupon codes",
   MANAGE_USERS: "Manage team members",
 }
 
@@ -49,7 +52,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
 export const PERMISSION_GROUPS: { heading: string; permissions: Permission[] }[] = [
   {
     heading: "Indicator",
-    permissions: ["VIEW_INDICATOR", "MANAGE_TRADINGVIEW_ACCESS", "EXPORT_DATA"],
+    permissions: ["VIEW_INDICATOR", "MANAGE_TRADINGVIEW_ACCESS", "EXPORT_DATA", "MANAGE_COUPONS"],
   },
   {
     heading: "Administration",
@@ -66,7 +69,8 @@ export const PERMISSION_GROUPS: { heading: string; permissions: Permission[] }[]
  *
  * ADMIN deliberately does NOT get MANAGE_USERS. Team management is the
  * superadmin's, and handing it out by default would let any admin promote
- * themselves. A superadmin can still grant it to a specific admin.
+ * themselves. A superadmin can still grant it to a specific admin. The same
+ * goes for MANAGE_COUPONS: a coupon is money, so it is handed out on purpose.
  */
 const ROLE_PERMISSIONS: Record<Exclude<Role, "SUPERADMIN">, Permission[]> = {
   ADMIN: ["VIEW_INDICATOR", "MANAGE_TRADINGVIEW_ACCESS", "EXPORT_DATA"],
