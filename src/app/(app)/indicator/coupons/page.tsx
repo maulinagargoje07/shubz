@@ -143,7 +143,7 @@ function OfferCard({
   return (
     <section
       aria-label={`${name} offer`}
-      className="rounded-xl border border-border/80 bg-card p-4 shadow-xs sm:p-5"
+      className="glass rounded-3xl p-5"
       data-testid="offer-card"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -163,7 +163,7 @@ function OfferCard({
       </div>
       <ul className="mt-3 grid gap-2 sm:grid-cols-2">
         {coupons.map((coupon) => (
-          <li key={coupon.id} className="rounded-lg border border-border/60 bg-secondary/30 px-3 py-2">
+          <li key={coupon.id} className="glass-tint rounded-2xl px-3.5 py-2.5">
             <div className="flex items-center justify-between gap-2">
               <span className="font-mono text-sm font-semibold">{coupon.code}</span>
               <StatusPill tone={STATE_TONES[coupon.state]}>{COUPON_STATE_LABELS[coupon.state]}</StatusPill>
@@ -354,7 +354,7 @@ export default async function CouponsPage({ searchParams }: { searchParams: Prom
         <div className="px-4 pt-4 sm:px-6">
           <p
             role="status"
-            className="flex items-start gap-2.5 rounded-xl border border-pending/30 bg-pending-muted px-4 py-3 text-sm text-pending-foreground"
+            className="glass-tint flex items-start gap-2.5 rounded-2xl border-pending/40 bg-pending-muted px-4 py-3 text-sm text-pending-foreground"
           >
             <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
             <span>

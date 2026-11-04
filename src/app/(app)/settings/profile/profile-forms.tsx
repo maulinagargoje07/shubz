@@ -117,7 +117,7 @@ export function ChangePasswordForm() {
 
   if (done) {
     return (
-      <p className="rounded-lg border border-paid/30 bg-paid-muted px-3 py-2 text-sm text-paid-foreground">
+      <p className="glass-tint rounded-2xl border-paid/40 bg-paid-muted px-3.5 py-2.5 text-sm text-paid-foreground">
         Password changed. Signing you out…
       </p>
     )

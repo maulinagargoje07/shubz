@@ -17,7 +17,7 @@ export function IndicatorUnavailable({ error }: { error: PaymentsApiError }) {
 
   return (
     <div className="px-4 py-6 sm:px-6">
-      <div className="max-w-2xl rounded-xl border border-overdue/35 bg-overdue-muted/30 p-5">
+      <div className="glass-tint max-w-2xl rounded-2xl border-overdue/40 bg-overdue-muted p-5">
         <div className="flex items-start gap-3">
           <Icon className="mt-0.5 size-5 shrink-0 text-overdue-foreground" aria-hidden />
           <div className="min-w-0 space-y-3 text-sm">
@@ -42,7 +42,7 @@ export function IndicatorUnavailable({ error }: { error: PaymentsApiError }) {
                 <li>Railway redeploys both. Reload this page once they show as active.</li>
               </ol>
             ) : (
-              <AutoRefresh updatedLabel={`${formatIST(new Date(), "h:mm:ss a")} · retrying`} />
+              <AutoRefresh updatedLabel={formatIST(new Date(), "h:mm:ss a")} retrying />
             )}
           </div>
         </div>

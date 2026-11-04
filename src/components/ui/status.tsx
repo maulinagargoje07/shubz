@@ -9,10 +9,12 @@
  */
 
 import Link from "next/link"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowUpRight, Minus, TrendingDown, TrendingUp } from "lucide-react"
 import { cn } from "cn"
 
 import { LinkPending } from "@/components/layout/link-pending"
+import { Sparkline } from "@/components/charts/sparkline"
+import { AnimatedNumber, GlassPane } from "@/components/ui/glass"
 
 export type StatusTone =
   | "neutral"
@@ -95,9 +97,49 @@ export function expiryTone(status: string | null | undefined): StatusTone {
   }
 }
 
+/** How a figure moved against an earlier period: up a quarter on October, say. */
+export type Delta = {
+  /** The change as a fraction (0.25 = up 25%); null when there was nothing before. */
+  ratio: number | null
+  /** The period compared with: "October", "the previous 30 days". */
+  vs: string
+  /** Whether a rise is good news (money, buyers) or bad (failures). */
+  upIsGood?: boolean
+}
+
+function DeltaChip({ delta }: { delta: Delta }) {
+  if (delta.ratio === null) {
+    return <span className="text-xs text-muted-foreground">Nothing in {delta.vs} to compare</span>
+  }
+  const pct = Math.round(Math.abs(delta.ratio) * 100)
+  const flat = pct === 0
+  const good = (delta.upIsGood ?? true) === (delta.ratio > 0)
+  const Icon = flat ? Minus : delta.ratio > 0 ? TrendingUp : TrendingDown
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+      <span
+        className={cn(
+          "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 font-semibold tabular-nums",
+          flat
+            ? "bg-secondary text-foreground"
+            : good
+              ? "bg-paid-muted text-paid-foreground"
+              : "bg-overdue-muted text-overdue-foreground"
+        )}
+      >
+        <Icon className="size-3" aria-hidden />
+        {flat ? "No change" : `${pct}%`}
+      </span>
+      vs {delta.vs}
+    </span>
+  )
+}
+
 /**
  * A headline figure. Optionally a link, because on the dashboard every tile
- * is really a doorway to the list behind it.
+ * is really a doorway to the list behind it. A `trend` draws the last few
+ * weeks under the figure; a `delta` says how it moved against an earlier
+ * period; `compact` is the small version for a row of five.
  */
 export function StatTile({
   label,
@@ -106,6 +148,10 @@ export function StatTile({
   tone,
   icon,
   href,
+  delta,
+  trend,
+  trendColor,
+  compact = false,
 }: {
   label: string
   value: React.ReactNode
@@ -113,56 +159,80 @@ export function StatTile({
   tone?: "overdue" | "paid"
   icon?: React.ReactNode
   href?: string
+  delta?: Delta
+  trend?: number[]
+  trendColor?: string
+  compact?: boolean
 }) {
   const content = (
     <>
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {icon ? <span className="text-muted-foreground">{icon}</span> : null}
-          <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground/80">
+        <div className="flex min-w-0 items-center gap-2">
+          {icon ? (
+            <span
+              className={cn(
+                "flex shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
+                compact ? "size-6" : "size-8",
+                tone === "overdue" ? "text-overdue-foreground" : tone === "paid" ? "text-paid-foreground" : "text-primary"
+              )}
+            >
+              {icon}
+            </span>
+          ) : null}
+          <p className={cn("font-semibold uppercase tracking-wider text-muted-foreground", compact ? "text-[0.625rem]" : "text-[0.6875rem]")}>
             {label}
           </p>
         </div>
         {href ? (
-          <span className="flex items-center gap-1.5 text-muted-foreground/40 transition-colors group-hover:text-primary">
+          <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground/50 transition-colors group-hover:text-primary">
             <LinkPending />
-            <ArrowUpRight className="size-3.5" aria-hidden />
+            <ArrowUpRight className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
           </span>
         ) : null}
       </div>
       <p
         className={cn(
-          "mt-2 text-2xl font-bold tracking-tight tabular-nums sm:text-3xl",
-          tone === "overdue" && "text-overdue",
-          tone === "paid" && "text-paid",
+          "font-bold tracking-tight",
+          compact ? "mt-2 text-2xl" : "mt-3 text-3xl sm:text-[2.125rem] sm:leading-none",
+          tone === "overdue" && "text-overdue-foreground drop-shadow-[0_0_16px_rgba(239,68,68,0.45)]",
+          tone === "paid" && "text-paid-foreground drop-shadow-[0_0_16px_rgba(16,185,129,0.45)]",
           !tone && "text-foreground"
         )}
       >
-        {value}
+        {typeof value === "string" || typeof value === "number" ? <AnimatedNumber value={String(value)} /> : value}
       </p>
-      {hint ? <p className="mt-1 text-xs text-muted-foreground/80">{hint}</p> : null}
+      {delta ? (
+        <div className="mt-2">
+          <DeltaChip delta={delta} />
+        </div>
+      ) : null}
+      {hint ? <p className={cn("text-xs text-muted-foreground", delta ? "mt-1" : "mt-1.5")}>{hint}</p> : null}
+      {trend && trend.length > 1 ? <Sparkline values={trend} color={trendColor} className="mt-3" height={44} /> : null}
     </>
   )
 
   const baseClass = cn(
-    "rounded-xl border p-4 shadow-xs transition-all",
-    tone === "overdue"
-      ? "border-overdue/40 bg-overdue-muted/15"
-      : tone === "paid"
-        ? "border-paid/40 bg-paid-muted/15"
-        : "border-border/80 bg-card",
-    href && "group hover:border-primary/50 hover:bg-secondary/40 active:scale-[0.985] cursor-pointer"
+    "block",
+    compact ? "rounded-2xl p-3.5" : "rounded-3xl p-5",
+    tone === "overdue" && "glass-overdue",
+    tone === "paid" && "glass-paid",
+    href && "group cursor-pointer active:scale-[0.985]"
   )
 
   if (href) {
     return (
-      <Link href={href} className={baseClass}>
-        {content}
-      </Link>
+      <GlassPane as="div" className={cn(baseClass, "p-0")}>
+        <Link
+          href={href}
+          className={cn("block rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60", compact ? "p-3.5" : "p-5")}
+        >
+          {content}
+        </Link>
+      </GlassPane>
     )
   }
 
-  return <div className={baseClass}>{content}</div>
+  return <GlassPane as="div" className={baseClass}>{content}</GlassPane>
 }
 
 /** An empty state that says what to do next rather than just what is missing. */
@@ -178,9 +248,9 @@ export function EmptyState({
   action?: React.ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-border/80 bg-card/40 px-6 py-12 text-center">
+    <div className="glass-tint rounded-3xl border-dashed px-6 py-12 text-center">
       {icon ? (
-        <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full border border-border/60 bg-secondary/80 text-muted-foreground">
+        <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]">
           {icon}
         </div>
       ) : null}

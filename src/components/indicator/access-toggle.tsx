@@ -97,8 +97,8 @@ export function AccessToggle({
         <label
           title={who ?? (checked ? "Access given" : "Tick once the username is added on TradingView")}
           className={cn(
-            "inline-flex cursor-pointer select-none items-center gap-1.5 rounded-md border px-1.5 py-0.5 text-xs font-medium transition-colors",
-            checked ? "border-paid/40 bg-paid-muted text-paid-foreground" : "border-border bg-card hover:bg-secondary/70",
+            "glass-tint inline-flex cursor-pointer select-none items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium transition-colors",
+            checked ? "border-paid/40 bg-paid-muted text-paid-foreground" : "hover:bg-glass-hover",
             saving && "cursor-wait opacity-70"
           )}
         >
@@ -133,10 +133,8 @@ export function AccessToggle({
         <TradingViewLink name={name} />
         <label
           className={cn(
-            "inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm font-medium transition-colors pointer-coarse:min-h-11",
-            checked
-              ? "border-paid/40 bg-paid-muted text-paid-foreground"
-              : "border-border bg-card hover:bg-secondary/70",
+            "glass-tint inline-flex cursor-pointer select-none items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-colors pointer-coarse:min-h-11",
+            checked ? "border-paid/40 bg-paid-muted text-paid-foreground" : "hover:bg-glass-hover",
             saving && "cursor-wait opacity-70"
           )}
         >
@@ -183,8 +181,8 @@ function TradingViewLink({ name, compact = false }: { name: string; compact?: bo
       title={`Open the indicator on TradingView to give ${name} access`}
       aria-label={compact ? `Open the indicator on TradingView to give ${name} access` : undefined}
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-card font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary",
-        compact ? "size-6 justify-center rounded-md" : "px-2.5 py-1.5 text-sm pointer-coarse:min-h-11"
+        "glass-tint inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-glass-hover hover:text-primary",
+        compact ? "size-6 justify-center" : "px-3 py-1.5 text-sm pointer-coarse:min-h-11"
       )}
     >
       <ExternalLink className="size-3.5" aria-hidden />

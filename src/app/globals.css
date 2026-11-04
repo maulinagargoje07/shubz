@@ -8,16 +8,23 @@
 /*
  * ShubzTrader design tokens.
  *
- * This is a fees and attendance tool an admin lives in all day, so the
- * neutrals are near-achromatic and the only saturated colour in the interface
- * carries meaning. Three semantic states do almost all the communicating:
+ * The admin panel is Apple-style liquid glass over a quiet, lit backdrop:
+ * clear panes that show the colour behind them, a bright specular rim that
+ * catches the light along the top-left edge (and swings toward the pointer),
+ * a sheen across the top of each pane and a faint lens at its edges. The
+ * glass is kept on the lighter, clearer side: a little blur, a little
+ * saturation, never a thick frost.
+ *
+ * The only saturated colour *inside* the interface still carries meaning:
  *
  *   paid      emerald   settled, nothing to chase
- *   pending   amber     raised, not yet due
- *   overdue   rose      money that needed collecting yesterday
+ *   pending   amber     needs a look soon
+ *   overdue   rose      act on this
+ *   primary   gold      the brand, and the one thing on a screen to press
  *
- * The brand accent is a deep indigo rather than a green, so "money is fine"
- * (emerald) never competes visually with "this is a button".
+ * Chart series have their own fixed slots (--chart-1 … --chart-5) so a colour
+ * always means the same thing: gold is money and the 3-month plan, blue is
+ * new, teal is renewals and UPI, violet and rose are spare.
  */
 
 @theme inline {
@@ -68,136 +75,246 @@
   --color-overdue-foreground: var(--overdue-foreground);
   --color-overdue-muted: var(--overdue-muted);
 
+  /* Chart series and status, as Tailwind colours too (text-chart-1, bg-chart-2 …). */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* The glass, as Tailwind colours (bg-glass, border-glass-rim, bg-glass-hover). */
+  --color-glass: var(--glass-fill-flat);
+  --color-glass-rim: var(--glass-rim-flat);
+  --color-glass-hover: var(--glass-hover);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.4);
 }
 
-:root {
-  /*
-   * Official ShubzTrader theme (https://shubztrader.com/)
-   * Executive Obsidian Black & Metallic Gold trading terminal aesthetic.
-   */
-  --background: #050505;
-  --foreground: #F7F7F5;
-  --card: #0D0D0D;
-  --card-foreground: #F7F7F5;
-  --popover: #121212;
-  --popover-foreground: #F7F7F5;
+/* The direction the light comes from, so a pane's rim can ease toward the pointer. */
+@property --light-angle {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 315deg;
+}
 
-  /* Signature Metallic Gold */
-  --primary: #D4AF37;
-  --primary-foreground: #050505;
+/*
+ * Night. Deep navy-graphite rather than black, so the glass has colour to be
+ * clear to; the signature metallic gold.
+ */
+:root,
+.dark {
+  --background: #0a0e1c;
+  --foreground: #f4f6fb;
+  --card: #121a30;
+  --card-foreground: #f4f6fb;
+  --popover: #141c34;
+  --popover-foreground: #f4f6fb;
 
-  --secondary: #161616;
-  --secondary-foreground: #EDEDED;
-  --muted: #141414;
-  --muted-foreground: #9A9A9A;
-  --accent: rgba(212, 175, 55, 0.12);
-  --accent-foreground: #F0C75E;
+  /* Signature Metallic Gold. Dark text on it, like a lit button. */
+  --primary: #d9b64a;
+  --primary-foreground: #1b1407;
 
-  --destructive: #EF4444;
-  --destructive-foreground: #FFFFFF;
+  --secondary: rgba(255, 255, 255, 0.08);
+  --secondary-foreground: #e8ecf5;
+  --muted: rgba(255, 255, 255, 0.06);
+  --muted-foreground: #aab3c9;
+  --accent: rgba(217, 182, 74, 0.16);
+  --accent-foreground: #f3cf63;
 
-  /* Fine gold-tinted borders and input focus rings */
-  --border: rgba(212, 175, 55, 0.18);
-  --input: rgba(212, 175, 55, 0.24);
-  --ring: #D4AF37;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.16);
+  --ring: #d9b64a;
 
   /* Financial status indicators (trading floor standard) */
-  --paid: #10B981;
-  --paid-foreground: #34D399;
-  --paid-muted: rgba(16, 185, 129, 0.14);
+  --paid: #10b981;
+  --paid-foreground: #4ade80;
+  --paid-muted: rgba(16, 185, 129, 0.16);
 
-  --pending: #F59E0B;
-  --pending-foreground: #FBBF24;
-  --pending-muted: rgba(245, 158, 11, 0.14);
+  --pending: #f59e0b;
+  --pending-foreground: #fbbf24;
+  --pending-muted: rgba(245, 158, 11, 0.16);
 
-  --overdue: #EF4444;
-  --overdue-foreground: #F87171;
-  --overdue-muted: rgba(239, 68, 68, 0.14);
+  --overdue: #ef4444;
+  --overdue-foreground: #f87171;
+  --overdue-muted: rgba(239, 68, 68, 0.16);
 
-  --radius: 0.625rem;
+  --radius: 0.75rem;
+  --light-angle: 315deg;
+
+  /*
+   * The wall behind everything: large, low-contrast fields of colour on a
+   * navy base (gold top-left where the light comes from, blue top-right,
+   * teal below), a fine dot grid that fades toward the edges, a breath of
+   * grain so nothing bands, and three glows that drift so slowly they are
+   * felt rather than seen.
+   */
+  --wall:
+    radial-gradient(120rem 70rem at 8% -20%, rgba(212, 175, 55, 0.18) 0%, transparent 55%),
+    radial-gradient(110rem 80rem at 110% 10%, rgba(63, 131, 232, 0.26) 0%, transparent 58%),
+    radial-gradient(90rem 70rem at 55% 125%, rgba(23, 168, 146, 0.18) 0%, transparent 60%),
+    radial-gradient(70rem 50rem at 85% 75%, rgba(155, 125, 242, 0.14) 0%, transparent 60%),
+    linear-gradient(180deg, #0d1226 0%, #0a0e1c 55%, #070a14 100%);
+  --wall-grid: rgba(255, 255, 255, 0.07);
+  --wall-grain: 0.04;
+  --wall-grain-blend: overlay;
+  --glow-1: rgba(212, 175, 55, 0.22);
+  --glow-2: rgba(63, 131, 232, 0.26);
+  --glow-3: rgba(23, 168, 146, 0.18);
+
+  /* The glass itself. */
+  --glass-fill: rgba(255, 255, 255, 0.07);
+  --glass-fill-hover: rgba(255, 255, 255, 0.11);
+  --glass-rim-a: rgba(255, 255, 255, 0.85);
+  --glass-rim-b: rgba(255, 255, 255, 0.14);
+  --glass-rim-c: rgba(255, 255, 255, 0.32);
+  --glass-top: rgba(255, 255, 255, 0.4);
+  --glass-lens: rgba(255, 255, 255, 0.14);
+  --glass-edge: rgba(0, 0, 0, 0.16);
+  --glass-bevel-hi: rgba(255, 255, 255, 0.18);
+  --glass-bevel-lo: rgba(0, 0, 0, 0.22);
+  --glass-sheen:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.04) 28%, rgba(255, 255, 255, 0) 55%),
+    radial-gradient(120% 80% at 50% 120%, rgba(255, 255, 255, 0.06), transparent 60%);
+  --glass-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.22),
+    0 18px 40px -20px rgba(0, 0, 0, 0.5);
+  --glass-shadow-lift:
+    0 1px 2px rgba(0, 0, 0, 0.22),
+    0 22px 48px -20px rgba(0, 0, 0, 0.55);
+  --glass-blur: 14px;
+  --glass-sat: 1.55;
+  --glass-bright: 1.02;
+  --glass-spot: rgba(255, 255, 255, 0.09);
+  /* The flat glass (no blur) for rows, chips, inputs and list items. */
+  --glass-fill-flat: rgba(255, 255, 255, 0.06);
+  --glass-rim-flat: rgba(255, 255, 255, 0.13);
+  --glass-highlight: rgba(255, 255, 255, 0.35);
+  --glass-hover: rgba(255, 255, 255, 0.11);
+  /* Regular glass: menus, popovers, dialogs, toasts. Legible over anything. */
+  --glass-regular: rgba(20, 27, 50, 0.6);
+  /* The bars: header and phone tab bar. */
+  --glass-bar: rgba(11, 16, 32, 0.32);
+  --glass-bar-line: rgba(255, 255, 255, 0.1);
+  /* Gold for the one thing to press. */
+  --gold-face: linear-gradient(180deg, #f3d679 0%, #d9b64a 55%, #c9a233 100%);
+  --gold-glow: 0 10px 28px -10px rgba(217, 182, 74, 0.85);
+
+  /* Chart slots (fixed order; validated against the dark glass) and chrome. */
+  --chart-1: #e2c05a;
+  --chart-2: #5b9cf6;
+  --chart-3: #2fc5a8;
+  --chart-4: #a98cf5;
+  --chart-5: #ef6b86;
+  --chart-grid: rgba(255, 255, 255, 0.09);
+  --chart-axis: rgba(255, 255, 255, 0.22);
+  --chart-track: rgba(255, 255, 255, 0.1);
+  --chart-neutral: rgba(255, 255, 255, 0.3);
 }
 
-.dark {
-  /* Aligned with root Obsidian & Metallic Gold */
-  --background: #050505;
-  --foreground: #F7F7F5;
-  --card: #0D0D0D;
-  --card-foreground: #F7F7F5;
-  --popover: #121212;
-  --popover-foreground: #F7F7F5;
-
-  --primary: #D4AF37;
-  --primary-foreground: #050505;
-
-  --secondary: #161616;
-  --secondary-foreground: #EDEDED;
-  --muted: #141414;
-  --muted-foreground: #9A9A9A;
-  --accent: rgba(212, 175, 55, 0.14);
-  --accent-foreground: #F0C75E;
-
-  --destructive: #EF4444;
-  --destructive-foreground: #FFFFFF;
-
-  --border: rgba(212, 175, 55, 0.18);
-  --input: rgba(212, 175, 55, 0.24);
-  --ring: #D4AF37;
-
-  --paid: #10B981;
-  --paid-foreground: #34D399;
-  --paid-muted: rgba(16, 185, 129, 0.14);
-
-  --pending: #F59E0B;
-  --pending-foreground: #FBBF24;
-  --pending-muted: rgba(245, 158, 11, 0.14);
-
-  --overdue: #EF4444;
-  --overdue-foreground: #F87171;
-  --overdue-muted: rgba(239, 68, 68, 0.14);
-}
-
+/*
+ * Day. Pearl white over soft fields of champagne, sky and mint (never pink);
+ * white glass with a bright rim and a navy hairline, the way a light-mode
+ * iPhone looks.
+ */
 .light {
-  /* Crisp champagne luxury light mode */
-  --background: #FBFBF9;
-  --foreground: #121212;
-  --card: #FFFFFF;
-  --card-foreground: #121212;
-  --popover: #FFFFFF;
-  --popover-foreground: #121212;
+  --background: #f3f4f9;
+  --foreground: #0f1424;
+  --card: #ffffff;
+  --card-foreground: #0f1424;
+  --popover: #ffffff;
+  --popover-foreground: #0f1424;
 
-  --primary: #B38E22;
-  --primary-foreground: #FFFFFF;
+  --primary: #b08a1f;
+  --primary-foreground: #1b1407;
 
-  --secondary: #F4F4F0;
-  --secondary-foreground: #2A2A2A;
-  --muted: #F4F4F0;
-  --muted-foreground: #6B6B6B;
-  --accent: rgba(212, 175, 55, 0.1);
-  --accent-foreground: #8C6D15;
+  --secondary: rgba(15, 20, 36, 0.06);
+  --secondary-foreground: #2a2f40;
+  --muted: rgba(15, 20, 36, 0.05);
+  --muted-foreground: #4f586d;
+  --accent: rgba(176, 138, 31, 0.12);
+  --accent-foreground: #7f6414;
 
-  --destructive: #DC2626;
-  --destructive-foreground: #FFFFFF;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
 
-  --border: rgba(179, 142, 34, 0.22);
-  --input: rgba(179, 142, 34, 0.28);
-  --ring: #B38E22;
+  --border: rgba(15, 20, 36, 0.1);
+  --input: rgba(15, 20, 36, 0.14);
+  --ring: #b08a1f;
 
   --paid: #059669;
-  --paid-foreground: #065F46;
-  --paid-muted: #ECFDF5;
+  --paid-foreground: #047857;
+  --paid-muted: rgba(5, 150, 105, 0.12);
 
-  --pending: #D97706;
-  --pending-foreground: #92400E;
-  --pending-muted: #FFFBEB;
+  --pending: #d97706;
+  --pending-foreground: #b45309;
+  --pending-muted: rgba(217, 119, 6, 0.12);
 
-  --overdue: #DC2626;
-  --overdue-foreground: #991B1B;
-  --overdue-muted: #FEF2F2;
+  --overdue: #dc2626;
+  --overdue-foreground: #b91c1c;
+  --overdue-muted: rgba(220, 38, 38, 0.1);
+
+  --wall:
+    radial-gradient(110rem 70rem at 8% -15%, rgba(250, 205, 110, 0.5) 0%, transparent 55%),
+    radial-gradient(100rem 80rem at 108% 12%, rgba(110, 165, 255, 0.45) 0%, transparent 58%),
+    radial-gradient(90rem 70rem at 55% 125%, rgba(80, 215, 185, 0.35) 0%, transparent 60%),
+    linear-gradient(180deg, #fbfbfe 0%, #f3f4f9 55%, #eceef6 100%);
+  --wall-grid: rgba(15, 20, 36, 0.08);
+  --wall-grain: 0.05;
+  --wall-grain-blend: multiply;
+  --glow-1: rgba(250, 205, 100, 0.4);
+  --glow-2: rgba(120, 170, 255, 0.4);
+  --glow-3: rgba(96, 220, 190, 0.3);
+
+  --glass-fill: rgba(255, 255, 255, 0.34);
+  --glass-fill-hover: rgba(255, 255, 255, 0.5);
+  --glass-rim-a: rgba(255, 255, 255, 1);
+  --glass-rim-b: rgba(255, 255, 255, 0.55);
+  --glass-rim-c: rgba(255, 255, 255, 0.9);
+  --glass-top: rgba(255, 255, 255, 0.95);
+  --glass-lens: rgba(255, 255, 255, 0.28);
+  --glass-edge: rgba(15, 20, 36, 0.14);
+  --glass-bevel-hi: rgba(255, 255, 255, 0.55);
+  --glass-bevel-lo: rgba(15, 20, 36, 0.06);
+  --glass-sheen:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.18) 30%, rgba(255, 255, 255, 0) 60%),
+    radial-gradient(120% 80% at 50% 120%, rgba(255, 255, 255, 0.25), transparent 60%);
+  --glass-shadow:
+    0 1px 2px rgba(30, 41, 80, 0.08),
+    0 18px 40px -20px rgba(30, 41, 80, 0.26);
+  --glass-shadow-lift:
+    0 1px 2px rgba(30, 41, 80, 0.08),
+    0 22px 48px -20px rgba(30, 41, 80, 0.32);
+  --glass-blur: 16px;
+  --glass-sat: 1.4;
+  --glass-bright: 1;
+  --glass-spot: rgba(255, 255, 255, 0.28);
+  --glass-fill-flat: rgba(255, 255, 255, 0.34);
+  --glass-rim-flat: rgba(255, 255, 255, 0.85);
+  --glass-highlight: rgba(255, 255, 255, 0.95);
+  --glass-hover: rgba(255, 255, 255, 0.6);
+  --glass-regular: rgba(255, 255, 255, 0.74);
+  --glass-bar: rgba(255, 255, 255, 0.42);
+  --glass-bar-line: rgba(255, 255, 255, 0.75);
+  --gold-face: linear-gradient(180deg, #f6dc7e 0%, #e0bd4f 55%, #cfa93a 100%);
+  --gold-glow: 0 10px 28px -10px rgba(207, 169, 58, 0.7);
+
+  --chart-1: #b8901f;
+  --chart-2: #2a6fd6;
+  --chart-3: #0f8f7a;
+  --chart-4: #7c5ce6;
+  --chart-5: #d0455f;
+  --chart-grid: rgba(15, 20, 36, 0.08);
+  --chart-axis: rgba(15, 20, 36, 0.2);
+  --chart-track: rgba(15, 20, 36, 0.08);
+  --chart-neutral: rgba(15, 20, 36, 0.3);
 }
 
 @layer base {
@@ -237,6 +354,33 @@
     textarea {
       min-height: 2.75rem;
     }
+  }
+
+  /* Safari's autofill would paint a yellow box into the glass; keep it ours. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--popover) inset;
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
+    transition: background-color 9999s ease-out;
+  }
+
+  /* Thin, quiet scrollbars that belong to the glass rather than the browser. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--foreground) 24%, transparent) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--foreground) 24%, transparent);
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
   }
 
   /* Respect a user's reduced-motion setting rather than animating regardless. */
@@ -283,7 +427,7 @@
     scrollbar-width: none;
   }
 
-  /* Executive gold border & glow accents */
+  /* Executive gold border & glow accents (legacy; prefer .glass-gold / .btn-gold). */
   .card-gold {
     border-color: rgba(212, 175, 55, 0.22);
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.35);
@@ -296,6 +440,556 @@
   .gold-glow-sm {
     box-shadow: 0 0 8px -2px rgba(212, 175, 55, 0.18);
   }
+
+  /*
+   * Liquid glass.
+   *
+   * .glass is a clear pane: the wall shows through it a little blurred,
+   * brighter and more saturated; a specular rim runs round its edge (::before,
+   * a conic gradient masked to a 1px ring, its bright pole where the light
+   * is — top-left, or wherever the pointer is on a live pane — with a second
+   * catch opposite); a sheen lies across its top (::after, under the
+   * content); a bevel pair and an inset lens give the edge its thickness; a
+   * contact shadow and a soft spread lift it off the wall; a hairline keeps
+   * the dim side of the rim from dissolving. Modifiers:
+   *
+   *   .glass-clear     less blur and fill, for a pane over a busy backdrop
+   *   .glass-regular   more fill and blur: menus, popovers, dialogs, toasts,
+   *                    the drawer, chart tooltips — legible over anything
+   *   .glass-tint      the look without the blur, for rows, chips, inputs and
+   *                    list items where dozens are on screen
+   *   .glass-bar       the header and the phone tab bar: see-through, no rim
+   *   .glass-gold / -paid / -pending / -overdue   rim, sheen and fill take a hue
+   *   .glass-live      lifts and brightens under the pointer; GlassPane
+   *                    (components/ui/glass.tsx) adds the pointer light
+   *                    (.glass-spot) and, on hero panes, the edge lens ring
+   *                    (.glass-ring), both children
+   *
+   * One blurred level only: never a .glass inside a .glass. Keep blur to a
+   * few surfaces per screen; rows and pills are .glass-tint.
+   */
+  .glass {
+    position: relative;
+    isolation: isolate;
+    background: var(--glass-fill);
+    border: 0;
+    box-shadow:
+      inset 0 1px 0 var(--glass-top),
+      inset 8px 8px 20px -14px var(--glass-bevel-hi),
+      inset -8px -8px 20px -14px var(--glass-bevel-lo),
+      inset 0 0 28px -10px var(--glass-lens),
+      0 0 0 1px var(--glass-edge),
+      var(--glass-shadow);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-bright));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-bright));
+  }
+  /* The specular rim, over everything (it is one pixel wide). */
+  .glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: 1px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--light-angle) at 50% 50%,
+      var(--glass-rim-a) 0deg,
+      var(--glass-rim-b) 70deg,
+      var(--glass-rim-b) 150deg,
+      var(--glass-rim-c) 180deg,
+      var(--glass-rim-b) 215deg,
+      var(--glass-rim-b) 300deg,
+      var(--glass-rim-a) 360deg
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  /* The sheen, under the content: light falling across the top of the pane. */
+  .glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--glass-sheen);
+    pointer-events: none;
+  }
+  .glass-clear {
+    --glass-blur: 10px;
+    --glass-fill: rgba(255, 255, 255, 0.04);
+  }
+  .light .glass-clear {
+    --glass-fill: rgba(255, 255, 255, 0.24);
+  }
+  .glass-regular {
+    --glass-fill: var(--glass-regular);
+    --glass-fill-hover: var(--glass-regular);
+    --glass-blur: 24px;
+  }
+  .glass-tint {
+    position: relative;
+    background: var(--glass-fill-flat);
+    border: 1px solid var(--glass-rim-flat);
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
+  }
+  .glass-bar {
+    background: var(--glass-bar);
+    box-shadow: inset 0 -1px 0 var(--glass-bar-line);
+    -webkit-backdrop-filter: blur(24px) saturate(var(--glass-sat));
+    backdrop-filter: blur(24px) saturate(var(--glass-sat));
+  }
+  .glass-gold {
+    --glass-rim-a: rgba(243, 207, 99, 0.95);
+    --glass-rim-b: rgba(217, 182, 74, 0.2);
+    --glass-rim-c: rgba(217, 182, 74, 0.55);
+    --glass-fill: rgba(217, 182, 74, 0.1);
+    --glass-lens: rgba(243, 207, 99, 0.2);
+  }
+  .glass-paid {
+    --glass-rim-a: rgba(134, 239, 172, 0.95);
+    --glass-rim-b: rgba(16, 185, 129, 0.2);
+    --glass-rim-c: rgba(16, 185, 129, 0.5);
+    --glass-fill: rgba(16, 185, 129, 0.1);
+    --glass-lens: rgba(74, 222, 128, 0.2);
+  }
+  .glass-pending {
+    --glass-rim-a: rgba(253, 224, 71, 0.95);
+    --glass-rim-b: rgba(245, 158, 11, 0.2);
+    --glass-rim-c: rgba(245, 158, 11, 0.5);
+    --glass-fill: rgba(245, 158, 11, 0.1);
+    --glass-lens: rgba(251, 191, 36, 0.2);
+  }
+  .glass-overdue {
+    --glass-rim-a: rgba(252, 165, 165, 0.95);
+    --glass-rim-b: rgba(239, 68, 68, 0.2);
+    --glass-rim-c: rgba(239, 68, 68, 0.5);
+    --glass-fill: rgba(239, 68, 68, 0.1);
+    --glass-lens: rgba(248, 113, 113, 0.2);
+  }
+  .light .glass-gold {
+    --glass-fill: rgba(255, 250, 230, 0.5);
+  }
+  .light .glass-paid {
+    --glass-fill: rgba(236, 253, 245, 0.5);
+  }
+  .light .glass-pending {
+    --glass-fill: rgba(255, 247, 230, 0.5);
+  }
+  .light .glass-overdue {
+    --glass-fill: rgba(255, 240, 240, 0.5);
+  }
+
+  /* The pointer light (a child of a .glass-live pane; glass.tsx moves it). */
+  .glass-spot {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background: radial-gradient(60% 45% at var(--mx, 50%) var(--my, 50%), var(--glass-spot), transparent 70%);
+    opacity: 0;
+    transition: opacity 250ms ease;
+    pointer-events: none;
+  }
+  /*
+   * The edge lens: a ring a few pixels wide that refracts the wall more
+   * brightly than the pane does, the way light bends at the edge of real
+   * glass. A second backdrop filter, so only hero panes get one, and never
+   * on a phone.
+   */
+  .glass-ring {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    padding: 10px;
+    border-radius: inherit;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    -webkit-backdrop-filter: blur(1.5px) brightness(1.18) saturate(1.5);
+    backdrop-filter: blur(1.5px) brightness(1.18) saturate(1.5);
+    pointer-events: none;
+  }
+  .light .glass-ring {
+    -webkit-backdrop-filter: blur(1.5px) brightness(1.08) saturate(1.4);
+    backdrop-filter: blur(1.5px) brightness(1.08) saturate(1.4);
+  }
+  /*
+   * A pane that answers the pointer: lifts, brightens, lets the spot in, and
+   * its rim's bright pole eases toward the cursor. It never tilts: Liquid
+   * Glass lifts and brightens, and a 3D transform on a blurred element is
+   * what makes Safari re-rasterise it every frame.
+   */
+  .glass-live {
+    --mx: 50%;
+    --my: 50%;
+    overflow: hidden;
+    transition:
+      transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 220ms ease,
+      background-color 220ms ease,
+      --light-angle 240ms ease;
+    transform: translateY(var(--lift, 0px));
+  }
+  @media (hover: hover) {
+    .glass-live:hover {
+      --lift: -2px;
+      background: var(--glass-fill-hover);
+      box-shadow:
+        inset 0 1px 0 var(--glass-top),
+        inset 8px 8px 20px -14px var(--glass-bevel-hi),
+        inset -8px -8px 20px -14px var(--glass-bevel-lo),
+        inset 0 0 28px -10px var(--glass-lens),
+        0 0 0 1px var(--glass-edge),
+        var(--glass-shadow-lift);
+    }
+    .glass-live:hover > .glass-spot {
+      opacity: 1;
+    }
+  }
+  .glass-live:active {
+    --lift: 0px;
+    transform: scale(0.985);
+  }
+  /* Phones: a little more blur (so grain never shows through), no brightening, no rings, a still wall. */
+  @media (pointer: coarse) {
+    .glass {
+      --glass-blur: 12px;
+      --glass-bright: 1;
+    }
+    .glass-ring {
+      display: none;
+    }
+    .aurora > span {
+      animation: none !important;
+    }
+  }
+  @media (max-width: 640px) {
+    .glass-ring {
+      display: none;
+    }
+  }
+
+  /* Small glass pieces: an icon badge, a chip, a control, a capsule of options. */
+  .glass-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    background: var(--glass-fill-flat);
+    border: 1px solid var(--glass-rim-flat);
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
+  }
+  .glass-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    background: var(--glass-fill-flat);
+    border: 1px solid var(--glass-rim-flat);
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
+  }
+  /* The selected option inside a capsule: a raised sliver of brighter glass. */
+  .glass-chip-on {
+    background: var(--glass-fill-hover);
+    color: var(--foreground);
+    box-shadow:
+      inset 0 1px 0 var(--glass-top),
+      0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+  /*
+   * The gold thumb that slides between the options of a capsule control
+   * (a segmented control's one piece of glass moving). Position and width
+   * are set inline from the selected option's measurements.
+   */
+  .seg-thumb {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 0;
+    border-radius: 9999px;
+    background: var(--gold-face);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      0 2px 8px rgba(0, 0, 0, 0.18);
+    transition:
+      transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      width 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    pointer-events: none;
+  }
+  .glass-control {
+    background: var(--glass-fill-flat);
+    border: 1px solid var(--glass-rim-flat);
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      background-color 150ms ease;
+  }
+  .glass-control:focus-visible,
+  .glass-control:focus-within {
+    outline: none;
+    background: var(--glass-hover);
+    border-color: color-mix(in oklab, var(--primary) 70%, transparent);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 0 0 3px color-mix(in oklab, var(--primary) 24%, transparent);
+  }
+  /* The gold button: a lit face, dark text, a glow, and a sheen that travels once on hover. */
+  .btn-gold {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--gold-face);
+    color: #1b1407;
+    border: 0;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.65),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+      var(--gold-glow);
+    transition:
+      transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 160ms ease,
+      filter 160ms ease;
+  }
+  .btn-gold::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+    transform: translateX(-120%);
+    pointer-events: none;
+  }
+  @media (hover: hover) {
+    .btn-gold:hover {
+      filter: brightness(1.05);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+        0 14px 32px -10px rgba(217, 182, 74, 0.9);
+    }
+    .btn-gold:hover::after {
+      animation: shubzSheen 900ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+  }
+  .btn-gold:active {
+    transform: scale(0.98);
+  }
+  .btn-gold:disabled {
+    filter: saturate(0.7);
+    opacity: 0.7;
+  }
+  /* Anything pressable: a small press. */
+  .press {
+    transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .press:active {
+    transform: scale(0.97);
+  }
+
+  /*
+   * The wall: the base fields of colour, a fine dot grid fading toward the
+   * edges, a breath of grain, and three glows drifting behind it all. Fixed
+   * behind the page, no pointer events; mounted once by the app shell and by
+   * the sign-in page.
+   */
+  .aurora {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--wall);
+  }
+  .aurora::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 1px 1px, var(--wall-grid) 1px, transparent 1.6px);
+    background-size: 24px 24px;
+    -webkit-mask-image: radial-gradient(90% 75% at 50% 15%, #000 15%, transparent 100%);
+    mask-image: radial-gradient(90% 75% at 50% 15%, #000 15%, transparent 100%);
+  }
+  .aurora::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: var(--wall-grain);
+    mix-blend-mode: var(--wall-grain-blend);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  .aurora > span {
+    position: absolute;
+    border-radius: 9999px;
+    mix-blend-mode: screen;
+  }
+  .light .aurora > span {
+    mix-blend-mode: normal;
+  }
+  .aurora > span:nth-child(1) {
+    width: 60vw;
+    height: 60vw;
+    left: -18vw;
+    top: -28vw;
+    background: radial-gradient(circle closest-side, var(--glow-1), transparent 70%);
+    animation: shubzDrift 90s ease-in-out infinite alternate;
+  }
+  .aurora > span:nth-child(2) {
+    width: 55vw;
+    height: 55vw;
+    right: -20vw;
+    top: -8vw;
+    background: radial-gradient(circle closest-side, var(--glow-2), transparent 70%);
+    animation: shubzDrift 120s ease-in-out infinite alternate-reverse;
+  }
+  .aurora > span:nth-child(3) {
+    width: 50vw;
+    height: 50vw;
+    left: 30vw;
+    bottom: -30vw;
+    background: radial-gradient(circle closest-side, var(--glow-3), transparent 70%);
+  }
+  @media (max-width: 640px) {
+    .aurora > span {
+      width: 110vw !important;
+      height: 110vw !important;
+    }
+    .aurora::before {
+      background-size: 20px 20px;
+    }
+  }
+
+  /* Content arrives: a short rise, staggered by --i. */
+  .rise-in {
+    animation: shubzRise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+
+  .stagger > * {
+    animation: shubzRise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .stagger > :nth-child(2) { animation-delay: 50ms; }
+  .stagger > :nth-child(3) { animation-delay: 100ms; }
+  .stagger > :nth-child(4) { animation-delay: 150ms; }
+  .stagger > :nth-child(5) { animation-delay: 200ms; }
+  .stagger > :nth-child(6) { animation-delay: 250ms; }
+  .stagger > :nth-child(7) { animation-delay: 300ms; }
+  .stagger > :nth-child(8) { animation-delay: 350ms; }
+
+  /* Sections far down the page are not painted until they are near the viewport. */
+  .lazy-section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 320px;
+  }
+
+  /* A hairline of gold under section titles. */
+  .heading-rule::after {
+    content: "";
+    display: block;
+    margin-top: 0.375rem;
+    height: 1px;
+    width: 2.25rem;
+    background: linear-gradient(90deg, var(--primary), transparent);
+  }
+
+  /* Live things: a row that has just arrived, a pane whose figure just changed. */
+  .row-new {
+    animation:
+      shubzRise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
+      shubzRimFade 2000ms ease-out both;
+  }
+  .glass-flash::after {
+    animation: shubzFlash 900ms ease-out both;
+  }
+
+  /*
+   * Charts (components/charts). Marks grow out of the baseline when a chart
+   * first appears; a hovered mark lifts. --i staggers the columns.
+   */
+  .viz-grow {
+    transform-box: fill-box;
+    transform-origin: bottom center;
+    animation: shubzGrow 720ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 16ms);
+  }
+  .viz-draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: shubzDraw 1100ms cubic-bezier(0.4, 0, 0.2, 1) 120ms forwards;
+  }
+  .viz-fade {
+    animation: shubzFade 700ms ease 500ms both;
+  }
+  .viz-ring {
+    transition: stroke-dashoffset 1100ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .viz-hbar {
+    transition: width 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  /* A gold ring expanding from a point: the newest purchase landing on a chart. */
+  .viz-ping {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: shubzPing 1200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  /* A chart tooltip: a small sheet of regular glass, opaque enough to read figures on. */
+  .viz-tip {
+    position: absolute;
+    z-index: 30;
+    pointer-events: none;
+    min-width: 8rem;
+    border-radius: 0.875rem;
+    background: var(--glass-regular);
+    border: 1px solid var(--glass-rim-flat);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 16px 40px -16px rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    backdrop-filter: blur(16px) saturate(1.5);
+    padding: 0.5rem 0.625rem;
+    font-size: 0.75rem;
+    line-height: 1.25;
+  }
+}
+
+@keyframes shubzDrift {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(3vw, 2vh, 0) scale(1.04); }
+  100% { transform: translate3d(-2vw, 3vh, 0) scale(1); }
+}
+@keyframes shubzRise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shubzGrow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes shubzDraw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes shubzFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes shubzSheen {
+  to { transform: translateX(120%); }
+}
+@keyframes shubzPing {
+  0% { transform: scale(0.4); opacity: 0.9; }
+  100% { transform: scale(3.2); opacity: 0; }
+}
+@keyframes shubzRimFade {
+  0% { box-shadow: inset 0 0 0 1px rgba(217, 182, 74, 0.9), 0 0 24px -6px rgba(217, 182, 74, 0.8); }
+  100% { box-shadow: inset 0 0 0 1px rgba(217, 182, 74, 0), 0 0 24px -6px rgba(217, 182, 74, 0); }
+}
+@keyframes shubzFlash {
+  0% { box-shadow: inset 0 0 0 1px rgba(217, 182, 74, 0.9), 0 0 0 0 rgba(217, 182, 74, 0.5); }
+  100% { box-shadow: inset 0 0 0 1px rgba(217, 182, 74, 0), 0 0 0 18px rgba(217, 182, 74, 0); }
 }
 
 /*
@@ -308,6 +1002,7 @@
   header,
   aside,
   nav,
+  .aurora,
   [data-print-hide],
   [data-slot="toaster"] {
     display: none !important;

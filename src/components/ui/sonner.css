@@ -1,0 +1,38 @@
+/*
+ * Sonner injects its own stylesheet at runtime, after ours and outside any
+ * cascade layer, so a Tailwind class on a toast loses to it for the surface
+ * properties (background, border, radius, shadow, colour). These rules sit
+ * outside the layers too, with more specificity than Sonner's, and hand the
+ * toast's surface back to the glass: the fill, shadow and radius are the
+ * same ones .glass draws, from the same tokens, so the rim and sheen its
+ * pseudo-elements add line up.
+ */
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"].glass {
+  background: var(--glass-fill);
+  border: 0;
+  border-radius: 1rem;
+  color: var(--popover-foreground);
+  box-shadow:
+    inset 0 1px 0 var(--glass-top),
+    inset 8px 8px 20px -14px var(--glass-bevel-hi),
+    inset -8px -8px 20px -14px var(--glass-bevel-lo),
+    inset 0 0 28px -10px var(--glass-lens),
+    0 0 0 1px var(--glass-edge),
+    var(--glass-shadow);
+}
+[data-sonner-toaster] [data-sonner-toast].glass [data-description] {
+  color: var(--muted-foreground);
+}
+/* With richColors on, the type colours the text and icon; the glass stays clear. */
+[data-sonner-toaster] [data-rich-colors="true"][data-sonner-toast].glass[data-type="success"] {
+  color: var(--paid-foreground);
+}
+[data-sonner-toaster] [data-rich-colors="true"][data-sonner-toast].glass[data-type="error"] {
+  color: var(--overdue-foreground);
+}
+[data-sonner-toaster] [data-rich-colors="true"][data-sonner-toast].glass[data-type="warning"] {
+  color: var(--pending-foreground);
+}
+[data-sonner-toaster] [data-rich-colors="true"][data-sonner-toast].glass[data-type="info"] {
+  color: var(--foreground);
+}

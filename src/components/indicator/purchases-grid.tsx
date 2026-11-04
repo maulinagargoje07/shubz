@@ -13,6 +13,7 @@ import {
   expiryStatusLabel,
   paymentMethodLabel,
   planLabel,
+  SHOW_FEE_FIGURES,
   subscriptionStatusLabel,
   type Payment,
 } from "@/lib/indicator"
@@ -37,15 +38,19 @@ export function PurchasesGrid({
       cell: (r) => <RazorpayId id={r.paymentId} label="payment ID" />,
     },
     { id: "paid", header: "Paid", kind: "money", align: "right", sum: true, value: (r) => r.amountPaise },
-    {
-      id: "earned",
-      header: "Earned (after fees)",
-      kind: "money",
-      align: "right",
-      sum: true,
-      // The service already puts the full amount here while Razorpay's fee is unknown.
-      value: (r) => r.netPaise ?? r.amountPaise,
-    },
+    ...(SHOW_FEE_FIGURES
+      ? [
+          {
+            id: "earned",
+            header: "Earned (after fees)",
+            kind: "money",
+            align: "right",
+            sum: true,
+            // The service already puts the full amount here while Razorpay's fee is unknown.
+            value: (r) => r.netPaise ?? r.amountPaise,
+          } satisfies GridColumn<Payment>,
+        ]
+      : []),
     { id: "paidAt", header: "Date", kind: "datetime", value: (r) => r.paidAt },
     { id: "email", header: "Email", value: (r) => r.email },
     {

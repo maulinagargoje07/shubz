@@ -127,11 +127,45 @@ Used on a phone and on a laptop, on Indian mobile networks.
   filters (`server/indicator/filters.ts`) and walk every page, so on
   Subscriptions and Failed payments they match the screen; on Customers and
   Purchases they are the whole list, and the grid's own button is the filtered one.
+- **Surfaces are liquid glass over a wallpaper.** `components/layout/backdrop.tsx`
+  mounts `.aurora` once (a navy base and five drifting glows; the light theme
+  swaps in a champagne base and pastels through the `--wall` / `--glow-*`
+  tokens). On it, `.glass` is a blurred sheet with a gradient rim (drawn by
+  its `::before`, so it follows any radius), `.glass-tint` the same without
+  the blur for rows and list items, `.glass-bar` the header, sidebar and tab
+  bar, and `.glass-gold` / `.glass-paid` / `.glass-overdue` recolour the rim
+  and fill through variables. `components/ui/glass.tsx` has the client
+  pieces: `GlassPane` (tilts toward the pointer, desktop only) and
+  `AnimatedNumber` (counts up on first paint, ticks on a refresh). Keep blur to
+  a few surfaces per screen. Everything honours `prefers-reduced-motion`.
+- **Charts are hand-drawn SVG in `components/charts/`** — no charting library
+  (see "Ask before adding any dependency"). `column-chart` (columns, one series
+  or stacked, hover and keyboard tooltips, a hidden table for screen readers),
+  `sparkline`, `segmented-bar`, `ranked-bars`, `ring-meter`, and `chart-card`
+  for the pane they sit in. Colours are the fixed slots in `palette.ts`
+  (`--chart-1…5` in `globals.css`, chosen to stay apart under colour-blindness):
+  gold is money and the 3-month plan, blue a first purchase and the 1-month
+  plan, teal renewals and payment methods. Status parts use the paid / pending /
+  overdue tokens. Values are formatted inside the charts (`unit: "inr" |
+  "count" | "percent"`), never passed in as functions, so server components
+  can render them.
+- **The dashboard's chart series come from `lib/chart-data.ts`**, which only
+  adds up the purchase rows the payments service sends (by Indian day and
+  month, plan, method, first purchase vs renewal). It decides nothing: expiry,
+  status, plan and purchase number are still the service's. The page fetches
+  the whole purchase list beside the overview; if that read fails the figures
+  still show and the charts rest until the next refresh.
+- **Fee figures are switched off** by `SHOW_FEE_FIGURES` in `lib/indicator.ts`:
+  the dashboard's "Net earned" tile, the Purchases grid's "Earned (after fees)"
+  column and the fee columns of the Excel/CSV exports. Flip it to bring them
+  all back; the payments service keeps recording fees regardless.
 - **Status has one visual language:** `StatusPill` tones and
   `subscriptionTone()` in `components/ui/status.tsx`. Don't hand-write
   emerald/rose classes at a call site.
 - **Indicator pages keep themselves current:** `AutoRefresh` calls
-  `router.refresh()` every 10 seconds while the tab is visible.
+  `router.refresh()` every 10 seconds while the tab is visible, and shows a
+  "Live · updated 8s ago" badge that ticks. On the dashboard `PurchasePulse`
+  toasts each purchase that lands while the page is open.
 - **No `loading.tsx` under `/indicator`.** With Next.js 15.5, a `loading.tsx`
   boundary above a page that fetches data made same-page navigations (filters,
   pagination, Clear) and `router.refresh()` intermittently do nothing.

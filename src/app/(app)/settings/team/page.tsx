@@ -148,7 +148,7 @@ export default async function TeamPage({
       />
 
       <div className="px-4 pt-4 sm:px-6">
-        <div className="flex items-start gap-2.5 rounded-xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm">
+        <div className="glass-tint flex items-start gap-2.5 rounded-2xl border-primary/40 bg-accent px-4 py-3 text-sm">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
           <p className="text-muted-foreground">
             Role and permissions are read from the database on every request, so a
@@ -160,7 +160,7 @@ export default async function TeamPage({
 
       {withoutPassword.length > 0 ? (
         <div className="px-4 pt-3 sm:px-6">
-          <div className="flex items-start gap-2.5 rounded-xl border border-pending/30 bg-pending-muted px-4 py-3 text-sm">
+          <div className="glass-tint flex items-start gap-2.5 rounded-2xl border-pending/40 bg-pending-muted px-4 py-3 text-sm">
             <TriangleAlert className="mt-0.5 size-4 shrink-0 text-pending" aria-hidden />
             <p className="text-pending-foreground">
               {withoutPassword.map((m) => m.name).join(", ")}{" "}

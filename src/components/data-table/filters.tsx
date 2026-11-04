@@ -18,8 +18,6 @@ import Link from "next/link"
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react"
 import { cn } from "cn"
 
-import { Button } from "@/components/ui/button"
-
 export type FilterOption = { value: string; label: string }
 
 export type FilterSpec = {
@@ -108,7 +106,7 @@ export function FilterBar({
               defaultValue={params.q ?? ""}
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder ?? "Search"}
-              className="h-10 w-full rounded-lg border border-border/80 bg-card pl-9 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
+              className="glass-control h-9 w-full rounded-xl pl-9 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
           </div>
         ) : null}
@@ -121,7 +119,7 @@ export function FilterBar({
                 <select
                   name={filter.key}
                   defaultValue={params[filter.key] ?? ""}
-                  className="h-10 w-full rounded-lg border border-border/80 bg-card px-3 text-sm text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
+                  className="glass-control h-9 w-full rounded-xl px-3 text-sm text-foreground outline-none"
                 >
                   <option value="">All {filter.label.toLowerCase()}</option>
                   {filter.groupBy
@@ -158,24 +156,22 @@ export function FilterBar({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button
+        {/* Apply is the one gold thing in the bar; Clear is a quiet capsule beside it. */}
+        <button
           type="submit"
-          size="sm"
-          className="h-10 flex-1 bg-primary text-primary-foreground font-semibold hover:bg-primary/90 active:scale-95 sm:flex-none"
+          className="btn-gold inline-flex h-9 flex-1 items-center justify-center rounded-full px-4 text-sm font-semibold sm:flex-none"
         >
           Apply
-        </Button>
+        </button>
 
         {hasActive ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-10 text-muted-foreground hover:text-foreground active:scale-95"
-            render={<Link href={clearHref ?? action} />}
+          <Link
+            href={clearHref ?? action}
+            className="glass-tint press inline-flex h-9 items-center gap-1 rounded-full px-3.5 text-sm text-muted-foreground transition-colors hover:bg-glass-hover hover:text-foreground"
           >
-            <X className="size-4" />
+            <X className="size-4" aria-hidden />
             Clear
-          </Button>
+          </Link>
         ) : null}
       </div>
     </form>
@@ -233,7 +229,8 @@ export function Pagination({
             <span className="hidden sm:inline">Previous</span>
           </PageLink>
 
-          <span className="px-1 text-muted-foreground">
+          {/* The page you are on, in gold, like the selected option of a capsule. */}
+          <span className="inline-flex h-9 items-center rounded-full bg-primary px-3 text-xs font-semibold text-primary-foreground tabular-nums">
             {page} / {totalPages}
           </span>
 
@@ -259,10 +256,8 @@ function PageLink({
   children: React.ReactNode
 }) {
   const className = cn(
-    "inline-flex h-9 items-center gap-1 rounded-lg border px-3 text-sm transition-colors",
-    disabled
-      ? "pointer-events-none opacity-40"
-      : "hover:bg-accent hover:text-accent-foreground"
+    "glass-tint inline-flex h-9 items-center gap-1 rounded-full px-3 text-sm transition-colors",
+    disabled ? "pointer-events-none opacity-40" : "press hover:bg-glass-hover hover:text-foreground"
   )
 
   // A disabled control must not be a link at all, or it stays keyboard-reachable

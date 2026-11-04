@@ -21,7 +21,7 @@ export function PageHeader({
   back?: { href: string; label: string }
 }) {
   return (
-    <div className="border-b border-border/70 bg-card/20 px-4 py-4 sm:px-6 sm:py-5">
+    <div className="relative px-4 pt-5 pb-1 sm:px-6 sm:pt-7">
       {back ? (
         <Link
           href={back.href}
@@ -34,7 +34,7 @@ export function PageHeader({
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-[1.75rem]">{title}</h1>
           {description ? (
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           ) : null}
@@ -60,7 +60,7 @@ export function SectionHeading({
 }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
-      <h2 className="text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground/80">
+      <h2 className="heading-rule text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground">
         {children}
       </h2>
       {action}

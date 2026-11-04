@@ -1,0 +1,18 @@
+/*
+ * The grid's pinned column. A pinned cell has to be opaque, or the columns
+ * scrolling under it show through; it is the sheet's card colour, almost
+ * solid, rather than a blurred pane (that would be one backdrop filter per
+ * row). The status tint is painted over it by the cell's ::before.
+ */
+.grid-pinned {
+  background-color: color-mix(in oklab, var(--card) 92%, transparent);
+}
+
+/*
+ * The pinned heading sits where the pinned column meets the header bar: the
+ * same opaque backing, with the bar's bottom line so the row reads as one.
+ */
+.grid-pinned-head {
+  background-color: color-mix(in oklab, var(--card) 92%, transparent);
+  box-shadow: inset 0 -1px 0 var(--glass-bar-line);
+}

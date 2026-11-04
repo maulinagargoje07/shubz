@@ -21,6 +21,8 @@ import { cn } from "cn"
 import { formatDate, formatIST, toISTDateString } from "@/lib/fy"
 import { formatINR } from "@/lib/money"
 
+import "./grid.css"
+
 export type GridKind = "text" | "number" | "money" | "date" | "datetime" | "yesno"
 export type GridValue = string | number | boolean | null | undefined
 
@@ -59,15 +61,15 @@ const ROW_TONES: Record<NonNullable<GridTone>, string> = {
   active: "bg-paid-muted",
   expiring: "bg-pending-muted",
   expired: "bg-overdue-muted",
-  check: "bg-orange-500/15",
+  check: "bg-accent",
 }
-// A pinned cell needs an opaque background, or the columns scrolling under it
-// show through; the tint is painted over that background.
+// A pinned cell needs an opaque background (.grid-pinned, in grid.css), or the
+// columns scrolling under it show through; the tint is painted over that.
 const PINNED_TONES: Record<NonNullable<GridTone>, string> = {
   active: "before:bg-paid-muted",
   expiring: "before:bg-pending-muted",
   expired: "before:bg-overdue-muted",
-  check: "before:bg-orange-500/15",
+  check: "before:bg-accent",
 }
 
 const kindOf = <Row,>(column: GridColumn<Row>): GridKind => column.kind ?? "text"
@@ -323,7 +325,7 @@ export function Grid<Row>({
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search everything"
             aria-label="Search"
-            className="h-9 w-56 rounded-lg border border-border/80 bg-card pr-3 pl-8 text-sm text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
+            className="glass-tint h-9 w-56 rounded-full pr-3 pl-8 text-sm text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20"
           />
         </label>
         <p className="text-sm text-muted-foreground">
@@ -347,7 +349,7 @@ export function Grid<Row>({
                 setFilters({})
                 setSearch("")
               }}
-              className="inline-flex h-9 items-center gap-1 rounded-lg px-2.5 text-sm text-muted-foreground hover:text-foreground"
+              className="inline-flex h-9 items-center gap-1 rounded-full px-2.5 text-sm text-muted-foreground transition-colors hover:bg-glass-hover hover:text-foreground"
             >
               <X className="size-3.5" aria-hidden />
               Clear {activeFilters ? `${activeFilters} filter${activeFilters === 1 ? "" : "s"}` : "search"}
@@ -357,7 +359,7 @@ export function Grid<Row>({
             type="button"
             onClick={download}
             disabled={shown.length === 0}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-sm font-medium hover:bg-secondary/70 disabled:opacity-50"
+            className="glass-tint press inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium transition-colors hover:bg-glass-hover disabled:opacity-50"
             title="A CSV of the rows shown, in this order, with these filters"
           >
             <Download className="size-4" aria-hidden />
@@ -367,7 +369,7 @@ export function Grid<Row>({
       </div>
 
       {/* ---- the grid ---- */}
-      <div className="mx-4 overflow-x-auto rounded-xl border border-border/80 bg-card sm:mx-6">
+      <div className="glass mx-4 overflow-x-auto rounded-3xl sm:mx-6">
         <table className="min-w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -380,9 +382,10 @@ export function Grid<Row>({
                     key={column.id}
                     scope="col"
                     className={cn(
-                      "border-b border-border/80 bg-secondary/60 px-2 py-1.5 text-left text-xs font-semibold whitespace-nowrap text-muted-foreground",
+                      "px-2 py-1.5 text-left text-xs font-semibold whitespace-nowrap text-muted-foreground",
                       column.align === "right" && "text-right",
-                      column.pinned && "sticky left-0 z-20 bg-secondary"
+                      // The pinned heading is backed solid (nothing may show through it); the rest are the bar.
+                      column.pinned ? "grid-pinned-head sticky left-0 z-20" : "glass-bar"
                     )}
                   >
                     {column.plain ? (
@@ -408,8 +411,8 @@ export function Grid<Row>({
                           aria-expanded={menu?.id === column.id}
                           aria-label={`Filter ${column.header}`}
                           className={cn(
-                            "inline-flex size-6 items-center justify-center rounded hover:bg-secondary hover:text-foreground",
-                            active && "bg-primary/15 text-primary"
+                            "inline-flex size-6 items-center justify-center rounded transition-colors hover:bg-glass-hover hover:text-foreground",
+                            active && "bg-accent text-accent-foreground"
                           )}
                         >
                           <Filter className="size-3" fill={active ? "currentColor" : "none"} aria-hidden />
@@ -443,7 +446,7 @@ export function Grid<Row>({
                           "border-b border-border/50 px-3 py-1.5 whitespace-nowrap align-middle",
                           column.align === "right" && "text-right tabular-nums",
                           column.pinned
-                            ? "sticky left-0 z-10 bg-card before:absolute before:inset-0 before:-z-10 before:content-['']"
+                            ? "grid-pinned sticky left-0 z-10 before:absolute before:inset-0 before:-z-10 before:content-['']"
                             : "relative",
                           column.pinned && tone && PINNED_TONES[tone]
                         )}
@@ -567,8 +570,7 @@ function FilterMenu<Row>({
         ? ["Smallest first", "Largest first"]
         : ["A → Z", "Z → A"]
   const inputType = kind === "date" || kind === "datetime" ? "date" : "number"
-  const inputClass =
-    "mt-0.5 h-8 w-full rounded-md border border-border/80 bg-card px-2 text-xs text-foreground outline-none focus-visible:border-primary/50"
+  const inputClass = "glass-control mt-0.5 h-8 w-full rounded-lg px-2 text-xs text-foreground outline-none"
 
   // Open to the left when the button sits near the right edge.
   const style: React.CSSProperties =
@@ -582,13 +584,13 @@ function FilterMenu<Row>({
       role="dialog"
       aria-label={`Filter ${column.header}`}
       style={style}
-      className="z-50 w-64 rounded-xl border border-border bg-popover p-2 text-left text-sm font-normal text-popover-foreground shadow-lg"
+      className="glass glass-regular z-50 w-64 rounded-2xl p-2 text-left text-sm font-normal text-popover-foreground"
     >
       <div className="flex gap-1">
         <button
           type="button"
           onClick={() => onSort("asc")}
-          className={cn("flex-1 rounded-md px-2 py-1 text-left text-xs hover:bg-secondary", sorted === "asc" && "bg-secondary font-semibold")}
+          className={cn("flex-1 rounded-lg px-2 py-1 text-left text-xs hover:bg-glass-hover", sorted === "asc" && "bg-glass-hover font-semibold")}
         >
           <ArrowUp className="mr-1 inline size-3" aria-hidden />
           {lowLabel}
@@ -596,7 +598,7 @@ function FilterMenu<Row>({
         <button
           type="button"
           onClick={() => onSort("desc")}
-          className={cn("flex-1 rounded-md px-2 py-1 text-left text-xs hover:bg-secondary", sorted === "desc" && "bg-secondary font-semibold")}
+          className={cn("flex-1 rounded-lg px-2 py-1 text-left text-xs hover:bg-glass-hover", sorted === "desc" && "bg-glass-hover font-semibold")}
         >
           <ArrowDown className="mr-1 inline size-3" aria-hidden />
           {highLabel}
@@ -636,7 +638,7 @@ function FilterMenu<Row>({
         className={cn(inputClass, "mt-2")}
       />
 
-      <label className="mt-1.5 flex items-center gap-2 rounded-md px-1.5 py-1 text-xs font-medium hover:bg-secondary">
+      <label className="mt-1.5 flex items-center gap-2 rounded-lg px-1.5 py-1 text-xs font-medium hover:bg-glass-hover">
         <input
           type="checkbox"
           aria-label="Select all"
@@ -657,7 +659,7 @@ function FilterMenu<Row>({
         {visible.length === 0 ? <li className="px-1.5 py-1 text-xs text-muted-foreground">No values match.</li> : null}
         {visible.map((o) => (
           <li key={o.label}>
-            <label className="flex items-center gap-2 rounded-md px-1.5 py-1 text-xs hover:bg-secondary">
+            <label className="flex items-center gap-2 rounded-lg px-1.5 py-1 text-xs hover:bg-glass-hover">
               <input
                 type="checkbox"
                 aria-label={o.label}
@@ -681,7 +683,7 @@ function FilterMenu<Row>({
         <button
           type="button"
           onClick={() => onChange({})}
-          className="mt-1.5 w-full rounded-md px-2 py-1 text-left text-xs text-primary hover:bg-secondary"
+          className="mt-1.5 w-full rounded-lg px-2 py-1 text-left text-xs text-primary hover:bg-glass-hover"
         >
           Clear filter on {column.header}
         </button>

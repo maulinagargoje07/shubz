@@ -74,8 +74,8 @@ function RoleChoice({
           <label
             key={role}
             className={cn(
-              "flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 text-sm transition-colors",
-              selected ? "border-primary bg-primary/10" : "border-border/70 hover:bg-secondary/50",
+              "glass-tint flex cursor-pointer items-start gap-2.5 rounded-2xl px-3 py-2.5 text-sm transition-colors",
+              selected ? "border-primary/60 bg-accent" : "hover:bg-glass-hover",
               disabled && "cursor-not-allowed opacity-60"
             )}
           >
@@ -360,7 +360,7 @@ export function EditTeamMemberDialog({
                 <FormItem>
                   <FormLabel>Role</FormLabel>
                   {isSelf ? (
-                    <p className="rounded-lg border border-border/70 bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
+                    <p className="glass-tint rounded-xl px-3 py-2 text-sm text-muted-foreground">
                       You cannot change your own role. Ask another superadmin.
                     </p>
                   ) : (

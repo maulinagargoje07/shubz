@@ -32,7 +32,7 @@ export function CopyButton({ value, label }: { value: string; label: string }) {
       onClick={copy}
       aria-label={copied ? "Copied" : label}
       title={label}
-      className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground pointer-coarse:size-11"
+      className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-glass-hover hover:text-foreground pointer-coarse:size-11"
     >
       {copied ? <Check className="size-3.5 text-paid" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
     </button>

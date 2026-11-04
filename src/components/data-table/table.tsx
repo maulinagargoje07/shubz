@@ -68,7 +68,7 @@ export function DataTable<TRow>({
 }: DataTableProps<TRow>) {
   if (rows.length === 0) {
     return (
-      <div className="mx-4 rounded-xl border border-dashed border-border/70 bg-card/60 px-6 py-12 text-center text-sm text-muted-foreground sm:mx-6">
+      <div className="glass-tint mx-4 rounded-3xl border-dashed px-6 py-12 text-center text-sm text-muted-foreground sm:mx-6">
         {empty}
       </div>
     )
@@ -97,7 +97,7 @@ export function DataTable<TRow>({
 
           return (
             <li key={key}>
-              <div className="rounded-xl border border-border/80 bg-card p-3.5 shadow-xs transition-all">
+              <div className="glass-tint rounded-2xl p-3.5 transition-all">
                 {/* Header line: Title & Metric */}
                 <div className="flex items-start justify-between gap-2.5">
                   {href ? (
@@ -158,16 +158,17 @@ export function DataTable<TRow>({
 
       {/* ---------- Tablet and up: a real table ---------- */}
       <div className="hidden sm:block">
-        <div className="scroll-x mx-6 rounded-xl border border-border/80 bg-card shadow-xs">
+        <div className="glass mx-6 overflow-x-auto rounded-3xl">
           <table className="w-full caption-bottom text-sm">
             <thead>
-              <tr className="border-b border-border/80 bg-secondary/35">
+              {/* The bar is on the cells, not the row: a sticky <tr> does nothing in Chrome. */}
+              <tr>
                 {columns.map((column) => (
                   <th
                     key={column.id}
                     scope="col"
                     className={cn(
-                      "px-4 py-3 text-left text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground/80",
+                      "glass-bar sticky top-0 z-10 border-b border-glass-rim px-4 py-3 text-left text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground",
                       column.align === "right" && "text-right",
                       PRIORITY_VISIBILITY[column.priority ?? "secondary"],
                       column.className
@@ -178,16 +179,13 @@ export function DataTable<TRow>({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/60">
+            <tbody className="divide-y divide-border/50">
               {rows.map((row) => {
                 const key = rowKey(row)
                 const href = rowHref?.(row)
 
                 return (
-                  <tr
-                    key={key}
-                    className="transition-colors hover:bg-secondary/35"
-                  >
+                  <tr key={key} className="transition-colors hover:bg-glass-hover">
                     {columns.map((column, index) => (
                       <td
                         key={column.id}

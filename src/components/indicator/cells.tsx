@@ -3,7 +3,8 @@
  * every page.
  */
 
-import { MessageCircle } from "lucide-react"
+import { CalendarRange, MessageCircle } from "lucide-react"
+import { cn } from "cn"
 
 import { CopyButton } from "@/components/indicator/copy-button"
 import { expiryTone, StatusPill, subscriptionTone } from "@/components/ui/status"
@@ -12,9 +13,11 @@ import {
   daysLeftLabel,
   expiryStatusHint,
   expiryStatusLabel,
+  planLabel,
   subscriptionStatusHint,
   subscriptionStatusLabel,
 } from "@/lib/indicator"
+import { formatINR } from "@/lib/money"
 import { formatPhone, whatsappHref } from "@/lib/phone-format"
 
 export function BuyerCell({ name, email, tradingviewId }: { name: string; email: string; tradingviewId?: string }) {
@@ -59,7 +62,7 @@ export function ContactCell({ phone }: { phone: string }) {
         rel="noopener noreferrer"
         aria-label={`WhatsApp ${formatPhone(phone)}`}
         title="WhatsApp"
-        className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-paid pointer-coarse:size-11"
+        className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-glass-hover hover:text-paid pointer-coarse:size-11"
       >
         <MessageCircle className="size-3.5" aria-hidden />
       </a>
@@ -112,6 +115,41 @@ export function RazorpayId({ id, label }: { id: string | null; label: string }) 
     <span className="inline-flex min-w-0 max-w-full items-center gap-0.5">
       <span className="truncate font-mono text-xs text-muted-foreground">{id}</span>
       <CopyButton value={id} label={`Copy ${label}`} />
+    </span>
+  )
+}
+
+/**
+ * Which plan a buyer is on, loud enough to read at a glance next to the
+ * access tick: "3 MONTHS" on a gold-tinted capsule, "1 MONTH" on plain glass,
+ * with the price under it. A plan the service couldn't read shows as a dash.
+ */
+export function PlanPill({
+  plan,
+  className,
+}: {
+  plan: { key: string | null; name?: string; amountPaise?: number } | null | undefined
+  className?: string
+}) {
+  if (!plan) {
+    return <span className={cn("text-sm text-muted-foreground", className)}>—</span>
+  }
+  const label = planLabel(plan)
+  const quarterly = plan.key === "3m"
+  return (
+    <span className={cn("inline-flex flex-col items-start gap-0.5", className)}>
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-wider whitespace-nowrap",
+          quarterly ? "border-primary/50 bg-accent text-accent-foreground" : "glass-tint text-foreground"
+        )}
+      >
+        <CalendarRange className="size-3" aria-hidden />
+        {label} plan
+      </span>
+      {typeof plan.amountPaise === "number" ? (
+        <span className="text-xs tabular-nums text-muted-foreground">{formatINR(plan.amountPaise)}</span>
+      ) : null}
     </span>
   )
 }

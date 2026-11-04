@@ -49,7 +49,7 @@ export default async function ProfilePage({
         <section className="space-y-6">
           <div>
             <SectionHeading>Account</SectionHeading>
-            <dl className="grid gap-3 rounded-xl border border-border/80 bg-card p-4 text-sm">
+            <dl className="glass grid gap-3 rounded-3xl p-5 text-sm">
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-muted-foreground">Email</dt>
                 <dd className="inline-flex min-w-0 items-center gap-1.5">
@@ -85,7 +85,7 @@ export default async function ProfilePage({
 
           <div>
             <SectionHeading>Display name</SectionHeading>
-            <div className="rounded-xl border border-border/80 bg-card p-4">
+            <div className="glass rounded-3xl p-5">
               <EditNameForm name={user.name} />
             </div>
           </div>
@@ -94,14 +94,14 @@ export default async function ProfilePage({
         <section className="space-y-6">
           <div>
             <SectionHeading>Password</SectionHeading>
-            <div className="rounded-xl border border-border/80 bg-card p-4">
+            <div className="glass rounded-3xl p-5">
               <ChangePasswordForm />
             </div>
           </div>
 
           <div>
             <SectionHeading>What you can do</SectionHeading>
-            <div className="rounded-xl border border-border/80 bg-card p-4">
+            <div className="glass rounded-3xl p-5">
               <p className="mb-3 flex items-start gap-2 text-sm text-muted-foreground">
                 <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
                 <span>

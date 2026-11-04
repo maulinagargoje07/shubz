@@ -1,0 +1,183 @@
+/*
+ * The sign-in page's own motion: how the pieces arrive, the one-time gleam
+ * across the logo, the shake on a wrong password and the sweep on a right
+ * one. Everything else on the page is the shared glass from globals.css.
+ * Under reduced motion globals.css collapses every animation to 0.01ms, so
+ * each keyframe ends in the resting state and nothing here needs a second
+ * copy for that case; the parallax and the timings live in JavaScript and
+ * check matchMedia themselves.
+ */
+
+/* Arrival: a 12px rise, each piece a beat after the last (--d). `backwards`
+   rather than `both`, so once it has landed the pane's own hover lift and
+   press can move it again. */
+.login-rise {
+  animation: loginRise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: var(--d, 0ms);
+}
+
+/* The faint crown behind the card: large, soft, centred a little below the
+   card's centre so the glass visibly refracts it. */
+.login-crown {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 40px);
+  z-index: -1;
+  width: 300px;
+  height: auto;
+  transform: translate(-50%, -50%);
+  opacity: 0.09;
+  filter: blur(2px);
+  pointer-events: none;
+  user-select: none;
+}
+@media (min-width: 640px) {
+  .login-crown {
+    width: 420px;
+  }
+}
+
+/* The real logo, with a band of light that crosses it once after it lands.
+   The wrapper's radius keeps the band inside the circle; the mask lets it
+   fade where the logo's own dark disc fades. */
+.login-logo {
+  position: relative;
+  overflow: hidden;
+  border-radius: 9999px;
+}
+.login-gleam {
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(
+    130deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 58%
+  );
+  -webkit-mask: radial-gradient(circle, #000 58%, transparent 72%);
+  mask: radial-gradient(circle, #000 58%, transparent 72%);
+  mix-blend-mode: screen;
+  transform: translateX(-70%);
+  opacity: 0;
+  pointer-events: none;
+  animation: loginGleam 900ms cubic-bezier(0.2, 0.8, 0.2, 1) 400ms 1 forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-gleam {
+    display: none;
+  }
+}
+
+/* A wrong password: the macOS shake, three cycles of ±6px. */
+.login-shake {
+  animation: loginShake 360ms ease-in-out;
+}
+
+/* The error line settles in rather than appearing. */
+.login-alert {
+  animation: loginFade 200ms ease both;
+}
+
+/* A right password: the card lifts a touch and fades while the page turns. */
+.login-leave {
+  animation: loginLeave 320ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+/* The gold that fills the button from the left on success, under the tick. */
+.login-sweep {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--primary) 55%, white) 0%,
+    color-mix(in oklab, var(--primary) 85%, white) 100%
+  );
+  transform-origin: left center;
+  animation: loginSweep 280ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* The submit spinner: a ring with one gap, turning. */
+.login-spinner {
+  animation: loginSpin 800ms linear infinite;
+}
+
+@keyframes loginRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes loginGleam {
+  0% {
+    transform: translateX(-70%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(70%);
+    opacity: 0;
+  }
+}
+@keyframes loginShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  16.6% {
+    transform: translateX(-6px);
+  }
+  33.3% {
+    transform: translateX(6px);
+  }
+  50% {
+    transform: translateX(-6px);
+  }
+  66.6% {
+    transform: translateX(6px);
+  }
+  83.3% {
+    transform: translateX(-6px);
+  }
+}
+@keyframes loginFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes loginLeave {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+}
+@keyframes loginSweep {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes loginSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}

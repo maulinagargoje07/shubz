@@ -39,7 +39,7 @@ export function PermissionPicker({
   // otherwise and the server ignores them anyway.
   if (role === "SUPERADMIN") {
     return (
-      <p className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">
+      <p className="glass-tint rounded-xl border-primary/40 bg-accent px-3 py-2 text-sm text-accent-foreground">
         A superadmin has every permission. These cannot be narrowed — it is the
         account that has to be able to fix everything else.
       </p>
@@ -56,7 +56,7 @@ export function PermissionPicker({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-secondary/40 px-3 py-2">
+      <div className="glass-tint flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2">
         <div className="min-w-0">
           <p className="text-sm font-medium">
             {usingDefaults ? "Using role defaults" : "Custom permissions"}
@@ -71,7 +71,7 @@ export function PermissionPicker({
           type="button"
           disabled={disabled}
           onClick={() => onChange(usingDefaults ? [...defaults] : null)}
-          className="shrink-0 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-secondary disabled:opacity-50"
+          className="glass-tint press shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors hover:bg-glass-hover disabled:opacity-50"
         >
           {usingDefaults ? "Customise" : "Reset to defaults"}
         </button>
@@ -98,9 +98,7 @@ export function PermissionPicker({
                     key={permission}
                     className={cn(
                       "flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors",
-                      checked
-                        ? "border-primary/30 bg-primary/10"
-                        : "border-border/70 hover:bg-secondary/50"
+                      checked ? "border-primary/50 bg-accent" : "border-glass-rim hover:bg-glass-hover"
                     )}
                   >
                     <input

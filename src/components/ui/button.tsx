@@ -8,11 +8,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        // The one gold thing on a screen: .btn-gold lights the face, darkens
+        // the text and runs a sheen across it once on hover.
+        default: "btn-gold rounded-xl border-0 text-primary-foreground",
+        // Flat glass. The base's transparent border would win over the
+        // class's hairline, so the rim colour is restated here.
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "glass-tint rounded-xl border-glass-rim text-foreground hover:bg-glass-hover aria-expanded:bg-glass-hover",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "glass-tint rounded-xl border-glass-rim text-secondary-foreground hover:bg-glass-hover hover:text-foreground aria-expanded:bg-glass-hover aria-expanded:text-foreground",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:

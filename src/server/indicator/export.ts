@@ -13,6 +13,7 @@ import {
   expiryStatusLabel,
   paymentMethodLabel,
   planLabel,
+  SHOW_FEE_FIGURES,
   subscriptionStatusLabel,
   type Customer,
   type FailedPayment,
@@ -80,8 +81,12 @@ const PAYMENT_COLUMNS: Column<Payment>[] = [
   contactColumn<Payment>(),
   { header: "TradingView username", width: 22, value: (r) => r.tradingviewId },
   { header: "Amount (₹)", width: 12, type: "money", value: (r) => r.amountPaise },
-  { header: "Razorpay fee (₹)", width: 14, type: "money", value: (r) => r.feePaise ?? null },
-  { header: "Net after fee (₹)", width: 15, type: "money", value: (r) => r.netPaise ?? r.amountPaise },
+  ...(SHOW_FEE_FIGURES
+    ? ([
+        { header: "Razorpay fee (₹)", width: 14, type: "money", value: (r) => r.feePaise ?? null },
+        { header: "Net after fee (₹)", width: 15, type: "money", value: (r) => r.netPaise ?? r.amountPaise },
+      ] satisfies Column<Payment>[])
+    : []),
   { header: "Currency", width: 9, value: (r) => r.currency },
   { header: "Plan", width: 12, value: (r) => planLabel(r.plan) },
   { header: "Months", width: 8, type: "integer", value: (r) => r.plan?.months ?? null },
@@ -116,7 +121,9 @@ const CUSTOMER_COLUMNS: Column<Customer>[] = [
   { header: "Days left", width: 10, type: "integer", value: (r) => r.daysLeft },
   { header: "Status", width: 14, value: (r) => expiryStatusLabel(r.accessStatus) },
   { header: "Total paid (₹)", width: 14, type: "money", value: (r) => r.totalPaidPaise },
-  { header: "Net after fees (₹)", width: 16, type: "money", value: (r) => r.netPaidPaise },
+  ...(SHOW_FEE_FIGURES
+    ? ([{ header: "Net after fees (₹)", width: 16, type: "money", value: (r) => r.netPaidPaise }] satisfies Column<Customer>[])
+    : []),
   { header: "Repurchased", width: 12, value: (r) => yesNo(r.repurchased) },
   { header: "Times repurchased", width: 16, type: "integer", value: (r) => r.timesRepurchased },
   { header: "AutoPay status", width: 16, value: (r) => subscriptionStatusLabel(r.subscriptionStatus) },

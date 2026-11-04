@@ -43,8 +43,8 @@ import {
   updateCouponAction,
 } from "@/server/indicator/coupon-actions"
 
-const selectClass =
-  "h-9 w-full rounded-lg border border-border/80 bg-card px-2.5 text-sm text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-50"
+/* A native select on the same glass as the inputs (the focus ring is the control's own). */
+const selectClass = "glass-control h-9 w-full rounded-xl px-2.5 text-sm text-foreground outline-none disabled:opacity-50"
 
 /** A discount as typed: type select beside a number, with the unit after it. */
 function DiscountFields({
@@ -167,7 +167,7 @@ function CouponForm({
           />
         </div>
 
-        <div className="rounded-lg border border-border/70 bg-secondary/30 p-3 space-y-3">
+        <div className="glass-tint space-y-3 rounded-2xl p-3">
           <p className="text-sm font-medium">Off the first payment</p>
           <DiscountFields form={form} base="discounts.1m" allowNone label="1-month plan" />
           <DiscountFields form={form} base="discounts.3m" allowNone label="3-month plan" />
@@ -227,10 +227,10 @@ function CouponForm({
             name="onePerBuyer"
             render={({ field }) => (
               <FormItem>
-                <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border/70 px-3 py-2.5 text-sm">
+                <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-glass-rim px-3 py-2.5 text-sm transition-colors hover:bg-glass-hover">
                   <input
                     type="checkbox"
-                    className="mt-0.5 size-4 accent-[#D4AF37]"
+                    className="mt-0.5 size-4 accent-primary"
                     checked={Boolean(field.value)}
                     onChange={(event) => field.onChange(event.target.checked)}
                   />
@@ -249,10 +249,10 @@ function CouponForm({
             name="active"
             render={({ field }) => (
               <FormItem>
-                <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border/70 px-3 py-2.5 text-sm">
+                <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-glass-rim px-3 py-2.5 text-sm transition-colors hover:bg-glass-hover">
                   <input
                     type="checkbox"
-                    className="mt-0.5 size-4 accent-[#D4AF37]"
+                    className="mt-0.5 size-4 accent-primary"
                     checked={Boolean(field.value)}
                     onChange={(event) => field.onChange(event.target.checked)}
                   />

@@ -10,6 +10,14 @@
  * Money is integer paise, as everywhere else; times are ISO strings in UTC.
  */
 
+/**
+ * Razorpay's fees, and the "net after fees" figures built on them, are kept off
+ * every screen and download for now: the dashboard tile, the Purchases grid
+ * column and the fee columns of the Excel/CSV exports. The payments service
+ * still records the fees, so flipping this to true brings them all back.
+ */
+export const SHOW_FEE_FIGURES = false
+
 /** Razorpay test keys or live keys. Test purchases never mix with real ones. */
 export const INDICATOR_MODES = ["live", "test"] as const
 export type IndicatorMode = (typeof INDICATOR_MODES)[number]

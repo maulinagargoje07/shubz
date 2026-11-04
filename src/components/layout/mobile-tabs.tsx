@@ -38,11 +38,12 @@ export function MobileTabs({
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-[#D4AF37]/20 bg-[#080808]/95 shadow-[0_-4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md lg:hidden"
-      style={{ paddingBottom: "calc(0.25rem + env(safe-area-inset-bottom))" }}
+      className="fixed inset-x-3 bottom-0 z-30 lg:hidden"
+      style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom))" }}
       aria-label="Primary"
     >
-      <ul className={cn("grid items-center py-1", GRID_COLS[tabs.length])}>
+      {/* A floating capsule of glass, like a phone's own tab bar; the current tab a capsule of flat glass inside it. */}
+      <ul className={cn("glass grid items-center rounded-[1.75rem] px-1.5 py-1.5", GRID_COLS[tabs.length])}>
         {tabs.map((tab) => {
           const active = isActivePath(pathname, tab)
           const Icon = tab.icon
@@ -53,26 +54,14 @@ export function MobileTabs({
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex flex-col items-center justify-center gap-1 py-1 text-[0.6875rem] font-medium transition-all active:scale-95",
+                  "press relative flex flex-col items-center justify-center gap-0.5 rounded-full py-1 text-[0.6875rem] font-medium transition-colors",
                   active
-                    ? "font-semibold text-primary"
+                    ? "glass-tint font-semibold text-primary"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {active ? (
-                  <span
-                    aria-hidden
-                    className="absolute -top-1 size-1 rounded-full bg-primary gold-glow-sm"
-                  />
-                ) : (
-                  <LinkPending className="absolute -top-1" />
-                )}
-                <div
-                  className={cn(
-                    "flex size-7 items-center justify-center rounded-lg transition-colors",
-                    active ? "bg-primary/15 text-primary" : ""
-                  )}
-                >
+                {active ? null : <LinkPending className="absolute top-1 right-3" />}
+                <div className="flex size-7 items-center justify-center">
                   <Icon className="size-4.5" aria-hidden />
                 </div>
                 <span>{tab.label}</span>
@@ -85,9 +74,9 @@ export function MobileTabs({
           <button
             type="button"
             onClick={onOpenMenu}
-            className="flex w-full flex-col items-center justify-center gap-1 py-1 text-[0.6875rem] font-medium text-muted-foreground transition-all hover:text-foreground active:scale-95"
+            className="press flex w-full flex-col items-center justify-center gap-0.5 rounded-full py-1 text-[0.6875rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            <div className="flex size-7 items-center justify-center rounded-lg">
+            <div className="flex size-7 items-center justify-center">
               <Menu className="size-4.5" aria-hidden />
             </div>
             <span>More</span>
