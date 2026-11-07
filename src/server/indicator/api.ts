@@ -22,6 +22,10 @@ import type {
   FailedPaymentList,
   IndicatorMode,
   IndicatorOverview,
+  MeetupBackfillResult,
+  MeetupPayload,
+  MeetupStatus,
+  ExperienceLevel,
   PaymentList,
   PlanFilter,
   RecoveredFilter,
@@ -244,6 +248,34 @@ export function setTradingViewAccess(
   return call(`/subscribers/${encodeURIComponent(subscriptionId)}/access`, {
     body: { granted, actor },
   })
+}
+
+// ----------------------------------------------------------------- meetup
+
+export type MeetupQuery = {
+  mode?: IndicatorMode
+  q?: string
+  status?: MeetupStatus
+  experience?: ExperienceLevel
+  limit?: number
+  offset?: number
+}
+
+/** The meetup's event facts, totals and a page of registrations. */
+export function getMeetup(query: MeetupQuery = {}): Promise<MeetupPayload> {
+  return call("/meetup", { query })
+}
+
+/**
+ * Asks the payments service to read the Payment Page's past payments from
+ * Razorpay and save any that are missing (days in India, both inclusive; the
+ * last 30 days when left out).
+ */
+export function backfillMeetup(
+  input: { mode?: IndicatorMode; from?: string; to?: string },
+  actor: string
+): Promise<MeetupBackfillResult> {
+  return call("/meetup/backfill", { body: { ...input, actor } })
 }
 
 // ---------------------------------------------------------------- coupons

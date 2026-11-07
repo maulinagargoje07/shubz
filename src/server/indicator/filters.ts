@@ -9,15 +9,19 @@
 
 import {
   ACCESS_FILTER_VALUES,
+  EXPERIENCE_LEVELS,
   EXPIRY_STATUS_FILTER_VALUES,
   INDICATOR_MODES,
+  MEETUP_STATUS_FILTER_VALUES,
   PLAN_FILTER_VALUES,
   RECOVERED_FILTER_VALUES,
   REPEAT_FILTER_VALUES,
   STATUS_FILTER_VALUES,
   type AccessFilter,
+  type ExperienceLevel,
   type ExpiryStatusFilter,
   type IndicatorMode,
+  type MeetupStatus,
   type PlanFilter,
   type RecoveredFilter,
   type RepeatFilter,
@@ -142,6 +146,22 @@ export function failedFilters(get: ParamReader): FailedFilters {
     q: textParam(get("q")),
     recovered: enumParam(get("recovered"), RECOVERED_FILTER_VALUES),
     page: pageParam(get("page")),
+  }
+}
+
+export type MeetupFilters = {
+  mode?: IndicatorMode
+  q?: string
+  status?: MeetupStatus
+  experience?: ExperienceLevel
+}
+
+export function meetupFilters(get: ParamReader): MeetupFilters {
+  return {
+    mode: modeParam(get),
+    q: textParam(get("q")),
+    status: enumParam(get("status"), MEETUP_STATUS_FILTER_VALUES),
+    experience: enumParam(get("experience"), EXPERIENCE_LEVELS),
   }
 }
 

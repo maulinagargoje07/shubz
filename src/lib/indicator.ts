@@ -516,3 +516,145 @@ export const MODE_LABELS: Record<IndicatorMode, string> = {
   live: "Live",
   test: "Test",
 }
+
+// ------------------------------------------------------------------ meetup
+
+/**
+ * The Pune Forex Traders Meetup. Tickets are paid on a Razorpay Payment Page;
+ * the payments service hears about each payment through Razorpay's webhooks
+ * and keeps the form's answers. Everything here mirrors GET /api/admin/meetup.
+ */
+
+export const EXPERIENCE_LEVELS = ["beginner", "intermediate", "advanced"] as const
+export type ExperienceLevel = (typeof EXPERIENCE_LEVELS)[number]
+
+export const EXPERIENCE_LABELS: Record<ExperienceLevel | "unknown", string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+  unknown: "Not given",
+}
+
+export const MEETUP_STATUSES = ["captured", "failed"] as const
+export type MeetupStatus = (typeof MEETUP_STATUSES)[number]
+
+export const MEETUP_STATUS_LABELS: Record<MeetupStatus, string> = {
+  captured: "Paid",
+  failed: "Failed",
+}
+
+export const MEETUP_STATUS_FILTERS = [
+  { value: "captured", label: "Paid" },
+  { value: "failed", label: "Failed" },
+] as const
+export const MEETUP_STATUS_FILTER_VALUES = MEETUP_STATUS_FILTERS.map((f) => f.value)
+
+/** The event's facts, as the payments service states them (dates India time). */
+export type MeetupEvent = {
+  key: string
+  name: string
+  /** "yyyy-mm-dd" */
+  date: string
+  startsAt: string
+  endsAt: string
+  timeLabel: string
+  venue: string
+  address: string
+  mapUrl: string
+  ticketPaise: number
+  currency: string
+  speaker: string
+  agenda: string
+  refundPolicy: string
+  registerUrl: string
+}
+
+/** One payment the Payment Page took or declined. */
+export type MeetupRegistration = {
+  paymentId: string
+  orderId: string | null
+  pageId: string
+  mode: IndicatorMode
+  status: MeetupStatus
+  amountPaise: number
+  currency: string
+  feePaise: number | null
+  method: string | null
+  fullName: string | null
+  email: string | null
+  contactNumber: string | null
+  /** As typed on the form. */
+  experience: string | null
+  /** The form's answer as one of the three levels, or null if it was something else. */
+  experienceLevel: ExperienceLevel | null
+  city: string | null
+  /** Every form field as Razorpay sent it. */
+  notes: Record<string, unknown>
+  errorCode: string | null
+  errorDescription: string | null
+  errorReason: string | null
+  /** When Razorpay created the payment (ISO), and that day in India ("yyyy-mm-dd"). */
+  paidAt: string
+  paidOn: string
+  createdAt: string
+}
+
+export type MeetupDay = {
+  /** "yyyy-mm-dd", India. */
+  day: string
+  registrations: number
+  collectedPaise: number
+  failed: number
+}
+
+export type MeetupTotals = {
+  registrations: number
+  collectedPaise: number
+  feesPaise: number
+  feeKnownFor: number
+  failedAttempts: number
+  /** Failed attempts whose payer never paid afterwards. */
+  unrecoveredFailures: number
+  registrationsToday: number
+  registrationsLast7Days: number
+  byExperience: Record<ExperienceLevel | "unknown", number>
+  byCity: { city: string; registrations: number }[]
+  byMethod: { method: string; registrations: number }[]
+  /** Every day from the first registration (or 30 days ago) to today, zeros included. */
+  byDay: MeetupDay[]
+  firstRegistrationOn: string | null
+  latestRegistrationAt: string | null
+}
+
+/** Whether the payments service knows the Payment Page for this mode (variable names only). */
+export type MeetupReport =
+  | { state: "ready"; variable: string }
+  | { state: "not_set"; variable: string }
+  | { state: "invalid"; variable: string; problem: string }
+
+export type MeetupPayload = ListMeta & {
+  event: MeetupEvent
+  pageId: string | null
+  report: MeetupReport
+  totals: MeetupTotals
+  rows: MeetupRegistration[]
+}
+
+/** What the backfill did: payments read from Razorpay and what was saved. */
+export type MeetupBackfillResult = {
+  ok: true
+  mode: IndicatorMode
+  pageId: string
+  from: string
+  to: string
+  scanned: number
+  matched: number
+  inserted: number
+  updated: number
+  unmatchedTotal: number
+}
+
+export function experienceLabel(level: ExperienceLevel | null | undefined, raw?: string | null): string {
+  if (level) return EXPERIENCE_LABELS[level]
+  return raw && raw.trim() ? raw.trim() : EXPERIENCE_LABELS.unknown
+}

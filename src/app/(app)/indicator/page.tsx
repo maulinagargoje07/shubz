@@ -3,6 +3,7 @@ import {
   ArrowRight,
   BadgeCheck,
   CalendarClock,
+  CalendarDays,
   CircleAlert,
   IndianRupee,
   ShoppingBag,
@@ -36,13 +37,14 @@ import {
   type Dashboard,
   type FailedPayment,
   type IndicatorOverview,
+  type MeetupPayload,
   type Payment,
 } from "@/lib/indicator"
 import { formatINR, formatINRShort } from "@/lib/money"
 import { can } from "@/lib/permissions"
 import type { RawParam } from "@/lib/search-params"
 import { requirePermissionPage } from "@/lib/session"
-import { fetchAll, getOverview, listPayments, PaymentsApiError } from "@/server/indicator/api"
+import { fetchAll, getMeetup, getOverview, listPayments, PaymentsApiError } from "@/server/indicator/api"
 import { fromRecord, hrefWith, modeParam } from "@/server/indicator/filters"
 
 export const dynamic = "force-dynamic"
@@ -71,15 +73,19 @@ export default async function IndicatorOverviewPage({
 
   let data: IndicatorOverview
   let purchases: Payment[] | null
+  let meetup: MeetupPayload | null
   try {
     // The overview and every purchase row (for the charts), side by side. The
     // charts are optional: if the list can't be read the figures still show.
-    const [overview, all] = await Promise.all([
+    // So is the meetup: a payments service without it just leaves the section out.
+    const [overview, all, meet] = await Promise.all([
       getOverview(requestedMode),
       fetchAll((page) => listPayments({ mode: requestedMode, ...page })).catch(() => null),
+      getMeetup({ mode: requestedMode, limit: 1 }).catch(() => null),
     ])
     data = overview
     purchases = all?.rows ?? null
+    meetup = meet
   } catch (error) {
     if (!(error instanceof PaymentsApiError)) throw error
     return (
@@ -449,6 +455,8 @@ export default async function IndicatorOverviewPage({
         </div>
       </section>
 
+      {meetup ? <MeetupSection meetup={meetup} link={link} /> : null}
+
       <section className="mt-8">
         <div className="px-4 sm:px-6">
           <SectionHeading
@@ -549,6 +557,62 @@ export default async function IndicatorOverviewPage({
 }
 
 type LinkFn = (path: string, params?: Record<string, string | undefined>) => string
+
+/**
+ * The meetup in brief: money, tickets and failed attempts, each a doorway to
+ * the Meetup page, with the event's date and place. Figures are the payments
+ * service's, as everywhere else.
+ */
+function MeetupSection({ meetup, link }: { meetup: MeetupPayload; link: LinkFn }) {
+  const { event, totals } = meetup
+  return (
+    <section className="px-4 pt-7 sm:px-6">
+      <SectionHeading action={<SeeAll href={link("/indicator/meetup")} />}>
+        {event.name}
+      </SectionHeading>
+      <p className="-mt-1.5 mb-3 text-sm text-muted-foreground">
+        {formatDate(event.date, "EEEE d MMMM yyyy")}, {event.timeLabel} · {event.venue} · {formatINRShort(event.ticketPaise)} a ticket
+        {meetup.report.state !== "ready" ? (
+          <span className="text-pending-foreground"> · not recording {meetup.mode} payments yet ({meetup.report.variable} not set)</span>
+        ) : null}
+      </p>
+      <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatTile
+          label="Collected for the meetup"
+          value={formatINRShort(totals.collectedPaise)}
+          icon={<IndianRupee className="size-4" />}
+          hint={`${plural(totals.registrations, "ticket")} sold`}
+          trend={totals.byDay.map((d) => d.collectedPaise)}
+          href={link("/indicator/meetup", { status: "captured" })}
+        />
+        <StatTile
+          label="Registrations"
+          value={totals.registrations}
+          tone={totals.registrations > 0 ? "paid" : undefined}
+          icon={<CalendarDays className="size-4" />}
+          hint={`${totals.registrationsToday} today · ${totals.registrationsLast7Days} in the last 7 days`}
+          trend={totals.byDay.map((d) => d.registrations)}
+          trendColor={SERIES.blue}
+          href={link("/indicator/meetup", { status: "captured" })}
+        />
+        <StatTile
+          label="Failed attempts"
+          value={totals.failedAttempts}
+          tone={totals.unrecoveredFailures > 0 ? "overdue" : undefined}
+          icon={<CircleAlert className="size-4" />}
+          hint={
+            totals.unrecoveredFailures > 0
+              ? `${plural(totals.unrecoveredFailures, "person", "people")} never paid afterwards`
+              : totals.failedAttempts > 0
+                ? "Everyone who failed has since paid"
+                : "No declined payments"
+          }
+          href={link("/indicator/meetup", { status: "failed" })}
+        />
+      </div>
+    </section>
+  )
+}
 
 /** Purchases by plan: a split bar and the figures behind it, each a link to those purchases. */
 function PlanMix({ charts, dash, link }: { charts: ChartData; dash: Dashboard; link: LinkFn }) {

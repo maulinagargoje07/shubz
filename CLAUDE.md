@@ -37,7 +37,7 @@ the payment service's admin API (`src/server/indicator/api.ts`, Bearer
 `/indicator` refresh themselves every 10 seconds.
 
 Pages: Dashboard (`/indicator`), Customers, Purchases (`/indicator/payments`),
-Subscriptions, Failed payments, Coupons, Team, Your profile. Roles SUPERADMIN
+Subscriptions, Failed payments, Coupons, Meetup, Team, Your profile. Roles SUPERADMIN
 and ADMIN; permissions `VIEW_INDICATOR`, `MANAGE_TRADINGVIEW_ACCESS`,
 `EXPORT_DATA`, `MANAGE_COUPONS` (admins don't get it by default), `MANAGE_USERS`.
 
@@ -53,6 +53,21 @@ and ADMIN; permissions `VIEW_INDICATOR`, `MANAGE_TRADINGVIEW_ACCESS`,
 - After 20 Nov 2026: switch the offer off here (the website's page and pop-up
   follow by themselves), then the website's footer link and pop-up mount can
   be removed.
+
+## Meetup page (added 8 Nov 2026, uncommitted)
+
+- `/indicator/meetup` for the Pune Forex Traders Meetup (Fri 4 Dec 2026,
+  Conrad Pune, ₹999): tiles, registrations-by-day area chart and calendar,
+  experience ring, cities, the registrations grid, a three-tile section on
+  the dashboard, nav entry. Data from the payments service's new
+  `GET /api/admin/meetup`; see AGENTS.md → "Meetup registrations".
+- Verified: `npm run typecheck`, `npm run lint`,
+  `NEXT_DIST_DIR=.next-check npm run build` pass. Not opened in a browser
+  (needs the owner's sign-in).
+- Until the payments service is pushed with the endpoint, the page says the
+  service needs updating and the dashboard leaves the section out. The
+  owner's pending Razorpay/Railway steps are listed in the payments service's
+  CLAUDE.md.
 
 ## State on 4 Nov 2026 — uncommitted work, under review by the owner
 

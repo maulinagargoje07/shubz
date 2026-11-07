@@ -52,6 +52,18 @@ that service's admin API, from the server only:
   username, not a subscription); this app writes the audit row after that
   service confirms the change. The Customers page and the dashboard's to-do
   lists tick through the customer's `latestSubscriptionId`.
+- **Meetup registrations** (`/indicator/meetup`, `server/indicator/api.ts`
+  `getMeetup` / `backfillMeetup`) live in the payments service too: tickets
+  for the Pune Forex Traders Meetup are paid on a Razorpay Payment Page, the
+  service hears about each payment from Razorpay's webhooks and keeps the
+  form's answers (name, email, phone, trading experience, city). The page
+  shows the service's totals and day series (`totals.byDay` already has one
+  entry per day, zeros included) and the rows in a grid; the dashboard has a
+  three-tile section linking to it. The one write, "Check Razorpay for missed
+  registrations" (`server/indicator/meetup-actions.ts`), is superadmin-only
+  and audited; it asks the service to read the page's payments back from
+  Razorpay. An older service without `/api/admin/meetup` makes the page say
+  the service needs updating and leaves the dashboard section out.
 - If the payments service can't be reached or the key is wrong, Indicator
   pages show `components/indicator/unavailable.tsx`. Sign-in, Team and
   Profile must keep working regardless.

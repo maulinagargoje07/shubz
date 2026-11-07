@@ -1,6 +1,7 @@
 import type { Permission } from "@/lib/permissions"
 
 import {
+  CalendarDays,
   CircleAlert,
   Contact,
   IndianRupee,
@@ -35,6 +36,7 @@ export const NAV_SECTIONS: { heading: string; items: NavItem[] }[] = [
       { href: "/indicator/subscribers", label: "Subscriptions", icon: Users, permission: "VIEW_INDICATOR" },
       { href: "/indicator/failed", label: "Failed payments", icon: CircleAlert, permission: "VIEW_INDICATOR" },
       { href: "/indicator/coupons", label: "Coupons", icon: Ticket, permission: "VIEW_INDICATOR" },
+      { href: "/indicator/meetup", label: "Meetup", icon: CalendarDays, permission: "VIEW_INDICATOR" },
     ],
   },
   {
