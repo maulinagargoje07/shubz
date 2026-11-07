@@ -114,14 +114,14 @@ export function RegistrationCalendar({ totals }: { totals: MeetupTotals }) {
   )
 }
 
-export function ExperienceSplit({ totals, href }: { totals: MeetupTotals; href: (level: ExperienceLevel) => string }) {
+export function ExperienceSplit({ totals, hrefs }: { totals: MeetupTotals; hrefs: Record<ExperienceLevel, string> }) {
   const parts: Part[] = (["beginner", "intermediate", "advanced", "unknown"] as const).map((level) => ({
     key: level,
     label: EXPERIENCE_LABELS[level],
     value: totals.byExperience[level],
     color: EXPERIENCE_COLOURS[level],
     hint: level === "unknown" ? "Something else, or left blank" : undefined,
-    href: level === "unknown" ? undefined : href(level),
+    href: level === "unknown" ? undefined : hrefs[level],
   }))
   return (
     <ChartCard title="Trading experience" subtitle="What registrants said on the form">

@@ -11,6 +11,7 @@ import { formatDate, formatIST } from "@/lib/fy"
 import {
   EXPERIENCE_LABELS,
   EXPERIENCE_LEVELS,
+  type ExperienceLevel,
   MEETUP_STATUS_FILTERS,
   type MeetupPayload,
   type MeetupRegistration,
@@ -75,6 +76,8 @@ export default async function MeetupPage({ searchParams }: { searchParams: Promi
   }
 
   const known = EXPERIENCE_LEVELS.map((level) => totals.byExperience[level])
+  // Plain strings, not a function: props cross into a client component.
+  const experienceHrefs = Object.fromEntries(EXPERIENCE_LEVELS.map((level) => [level, link({ experience: level })])) as Record<ExperienceLevel, string>
   const topLevel = EXPERIENCE_LEVELS.reduce((best, level) => (totals.byExperience[level] > totals.byExperience[best] ? level : best), EXPERIENCE_LEVELS[0])
 
   return (
@@ -169,7 +172,7 @@ export default async function MeetupPage({ searchParams }: { searchParams: Promi
         <SectionHeading>Registrations</SectionHeading>
         <div className="stagger grid grid-cols-1 gap-4 lg:grid-cols-3">
           <RegistrationsByDay totals={totals} />
-          <ExperienceSplit totals={totals} href={(level) => link({ experience: level })} />
+          <ExperienceSplit totals={totals} hrefs={experienceHrefs} />
           <RegistrationCalendar totals={totals} />
           <CitySplit totals={totals} />
           <EventCard data={data} />
