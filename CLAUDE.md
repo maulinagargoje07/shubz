@@ -54,10 +54,10 @@ and ADMIN; permissions `VIEW_INDICATOR`, `MANAGE_TRADINGVIEW_ACCESS`,
   follow by themselves), then the website's footer link and pop-up mount can
   be removed.
 
-## Meetup page (added 8 Nov 2026, uncommitted)
+## Meetup page (added 8 Nov 2026)
 
-- `/indicator/meetup` for the Pune Forex Traders Meetup (Fri 4 Dec 2026,
-  Conrad Pune, ₹999): tiles, registrations-by-day area chart and calendar,
+- `/indicator/meetup` for the Pune Forex Traders Meetup (Wed 27 Jan 2027,
+  Hyatt Pune, Kalyani Nagar, ₹999; moved from 4 Dec 2026 at Conrad Pune): tiles, registrations-by-day area chart and calendar,
   experience ring, cities, the registrations grid, a three-tile section on
   the dashboard, nav entry. Data from the payments service's new
   `GET /api/admin/meetup`; see AGENTS.md → "Meetup registrations".
