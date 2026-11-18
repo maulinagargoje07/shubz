@@ -61,7 +61,7 @@ export default async function PurchasesPage({
     <div className="pb-8">
       <PageHeader
         title="Purchases"
-        description="Every successful payment: first payments and AutoPay renewals, each with the plan it bought and when that runs out. Click a heading to sort; the funnel filters that column."
+        description="Every successful payment: first payments and AutoPay renewals, each with the plan it bought and when that runs out: the same date one plan length later, the day AutoPay charges again (paid on the 17th, valid till the 17th). Click a heading to sort; the funnel filters that column."
         actions={canExport ? <ExportLinks href={`${PATH}/export`} params={filterParams({ mode })} /> : undefined}
       />
       <IndicatorToolbar path={PATH} mode={meta.mode} serviceMode={meta.serviceMode} generatedAt={meta.generatedAt} />

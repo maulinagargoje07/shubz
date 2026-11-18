@@ -5,7 +5,8 @@ who bought the 7 Godfather Strategies TradingView indicator, their purchases
 and failed payments, and lets an admin tick "TradingView access given" once a
 buyer's username has been added on TradingView. Its dashboard, Customers and
 Purchases pages follow the spreadsheet tracker they replaced (one row per
-person merged on TradingView username; purchase date + months, less a day, = expiry (the last day of access);
+person merged on TradingView username; purchase date + months = expiry, the last day of access and the
+day AutoPay charges next (paid on the 17th, valid till the 17th of next month; a day less before 18 Nov 2026);
 expired / expiring soon (7 days) / active). Read this before writing code.
 
 Until migration 0007 this app was a student CRM (contacts, programs,

@@ -98,7 +98,7 @@ export type Subscriber = {
   totalPaidPaise: number
   currentPeriodStart: string | null
   currentPeriodEnd: string | null
-  /** The last day of access ("yyyy-mm-dd", India): last payment plus one billing cycle, less a day. */
+  /** The last day of access ("yyyy-mm-dd", India): last payment plus one billing cycle, the day AutoPay charges next. */
   paidThrough: string | null
   daysLeft?: number | null
   accessStatus?: ExpiryStatus

@@ -65,7 +65,7 @@ export default async function CustomersPage({
     <div className="pb-8">
       <PageHeader
         title="Customers"
-        description="One row per person, repeat purchases merged on TradingView username. Access valid till is the latest expiry across all of their purchases. Click a heading to sort; the funnel filters that column."
+        description="One row per person, repeat purchases merged on TradingView username. Access valid till is the latest expiry across all of their purchases: the same date as the purchase, one plan length later (paid on the 17th, valid till the 17th). Click a heading to sort; the funnel filters that column."
         actions={canExport ? <ExportLinks href={`${PATH}/export`} params={filterParams({ mode })} /> : undefined}
       />
       <IndicatorToolbar path={PATH} mode={meta.mode} serviceMode={meta.serviceMode} generatedAt={meta.generatedAt} />

@@ -707,7 +707,7 @@ function AccessSplit({ dash, link }: { dash: Dashboard; link: LinkFn }) {
         <p className="text-sm font-semibold text-foreground">
           {plural(dash.access.customers, "customer")}, by access status
         </p>
-        <p className="text-xs text-muted-foreground">Judged on today&apos;s date in India; 7 days or less left counts as expiring</p>
+        <p className="text-xs text-muted-foreground">Judged on today&apos;s date in India. Access runs to the same date next month (paid on the 17th, valid till the 17th); 7 days or less left counts as expiring</p>
       </div>
       <SegmentedBar parts={parts} unit="count" list={false} thickness={14} />
       <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-muted-foreground" aria-label="Legend">
